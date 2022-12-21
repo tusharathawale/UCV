@@ -57,13 +57,39 @@ else
     -DVTKm_ENABLE_MPI=ON \
     -DVTKm_ENABLE_OPENMP=ON \
     -DVTKm_ENABLE_LOGGING=ON \
-    -DVTKm_ENABLE_TESTING=OFF 
+    -DVTKm_ENABLE_TESTING=OFF \
+    -DVTKm_BUILD_TESTING=OFF \
+
     cmake --build ${VTKM_BUILD_DIR} -j${build_jobs}
 
     echo "**** Installing vtk-m"
     cmake --install ${VTKM_BUILD_DIR}
 fi
+
 echo "====> Installing vtk-m, ok"
 
 echo "====> build UCV"
 # the only have build dir without the install dir
+# the install dir is same with the build dir
+UCV_SRC_DIR=$HERE/../../
+# use the install dir as the build dir
+UCV_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/UCV"
+
+if [ -d $UCV_INSTALL_DIR ]; then
+    echo "====> skip, $UCV_INSTALL_DIR already exists," \
+             "please remove it if you want to reinstall it"
+else
+
+    cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
+    -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-1.9 \
+    
+    cd $HERE
+
+    # build and install
+    echo "**** Building UCV"
+    cmake --build ${UCV_INSTALL_DIR} -j${build_jobs}
+fi
+
+# not sure why the libvtkmdiympi.so is not included during the build process
+echo "try to add library path by executing:"
+echo "export LD_LIBRARY_PATH=${VTKM_INSTALL_DIR}/lib:\${LD_LIBRARY_PATH}"
