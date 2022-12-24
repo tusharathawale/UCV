@@ -1,7 +1,11 @@
 #include <vtkm/cont/Initialize.h>
 #include <vtkm/io/reader/VTKDataSetReader.h>
+#include <vtkm/io/writer/VTKDataSetWriter.h>
+
 #include <vtkm/worklet/WorkletPointNeighborhood.h>
 #include <vtkm/cont/ArrayHandle.h>
+
+#include <float.h>
 
 struct GoThroughNeigoborhood : public vtkm::worklet::WorkletPointNeighborhood
 {
@@ -9,51 +13,43 @@ public:
     GoThroughNeigoborhood(int neighborhoodSize)
         : m_neighborhoodSize(neighborhoodSize)
     {
-    }
+    };
 
-    using ControlSignature = void(CellSetIn, FieldInNeighborhood, FieldOut);
+    using ControlSignature = void(CellSetIn, FieldInNeighborhood, FieldOut, FieldOut);
 
-    using ExecutionSignature = void(_2,_3);
-
-    // where are these template parameters are specified?
-    // is it following the fixed format?
-    // the first is the type of input, the second is the type of output
+    using ExecutionSignature = void(_2, _3, _4);
 
     template <typename InNeighborhoodT, typename T>
     VTKM_EXEC void operator()(const InNeighborhoodT &input,
-                              T &output) const
+                              T &output1, T &output2) const
     {
-        //how to get the bound of the bounding box of the input data?
-        //the type of input is the array ArrayPortalBasicRead
-        //we need to skip some of the data points
-        
-        // the type of input is in src/vtk-m/vtkm/exec/FieldNeighborhood.h
-        // std::cout << "this->m_neighborhoodSize " << this->m_neighborhoodSize << std::endl;
-        auto flatIndex = input.Get({1,1,1});
-        if(flatIndex!=0){
-            std::cout << "check the flatindex " << flatIndex << std::endl;
-        }
-        
+       
+        // some questions:
+        // 1. how to process the case where the ijk is out of the box
+        // 2. how to get the coarse results?
+        // 3. how to combine it with the ascent that contains multiple blocks?
+        vtkm::FloatDefault boxMin = DBL_MAX;
+        // the min value for the field is 0 in this dataset
+        // we can reset this number if it is different
+        vtkm::FloatDefault boxMax = 0;
 
         for (vtkm::IdComponent k = -this->m_neighborhoodSize; k <= this->m_neighborhoodSize; ++k)
         {
-            for (vtkm::IdComponent j = -this->m_neighborhoodSize; j <=this->m_neighborhoodSize; ++j)
+            for (vtkm::IdComponent j = -this->m_neighborhoodSize; j <= this->m_neighborhoodSize; ++j)
             {
                 for (vtkm::IdComponent i = -this->m_neighborhoodSize; i <= this->m_neighborhoodSize; ++i)
                 {
-                    //is this input change everytime?
+                    // the type of T1 and T2 are same
                     vtkm::FloatDefault value = static_cast<T>(input.Get(i, j, k));
-                    //check the first value of input
-                    
-                    if(flatIndex!=0 && value!=0){
-                        std::cout << "flatIndex " << flatIndex << " test value " << value << std::endl; 
-                    }
 
-                    
+                    // add other values as needed for the next step
+                    boxMax = std::max(boxMax, value);
+                    boxMin = std::min(boxMin, value);  
                 }
             }
         }
-
+        output1 = boxMin;
+        output2 = boxMax;
     }
 
 private:
@@ -69,6 +65,7 @@ using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::Int32,
                                   vtkm::UInt32>;
 
+// TODO, extracting the ensemble data based on vtk operation
 int main(int argc, char *argv[])
 {
     // init the vtkm (set the backend and log level here)
@@ -90,41 +87,40 @@ int main(int argc, char *argv[])
     vtkm::cont::DataSet inData = reader.ReadDataSet();
 
     // check the property of the data
-    // the raw_data for testing is 832*832*494
     inData.PrintSummary(std::cout);
 
-    // TODO try to use the point neighborhood
-    // skip particular on if it is covered by previous points
-    // refer to this:
-    // https://gitlab.kitware.com/vtk/vtk-m/-/blob/release-1.9/vtkm/filter/image_processing/worklet/ComputeMoments.h
-    // https://gitlab.kitware.com/vtk/vtk-m/-/blob/release-1.9/vtkm/filter/image_processing/ImageMedian.cxx
-    // not sure how to use that boundy thing
-    /* try the neighborhood worklet */
-
-    std::cout << "get cell set" << std::endl;
+    //std::cout << "get cell set" << std::endl;
     const vtkm::cont::UnknownCellSet &inputCellSet = inData.GetCellSet();
-    std::cout << "get field" << std::endl;
+    //std::cout << "get field" << std::endl;
 
     auto field = inData.GetField(fieldName);
-
-    vtkm::cont::UnknownArrayHandle outArray;
 
     using WorkletType = GoThroughNeigoborhood;
     using DispatcherType = vtkm::worklet::DispatcherPointNeighborhood<WorkletType>;
 
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> result;
-    std::cout << "dispatcher and invoke" << std::endl;
-
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> result1;
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> result2;
 
     auto resolveType = [&](const auto &concrete)
     {
-        DispatcherType dispatcher(WorkletType{1});
-        dispatcher.Invoke(inputCellSet, concrete, result);
-        outArray = result;
+        DispatcherType dispatcher(WorkletType{2});
+        dispatcher.Invoke(inputCellSet, concrete, result1, result2);
     };
 
     field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
         resolveType);
+
+    // add new array into data set
+    std::cout << "data summary after adding the field array:" << std::endl;
+    inData.AddPointField("min", result1);
+    inData.AddPointField("max", result2);
+    inData.PrintSummary(std::cout);
+
+    // output the dataset into the vtk file for results checking
+    std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
+    std::string outputFileName = fileSuffix + std::string("_Derived.vtk");
+    vtkm::io::VTKDataSetWriter write(outputFileName);
+    write.WriteDataSet(inData);
 
     return 0;
 }
