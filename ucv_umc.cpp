@@ -17,7 +17,7 @@ public:
     using ControlSignature = void(CellSetIn,
                                   FieldInPoint,
                                   FieldInPoint,
-                                  FieldInPoint, 
+                                  FieldInPoint,
                                   FieldOutCell);
 
     using ExecutionSignature = void(_2, _3, _4, _5);
@@ -42,6 +42,7 @@ public:
         for (vtkm::IdComponent pointIndex = 0; pointIndex < numPoints; ++pointIndex)
         {
             // outCellField = outCellField + inPointFieldVec[pointIndex];
+            // TODO marching cube things
         }
 
         outCellField =
@@ -88,7 +89,8 @@ int main(int argc, char *argv[])
     // we currently do not use the resolveType, just call the Invoke direactly with concrete type?
 
     // dispatcher.Invoke(inData.GetCellSet(), inFieldRaw, inFieldMin, inFieldMax, outArray);
-    // it takes comparatively long time to
+    // it takes comparatively long time to compile this
+    // around several minutes for doing this, not sure the reason
     dispatcher.Invoke(inData.GetCellSet(), inFieldRaw, inFieldMin, inFieldMax, outArray);
 
     // TODO add results into the dataset

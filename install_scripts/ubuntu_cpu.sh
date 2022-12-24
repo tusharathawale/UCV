@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-build_jobs=8
+build_jobs=1
 mkdir -p ubuntu_cpu
 cd ubuntu_cpu
 
@@ -81,6 +81,8 @@ if [ -d $UCV_INSTALL_DIR ]; then
 else
 
     cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_SHARED_LIBS=ON \
     -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-1.9 \
     
     cd $HERE

@@ -12,5 +12,6 @@ find_package(MPI REQUIRED)
 add_executable(ucv_extract ucv_extract.cpp)
 target_link_libraries(ucv_extract ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
+#Not sure why it takes so long to build this
 add_executable(ucv_umc ucv_umc.cpp)
 target_link_libraries(ucv_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
