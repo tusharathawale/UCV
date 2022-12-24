@@ -13,36 +13,45 @@ public:
     ProbMCWorklet(int isovalue)
         : m_isovalue(isovalue){};
 
-    // two input variables
     using ControlSignature = void(CellSetIn,
                                   FieldInPoint,
                                   FieldInPoint,
                                   FieldInPoint,
                                   FieldOutCell);
 
+    // using ControlSignature = void(CellSetIn,
+    //                               FieldInPoint,
+    //                               FieldOutCell);
+
     using ExecutionSignature = void(_2, _3, _4, _5);
+    // using ExecutionSignature = void(_2, _3);
+
     // the first parameter is binded with the worklet
     using InputDomain = _1;
-
-    // Gradient filter is an example that recieves multiple fields
-    template <typename InPointFieldType, typename InPointFieldMinType, typename InPointFieldMaxType, typename OutCellFieldType>
-    VTKM_EXEC void operator()(const InPointFieldType &inPointFieldRaw,
-                              const InPointFieldMinType &inPointFieldMin,
-                              const InPointFieldMaxType &inPointFieldMax,
+    // InPointFieldType should be a vector
+    template <typename InPointFieldType1, typename InPointFieldType2, typename InPointFieldType3, typename OutCellFieldType>
+    // VTKM_EXEC void operator()(const InPointFieldType &inPointFieldVecRaw,
+    //                           OutCellFieldType &outCellField) const
+    VTKM_EXEC void operator()(const InPointFieldType1 &inPointFieldVecRaw,
+                              const InPointFieldType2 &inPointFieldVecMin,
+                              const InPointFieldType3 &inPointFieldVecMax,
                               OutCellFieldType &outCellField) const
     {
         // how to process the case where there are multiple variables
-        vtkm::IdComponent numPoints = inPointFieldRaw.GetNumberOfComponents();
+        vtkm::IdComponent numPoints = inPointFieldVecRaw.GetNumberOfComponents();
 
-        std::cout << "numPoints for each input" << numPoints << std::endl;
+        // std::cout << "numPoints for each input" << numPoints << std::endl;
 
         outCellField = OutCellFieldType(0);
 
-        // howt to go through each point in the cell?
+        // how to go through different field?
         for (vtkm::IdComponent pointIndex = 0; pointIndex < numPoints; ++pointIndex)
         {
             // outCellField = outCellField + inPointFieldVec[pointIndex];
-            // TODO marching cube things
+            // TODO operations about marching cube things
+            // vtkm::FloatDefault raw = inPointFieldVec[pointIndex][0];
+            // vtkm::FloatDefault fieldMin = inPointFieldVec[pointIndex][1];
+            // vtkm::FloatDefault fieldMax = inPointFieldVec[pointIndex][2];
         }
 
         outCellField =
@@ -73,9 +82,13 @@ int main(int argc, char *argv[])
     std::string fieldName = argv[2];
     vtkm::io::VTKDataSetReader reader(fileName);
     vtkm::cont::DataSet inData = reader.ReadDataSet();
-    auto &inFieldRaw = inData.GetField(fieldName);
-    auto &inFieldMin = inData.GetField("min");
-    auto &inFieldMax = inData.GetField("max");
+
+    std::cout << "check dataset:" << std::endl;
+    inData.PrintSummary(std::cout);
+
+    const auto &inFieldRaw = inData.GetField(fieldName);
+    const auto &inFieldMin = inData.GetField("min");
+    const auto &inFieldMax = inData.GetField("max");
 
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> outArray;
 
@@ -91,6 +104,7 @@ int main(int argc, char *argv[])
     // dispatcher.Invoke(inData.GetCellSet(), inFieldRaw, inFieldMin, inFieldMax, outArray);
     // it takes comparatively long time to compile this
     // around several minutes for doing this, not sure the reason
+    // dispatcher.Invoke(inData.GetCellSet(), inFieldRaw, outArray);
     dispatcher.Invoke(inData.GetCellSet(), inFieldRaw, inFieldMin, inFieldMax, outArray);
 
     // TODO add results into the dataset
