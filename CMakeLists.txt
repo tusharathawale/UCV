@@ -12,9 +12,15 @@ find_package(MPI REQUIRED)
 add_executable(ucv_extract ucv_extract.cpp)
 target_link_libraries(ucv_extract ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
+add_executable(ucv_extract_vector ucv_extract_vector.cpp)
+target_link_libraries(ucv_extract_vector ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
+add_executable(ucv_umc_vector ucv_umc_vector.cpp)
+target_link_libraries(ucv_umc_vector ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
 #Not sure why it takes so long to build this
-add_executable(ucv_umc ucv_umc.cpp)
-target_link_libraries(ucv_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
+#add_executable(ucv_umc ucv_umc.cpp)
+#target_link_libraries(ucv_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 #add_executable(point_to_cell point_to_cell.cpp)
 #target_link_libraries(point_to_cell ${VTKm_LIBRARIES} MPI::MPI_CXX)
