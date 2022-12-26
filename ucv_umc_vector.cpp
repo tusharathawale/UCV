@@ -32,36 +32,35 @@ public:
         // how to process the case where there are multiple variables
         vtkm::IdComponent numPoints = inPointFieldVecDerived.GetNumberOfComponents();
         // there are 8 points for each cell
+        
+        vtkm::FloatDefault allPositiveProb = 1.0;
+        vtkm::FloatDefault allNegativeProb = 1.0;
+        vtkm::FloatDefault allCrossProb = 0.0;
 
-        // std::vector<vtkm::FloatDefault, numPoints> postiveProblist;
-        // std::vector<vtkm::FloatDefault, numPoints> negativeProblist;
-
-        vtkm::FloatDefault allPositiveProb = 1;
-        vtkm::FloatDefault allNegativeProb = 1;
-        vtkm::FloatDefault allCrossProb = 0;
+        vtkm::FloatDefault positiveProb;
+        vtkm::FloatDefault negativeProb;
 
         for (vtkm::IdComponent pointIndex = 0; pointIndex < numPoints; ++pointIndex)
         {
             vtkm::Vec<vtkm::FloatDefault, 2> derivedVec = inPointFieldVecDerived[pointIndex];
             vtkm::FloatDefault minV = derivedVec[0];
             vtkm::FloatDefault maxV = derivedVec[1];
-            vtkm::FloatDefault positiveProb;
-            vtkm::FloatDefault negativeProb;
-            if (m_isovalue <= minV)
+
+            if (this->m_isovalue <= minV)
             {
-                positiveProb = 1;
-                negativeProb = 0;
+                positiveProb = 1.0;
+                negativeProb = 0.0;
             }
-            else if (m_isovalue >= maxV)
+            else if (this->m_isovalue >= maxV)
             {
-                positiveProb = 0;
-                negativeProb = 1;
+                positiveProb = 0.0;
+                negativeProb = 1.0;
             }
             else
             {
                 // assuming we use the uniform distribution
                 positiveProb = (maxV - this->m_isovalue) / (maxV - minV);
-                negativeProb = 1 - positiveProb;
+                negativeProb = 1.0 - positiveProb;
             }
 
             allPositiveProb *= positiveProb;
@@ -99,14 +98,15 @@ int main(int argc, char *argv[])
     // init the vtkm (set the backend and log level here)
     vtkm::cont::Initialize(argc, argv);
 
-    if (argc != 3)
+    if (argc != 4)
     {
-        std::cout << "executable <filename> <fieldname>" << std::endl;
+        std::cout << "executable <filename> <fieldname> <isovalue>" << std::endl;
         exit(0);
     }
 
     std::string fileName = argv[1];
     std::string fieldName = argv[2];
+    int isovalue = std::stoi(argv[3]);
     vtkm::io::VTKDataSetReader reader(fileName);
     vtkm::cont::DataSet inData = reader.ReadDataSet();
 
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
     using WorkletType = ProbMCWorklet;
     using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
-    DispatcherType dispatcher(ProbMCWorklet{900});
+    DispatcherType dispatcher(ProbMCWorklet{isovalue});
 
     // how to process the case where there are multiple fields
     // maybe gradient filter is an example
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 
     // TODO add results into the dataset
     std::cout << "data summary after adding the field array:" << std::endl;
-    inData.AddPointField("prob", outArray);
+    inData.AddCellField("prob", outArray);
     inData.PrintSummary(std::cout);
 
     // TODO output the dataset
