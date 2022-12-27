@@ -32,13 +32,16 @@ public:
         // how to process the case where there are multiple variables
         vtkm::IdComponent numPoints = inPointFieldVecDerived.GetNumberOfComponents();
         // there are 8 points for each cell
-        
+
         vtkm::FloatDefault allPositiveProb = 1.0;
         vtkm::FloatDefault allNegativeProb = 1.0;
         vtkm::FloatDefault allCrossProb = 0.0;
 
         vtkm::FloatDefault positiveProb;
         vtkm::FloatDefault negativeProb;
+
+        vtkm::FloatDefault entropy;
+        vtkm::FloatDefault entropyLocal;
 
         for (vtkm::IdComponent pointIndex = 0; pointIndex < numPoints; ++pointIndex)
         {
@@ -65,13 +68,31 @@ public:
 
             allPositiveProb *= positiveProb;
             allNegativeProb *= negativeProb;
+
+            // for each vertex, there are two probabilities
+            // [pprob, nprob]
         }
+
+        //create 256 cases
+        //it requires a process to go through a binary tree with the depth equals to 9
+        //based on the information on each leave node 
+        //extract entropy or other parameters, such as number of possible cases
+        //there should be a worklet that create this histogram
+        //for each cell, there are 256 possible values
+        //some possible trim operation:
+        //trim the branch with the prob=0
 
         allCrossProb = 1 - allPositiveProb - allNegativeProb;
 
         outCellField[0] = allPositiveProb;
         outCellField[1] = allNegativeProb;
         outCellField[2] = allCrossProb;
+
+        // how to compute histogram based on the case table
+        // computing the histogram? the key of case histogram is the case, value is its probability
+        // There are 256 cases per cell
+        // refering to the marching cube worklet
+        // and value such as entropy
     }
 
 private:
@@ -112,14 +133,15 @@ int main(int argc, char *argv[])
 
     std::cout << "check dataset:" << std::endl;
     inData.PrintSummary(std::cout);
-
+    
+    // it is potential to trigger long compiling time if the type is not clear
     const auto &inFieldRaw = inData.GetField(fieldName);
     // vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::FloatDefault, 2>> inFieldDerived = inData.GetField("derived").GetData();
     const auto &inFieldDerived = inData.GetField("derived");
 
     std::cout << "ok to get field, call dispatcher" << std::endl;
 
-    vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::FloatDefault, 3>> outArray;
+    vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::FloatDefault, 4>> outArray;
 
     using WorkletType = ProbMCWorklet;
     using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
