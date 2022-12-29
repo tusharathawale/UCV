@@ -1,6 +1,7 @@
 build/
 install/
 src/
+.vscode/
 *.vtk
 *.vti
 *.log

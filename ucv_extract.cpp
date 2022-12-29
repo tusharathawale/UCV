@@ -1,6 +1,6 @@
 #include <vtkm/cont/Initialize.h>
-#include <vtkm/io/reader/VTKDataSetReader.h>
-#include <vtkm/io/writer/VTKDataSetWriter.h>
+#include <vtkm/io/VTKDataSetReader.h>
+#include <vtkm/io/VTKDataSetWriter.h>
 
 #include <vtkm/worklet/WorkletPointNeighborhood.h>
 #include <vtkm/cont/ArrayHandle.h>
@@ -26,7 +26,7 @@ public:
        
         // some questions:
         // 1. how to process the case where the ijk is out of the box
-        // 2. how to get the coarse results?
+        // 2. how to get the coarse results? Large data -> small data
         // 3. how to combine it with the ascent that contains multiple blocks?
         vtkm::FloatDefault boxMin = DBL_MAX;
         // the min value for the field is 0 in this dataset
@@ -112,6 +112,11 @@ int main(int argc, char *argv[])
 
     // add new array into data set
     std::cout << "data summary after adding the field array:" << std::endl;
+
+    // it is not good to use vector to store multiple data
+    // the code can be bespoke
+    // we can add more derived value here
+    // such as mean and stdev used for gaussian distribution
     inData.AddPointField("min", result1);
     inData.AddPointField("max", result2);
     inData.PrintSummary(std::cout);

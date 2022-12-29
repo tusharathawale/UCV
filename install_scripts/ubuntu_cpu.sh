@@ -36,7 +36,7 @@ else
     cd $SOFTWARE_SRC_DIR
     git clone $VTKM_REPO
     cd $VTKM_SRC_DIR
-    git checkout v1.9.0
+    git checkout v2.0.0-rc1
     fi
     
     cd $HERE
@@ -58,7 +58,6 @@ else
     -DVTKm_ENABLE_OPENMP=ON \
     -DVTKm_ENABLE_LOGGING=ON \
     -DVTKm_ENABLE_TESTING=OFF \
-    -DVTKm_BUILD_TESTING=OFF \
 
     cmake --build ${VTKM_BUILD_DIR} -j${build_jobs}
 
@@ -83,7 +82,7 @@ else
     cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=ON \
-    -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-1.9 \
+    -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 \
     
     cd $HERE
 
