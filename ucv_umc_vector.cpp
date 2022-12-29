@@ -1,3 +1,5 @@
+// this is the depricated code, it uses vector to transfer data which is not good 
+// use this as a reference
 #include <vtkm/cont/Initialize.h>
 #include <vtkm/cont/ArrayHandle.h>
 
@@ -169,7 +171,6 @@ int main(int argc, char *argv[])
     inFieldDerived.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
         resolveType);
 
-    // TODO add results into the dataset
     std::cout << "data summary after adding the field array:" << std::endl;
     inData.AddCellField("prob", outArray);
     inData.PrintSummary(std::cout);

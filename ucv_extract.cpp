@@ -117,8 +117,8 @@ int main(int argc, char *argv[])
     // the code can be bespoke
     // we can add more derived value here
     // such as mean and stdev used for gaussian distribution
-    inData.AddPointField("min", result1);
-    inData.AddPointField("max", result2);
+    inData.AddPointField("ensemble_min", result1);
+    inData.AddPointField("ensemble_max", result2);
     inData.PrintSummary(std::cout);
 
     // output the dataset into the vtk file for results checking

@@ -1,5 +1,6 @@
 #include <vtkm/cont/Initialize.h>
 #include <vtkm/cont/ArrayHandle.h>
+#include <vtkm/cont/ArrayCopy.h>
 
 #include <vtkm/io/VTKDataSetReader.h>
 #include <vtkm/io/VTKDataSetWriter.h>
@@ -16,51 +17,79 @@ public:
     using ControlSignature = void(CellSetIn,
                                   FieldInPoint,
                                   FieldInPoint,
-                                  FieldInPoint,
                                   FieldOutCell);
 
-    // using ControlSignature = void(CellSetIn,
-    //                               FieldInPoint,
-    //                               FieldOutCell);
-
-    using ExecutionSignature = void(_2, _3, _4, _5);
-    // using ExecutionSignature = void(_2, _3);
+    using ExecutionSignature = void(_2, _3, _4);
 
     // the first parameter is binded with the worklet
     using InputDomain = _1;
     // InPointFieldType should be a vector
-    template <typename InPointFieldType1, typename InPointFieldType2, typename InPointFieldType3, typename OutCellFieldType>
-    // VTKM_EXEC void operator()(const InPointFieldType &inPointFieldVecRaw,
-    //                           OutCellFieldType &outCellField) const
-    VTKM_EXEC void operator()(const InPointFieldType1 &inPointFieldVecRaw,
-                              const InPointFieldType2 &inPointFieldVecMin,
-                              const InPointFieldType3 &inPointFieldVecMax,
-                              OutCellFieldType &outCellField) const
+    template <typename InPointFieldMinType, typename InPointFieldMaxType, typename OutCellFieldType>
+
+    VTKM_EXEC void operator()(
+        const InPointFieldMinType &inPointFieldVecMin,
+        const InPointFieldMaxType &inPointFieldVecMax,
+        OutCellFieldType &outCellFieldCProb) const
     {
         // how to process the case where there are multiple variables
-        vtkm::IdComponent numPoints = inPointFieldVecRaw.GetNumberOfComponents();
+        vtkm::IdComponent numPoints = inPointFieldVecMin.GetNumberOfComponents();
+        // there are 8 points for each cell
 
-        // std::cout << "numPoints for each input" << numPoints << std::endl;
+        vtkm::FloatDefault allPositiveProb = 1.0;
+        vtkm::FloatDefault allNegativeProb = 1.0;
+        vtkm::FloatDefault allCrossProb = 0.0;
 
-        outCellField = OutCellFieldType(0);
+        vtkm::FloatDefault positiveProb;
+        vtkm::FloatDefault negativeProb;
 
-        // how to go through different field?
         for (vtkm::IdComponent pointIndex = 0; pointIndex < numPoints; ++pointIndex)
         {
-            // outCellField = outCellField + inPointFieldVec[pointIndex];
-            // TODO operations about marching cube things
-            // vtkm::FloatDefault raw = inPointFieldVec[pointIndex][0];
-            // vtkm::FloatDefault fieldMin = inPointFieldVec[pointIndex][1];
-            // vtkm::FloatDefault fieldMax = inPointFieldVec[pointIndex][2];
+            vtkm::FloatDefault minV = inPointFieldVecMin[pointIndex];
+            vtkm::FloatDefault maxV = inPointFieldVecMax[pointIndex];
+
+            if (this->m_isovalue <= minV)
+            {
+                positiveProb = 1.0;
+                negativeProb = 0.0;
+            }
+            else if (this->m_isovalue >= maxV)
+            {
+                positiveProb = 0.0;
+                negativeProb = 1.0;
+            }
+            else
+            {
+                // assuming we use the uniform distribution
+                positiveProb = (maxV - this->m_isovalue) / (maxV - minV);
+                negativeProb = 1.0 - positiveProb;
+            }
+
+            allPositiveProb *= positiveProb;
+            allNegativeProb *= negativeProb;
+
+            // for each vertex, there are two probabilities
+            // [pprob, nprob]
         }
 
-        outCellField =
-            static_cast<OutCellFieldType>(outCellField / static_cast<vtkm::FloatDefault>(numPoints));
+        allCrossProb = 1 - allPositiveProb - allNegativeProb;
+
+        // outCellField[0] = allPositiveProb;
+        // outCellField[1] = allNegativeProb;
+        outCellFieldCProb = allCrossProb;
     }
 
 private:
     int m_isovalue;
 };
+
+using SupportedTypes = vtkm::List<vtkm::Float32,
+                                  vtkm::Float64,
+                                  vtkm::Int8,
+                                  vtkm::UInt8,
+                                  vtkm::Int16,
+                                  vtkm::UInt16,
+                                  vtkm::Int32,
+                                  vtkm::UInt32>;
 
 // executing the uncertainty marching cube
 // based on extracted ensemble data
@@ -72,14 +101,15 @@ int main(int argc, char *argv[])
     // init the vtkm (set the backend and log level here)
     vtkm::cont::Initialize(argc, argv);
 
-    if (argc != 3)
+    if (argc != 4)
     {
-        std::cout << "executable <filename> <fieldname>" << std::endl;
+        std::cout << "executable <filename> <fieldname> <isovalue>" << std::endl;
         exit(0);
     }
 
     std::string fileName = argv[1];
     std::string fieldName = argv[2];
+    int isovalue = std::stoi(argv[3]);
     vtkm::io::VTKDataSetReader reader(fileName);
     vtkm::cont::DataSet inData = reader.ReadDataSet();
 
@@ -87,29 +117,54 @@ int main(int argc, char *argv[])
     inData.PrintSummary(std::cout);
 
     const auto &inFieldRaw = inData.GetField(fieldName);
-    const auto &inFieldMin = inData.GetField("min");
-    const auto &inFieldMax = inData.GetField("max");
 
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> outArray;
+    vtkm::cont::UnknownArrayHandle outArray;
 
     using WorkletType = ProbMCWorklet;
     using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
-    DispatcherType dispatcher(ProbMCWorklet{900});
+    DispatcherType dispatcher(ProbMCWorklet{isovalue});
 
-    // how to process the case where there are multiple fields
-    // maybe gradient filter is an example
-    // we currently do not use the resolveType, just call the Invoke direactly with concrete type?
+    auto resolveType = [&](const auto &inputArray)
+    {
+        // try to derive the type of the input field
+        using T = typename std::decay_t<decltype(inputArray)>::ValueType;
 
-    // dispatcher.Invoke(inData.GetCellSet(), inFieldRaw, inFieldMin, inFieldMax, outArray);
-    // it takes comparatively long time to compile this
-    // around several minutes for doing this, not sure the reason
-    // dispatcher.Invoke(inData.GetCellSet(), inFieldRaw, outArray);
-    dispatcher.Invoke(inData.GetCellSet(), inFieldRaw, inFieldMin, inFieldMax, outArray);
+        // and use the type of raw field as a reminder for predicting derived parameters
+        // this shallowIfPossible can cast the variable to dedicated type
+        // otherwise, it will use the deep copy to transfer data to dedicated type
+        // we use the shallowcopy to fix the type of the input array
+        // otherwise, the autonomic type deduction will take lots of time
+        // for multiple input field in the worklet
 
-    // TODO add results into the dataset
+        vtkm::cont::ArrayHandle<T> inFieldMin;
+        vtkm::cont::ArrayCopyShallowIfPossible(inData.GetField("ensemble_min").GetData(), inFieldMin);
+        vtkm::cont::ArrayHandle<T> inFieldMax;
+        vtkm::cont::ArrayCopyShallowIfPossible(inData.GetField("ensemble_max").GetData(), inFieldMax);
+
+        // using the same type as the assumption for the output type
+        vtkm::cont::ArrayHandle<T> result;
+
+        dispatcher.Invoke(inData.GetCellSet(), inFieldMin, inFieldMax, result);
+
+        outArray = result;
+    };
+
+    inFieldRaw.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
+        resolveType);
+    // there are some compiling issues for using the CastAndCall direactly
+    // vtkm::cont::CastAndCall(inFieldRaw, resolveType);
+
+    std::cout << "===data summary after adding the field array:" << std::endl;
+    inData.AddCellField("cross_prob", outArray);
+    inData.PrintSummary(std::cout);
 
     // TODO output the dataset
-
+    // output the dataset into the vtk file for results checking
+    std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
+    std::string outputFileName = fileSuffix + std::string("_Prob.vtk");
+    vtkm::io::VTKDataSetWriter write(outputFileName);
+    write.SetFileTypeToBinary();
+    write.WriteDataSet(inData);
     return 0;
 }
