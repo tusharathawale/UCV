@@ -16,15 +16,14 @@ $ export LD_LIBRARY_PATH=/home/zw/cworkspace/UCV/install_scripts/ubuntu_cpu/inst
 
 ### Example
 
-extracting the dataset:
+extracting the ensemble dataset:
 
 ```
-$ ./ubuntu_cpu/install/UCV/ucv_extract_vector ../dataset/raw_data_123_208_208.vtk instance
+$ ./ubuntu_cpu/install/UCV/ucv_extract ../dataset/raw_data_123_208_208.vtk instance
 ```
 
-computing the probability marching cube (this part is still in progress):
-
+computing the probability marching cube:
 
 ```
-$ ./ubuntu_cpu/install/UCV/ucv_umc_vector ../dataset/raw_data_123_208_208_Derived.vtk instance
+$ ./ubuntu_cpu/install/UCV/ucv_umc ../dataset/raw_data_123_208_208_Derived.vtk instance
 ```

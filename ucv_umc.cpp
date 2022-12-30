@@ -87,19 +87,23 @@ public:
     using ControlSignature = void(CellSetIn,
                                   FieldInPoint,
                                   FieldInPoint,
+                                  FieldOutCell,
+                                  FieldOutCell,
                                   FieldOutCell);
 
-    using ExecutionSignature = void(_2, _3, _4);
+    using ExecutionSignature = void(_2, _3, _4, _5, _6);
 
     // the first parameter is binded with the worklet
     using InputDomain = _1;
     // InPointFieldType should be a vector
-    template <typename InPointFieldMinType, typename InPointFieldMaxType, typename OutCellFieldType>
+    template <typename InPointFieldMinType, typename InPointFieldMaxType, typename OutCellFieldType1, typename OutCellFieldType2, typename OutCellFieldType3>
 
     VTKM_EXEC void operator()(
         const InPointFieldMinType &inPointFieldVecMin,
         const InPointFieldMaxType &inPointFieldVecMax,
-        OutCellFieldType &outCellFieldCProb) const
+        OutCellFieldType1 &outCellFieldCProb,
+        OutCellFieldType2 &outCellFieldNumNonzeroProb,
+        OutCellFieldType3 &outCellFieldEntropy) const
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numPoints = inPointFieldVecMin.GetNumberOfComponents();
@@ -118,8 +122,8 @@ public:
         positiveProbList.resize(numPoints);
         negativeProbList.resize(numPoints);
 
-        // TODO, try to make this general
-        int totalNumCases = 256;
+        // there are 2^n total cases
+        int totalNumCases = static_cast<int>(vtkm::Pow(2.0,static_cast<vtkm::FloatDefault>(numPoints)));
         std::vector<vtkm::FloatDefault> probHistogram;
 
         probHistogram.resize(totalNumCases);
@@ -155,27 +159,43 @@ public:
 
         allCrossProb = 1 - allPositiveProb - allNegativeProb;
         outCellFieldCProb = allCrossProb;
-        
-        //TODO, how to call the fuction from this worklet
-        //traverse(1.0, 0, 0, positiveProbList, negativeProbList, probHistogram);
 
-        //TODO extracting the entropy or other values based on probHistogram
+        // TODO, use the number of vertesies as another parameter
+        traverse(1.0, 0, 0, numPoints, positiveProbList, negativeProbList, probHistogram);
+
+        // extracting the entropy or other values based on probHistogram
+
+        vtkm::FloatDefault entropyValue=0;
+        vtkm::Id nonzeroCases=0;
+        vtkm::FloatDefault templog=0;
+        for (int i = 0; i < totalNumCases; i++)
+        {
+            templog = 0;
+            if (probHistogram[i] > 0.00001)
+            {
+                nonzeroCases++;
+                templog = vtkm::Log2(probHistogram[i]);
+            }
+            entropyValue = entropyValue + (-probHistogram[i]) * templog;
+        }
+        outCellFieldNumNonzeroProb = nonzeroCases;
+        outCellFieldEntropy = entropyValue;
     }
 
     // using recursive call to go through all possibilities
-    void traverse(vtkm::FloatDefault currentProb, int depth, int id,
+    void traverse(vtkm::FloatDefault currentProb, int depth, int id, const int numPoints,
                   std::vector<vtkm::FloatDefault> &positiveProbList,
                   std::vector<vtkm::FloatDefault> &negativeProbList,
-                  std::vector<vtkm::FloatDefault> &probHistogram)
+                  std::vector<vtkm::FloatDefault> &probHistogram) const
     {
         // TODO, make this as a private variable
         // how to set it as a private variable of the worklet
-        if (depth == 8)
+        if (depth == numPoints)
         {
-            if (id > 256)
-            {
-                throw std::runtime_error("id is supposed to be 0 to 255");
-            }
+            //if (id > 256) how to set this as a worklet parameter?
+            //{
+            //    throw std::runtime_error("id is supposed to be 0 to 255");
+            //}
             probHistogram[id] = currentProb;
             return;
         }
@@ -183,8 +203,8 @@ public:
         vtkm::FloatDefault nextPosProb = currentProb * positiveProbList[depth];
         vtkm::FloatDefault nextNegProb = currentProb * negativeProbList[depth];
 
-        traverse(nextPosProb, depth + 1, 1 + (id << 1), positiveProbList, negativeProbList, probHistogram);
-        traverse(nextNegProb, depth + 1, id << 1, positiveProbList, negativeProbList, probHistogram);
+        traverse(nextPosProb, depth + 1, 1 + (id << 1), numPoints, positiveProbList, negativeProbList, probHistogram);
+        traverse(nextNegProb, depth + 1, id << 1, numPoints, positiveProbList, negativeProbList, probHistogram);
         return;
     }
 
@@ -228,12 +248,16 @@ int main(int argc, char *argv[])
 
     const auto &inFieldRaw = inData.GetField(fieldName);
 
-    vtkm::cont::UnknownArrayHandle outArray;
+    vtkm::cont::UnknownArrayHandle outArray1;
+    vtkm::cont::UnknownArrayHandle outArray2;
+    vtkm::cont::UnknownArrayHandle outArray3;
 
-    using WorkletType = ProbMCWorklet;
+    // using WorkletType = ProbMCWorklet;
+    using WorkletType = ProbMCEntropyWorklet;
     using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
-    DispatcherType dispatcher(ProbMCWorklet{isovalue});
+    // DispatcherType dispatcher(ProbMCWorklet{isovalue});
+    DispatcherType dispatcher(ProbMCEntropyWorklet{isovalue});
 
     auto resolveType = [&](const auto &inputArray)
     {
@@ -253,23 +277,29 @@ int main(int argc, char *argv[])
         vtkm::cont::ArrayCopyShallowIfPossible(inData.GetField("ensemble_max").GetData(), inFieldMax);
 
         // using the same type as the assumption for the output type
-        vtkm::cont::ArrayHandle<T> result;
+        vtkm::cont::ArrayHandle<T> result1;
+        vtkm::cont::ArrayHandle<vtkm::Id> result2;
+        vtkm::cont::ArrayHandle<T> result3;
 
-        dispatcher.Invoke(inData.GetCellSet(), inFieldMin, inFieldMax, result);
+        dispatcher.Invoke(inData.GetCellSet(), inFieldMin, inFieldMax, result1, result2, result3);
 
-        outArray = result;
+        outArray1 = result1;
+        outArray2 = result2;
+        outArray3 = result3;
     };
 
     inFieldRaw.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
         resolveType);
     // there are some compiling issues for using the CastAndCall direactly
-    //vtkm::cont::CastAndCall(inFieldRaw, resolveType);
+    // vtkm::cont::CastAndCall(inFieldRaw, resolveType);
 
     std::cout << "===data summary after adding the field array:" << std::endl;
-    inData.AddCellField("cross_prob", outArray);
+    inData.AddCellField("cross_prob", outArray1);
+    inData.AddCellField("num_nonzero_prob", outArray2);
+    inData.AddCellField("entropy", outArray3);
+
     inData.PrintSummary(std::cout);
 
-    // TODO output the dataset
     // output the dataset into the vtk file for results checking
     std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
     std::string outputFileName = fileSuffix + std::string("_Prob.vtk");
