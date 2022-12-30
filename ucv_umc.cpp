@@ -32,8 +32,9 @@ public:
         OutCellFieldType &outCellFieldCProb) const
     {
         // how to process the case where there are multiple variables
+        // for current data set, there are 8 points for each cell
+        // try to make it more general
         vtkm::IdComponent numPoints = inPointFieldVecMin.GetNumberOfComponents();
-        // there are 8 points for each cell
 
         vtkm::FloatDefault allPositiveProb = 1.0;
         vtkm::FloatDefault allNegativeProb = 1.0;
@@ -66,16 +67,125 @@ public:
 
             allPositiveProb *= positiveProb;
             allNegativeProb *= negativeProb;
-
-            // for each vertex, there are two probabilities
-            // [pprob, nprob]
         }
 
         allCrossProb = 1 - allPositiveProb - allNegativeProb;
 
-        // outCellField[0] = allPositiveProb;
-        // outCellField[1] = allNegativeProb;
         outCellFieldCProb = allCrossProb;
+    }
+
+private:
+    int m_isovalue;
+};
+
+class ProbMCEntropyWorklet : public vtkm::worklet::WorkletVisitCellsWithPoints
+{
+public:
+    ProbMCEntropyWorklet(int isovalue)
+        : m_isovalue(isovalue){};
+
+    using ControlSignature = void(CellSetIn,
+                                  FieldInPoint,
+                                  FieldInPoint,
+                                  FieldOutCell);
+
+    using ExecutionSignature = void(_2, _3, _4);
+
+    // the first parameter is binded with the worklet
+    using InputDomain = _1;
+    // InPointFieldType should be a vector
+    template <typename InPointFieldMinType, typename InPointFieldMaxType, typename OutCellFieldType>
+
+    VTKM_EXEC void operator()(
+        const InPointFieldMinType &inPointFieldVecMin,
+        const InPointFieldMaxType &inPointFieldVecMax,
+        OutCellFieldType &outCellFieldCProb) const
+    {
+        // how to process the case where there are multiple variables
+        vtkm::IdComponent numPoints = inPointFieldVecMin.GetNumberOfComponents();
+        // there are 8 points for each cell
+
+        vtkm::FloatDefault allPositiveProb = 1.0;
+        vtkm::FloatDefault allNegativeProb = 1.0;
+        vtkm::FloatDefault allCrossProb = 0.0;
+
+        vtkm::FloatDefault positiveProb;
+        vtkm::FloatDefault negativeProb;
+
+        std::vector<vtkm::FloatDefault> positiveProbList;
+        std::vector<vtkm::FloatDefault> negativeProbList;
+
+        positiveProbList.resize(numPoints);
+        negativeProbList.resize(numPoints);
+
+        // TODO, try to make this general
+        int totalNumCases = 256;
+        std::vector<vtkm::FloatDefault> probHistogram;
+
+        probHistogram.resize(totalNumCases);
+
+        for (vtkm::IdComponent pointIndex = 0; pointIndex < numPoints; ++pointIndex)
+        {
+            vtkm::FloatDefault minV = inPointFieldVecMin[pointIndex];
+            vtkm::FloatDefault maxV = inPointFieldVecMax[pointIndex];
+
+            if (this->m_isovalue <= minV)
+            {
+                positiveProb = 1.0;
+                negativeProb = 0.0;
+            }
+            else if (this->m_isovalue >= maxV)
+            {
+                positiveProb = 0.0;
+                negativeProb = 1.0;
+            }
+            else
+            {
+                // assuming we use the uniform distribution
+                positiveProb = (maxV - this->m_isovalue) / (maxV - minV);
+                negativeProb = 1.0 - positiveProb;
+            }
+
+            positiveProbList[pointIndex] = positiveProb;
+            negativeProbList[pointIndex] = negativeProb;
+
+            allPositiveProb *= positiveProb;
+            allNegativeProb *= negativeProb;
+        }
+
+        allCrossProb = 1 - allPositiveProb - allNegativeProb;
+        outCellFieldCProb = allCrossProb;
+        
+        //TODO, how to call the fuction from this worklet
+        //traverse(1.0, 0, 0, positiveProbList, negativeProbList, probHistogram);
+
+        //TODO extracting the entropy or other values based on probHistogram
+    }
+
+    // using recursive call to go through all possibilities
+    void traverse(vtkm::FloatDefault currentProb, int depth, int id,
+                  std::vector<vtkm::FloatDefault> &positiveProbList,
+                  std::vector<vtkm::FloatDefault> &negativeProbList,
+                  std::vector<vtkm::FloatDefault> &probHistogram)
+    {
+        // TODO, make this as a private variable
+        // how to set it as a private variable of the worklet
+        if (depth == 8)
+        {
+            if (id > 256)
+            {
+                throw std::runtime_error("id is supposed to be 0 to 255");
+            }
+            probHistogram[id] = currentProb;
+            return;
+        }
+        // two branch for current node
+        vtkm::FloatDefault nextPosProb = currentProb * positiveProbList[depth];
+        vtkm::FloatDefault nextNegProb = currentProb * negativeProbList[depth];
+
+        traverse(nextPosProb, depth + 1, 1 + (id << 1), positiveProbList, negativeProbList, probHistogram);
+        traverse(nextNegProb, depth + 1, id << 1, positiveProbList, negativeProbList, probHistogram);
+        return;
     }
 
 private:
@@ -153,7 +263,7 @@ int main(int argc, char *argv[])
     inFieldRaw.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
         resolveType);
     // there are some compiling issues for using the CastAndCall direactly
-    // vtkm::cont::CastAndCall(inFieldRaw, resolveType);
+    //vtkm::cont::CastAndCall(inFieldRaw, resolveType);
 
     std::cout << "===data summary after adding the field array:" << std::endl;
     inData.AddCellField("cross_prob", outArray);
