@@ -123,7 +123,7 @@ public:
         negativeProbList.resize(numPoints);
 
         // there are 2^n total cases
-        int totalNumCases = static_cast<int>(vtkm::Pow(2.0,static_cast<vtkm::FloatDefault>(numPoints)));
+        int totalNumCases = static_cast<int>(vtkm::Pow(2.0, static_cast<vtkm::FloatDefault>(numPoints)));
         std::vector<vtkm::FloatDefault> probHistogram;
 
         probHistogram.resize(totalNumCases);
@@ -165,9 +165,9 @@ public:
 
         // extracting the entropy or other values based on probHistogram
 
-        vtkm::FloatDefault entropyValue=0;
-        vtkm::Id nonzeroCases=0;
-        vtkm::FloatDefault templog=0;
+        vtkm::FloatDefault entropyValue = 0;
+        vtkm::Id nonzeroCases = 0;
+        vtkm::FloatDefault templog = 0;
         for (int i = 0; i < totalNumCases; i++)
         {
             templog = 0;
@@ -192,10 +192,10 @@ public:
         // how to set it as a private variable of the worklet
         if (depth == numPoints)
         {
-            //if (id > 256) how to set this as a worklet parameter?
+            // if (id > 256) how to set this as a worklet parameter?
             //{
-            //    throw std::runtime_error("id is supposed to be 0 to 255");
-            //}
+            //     throw std::runtime_error("id is supposed to be 0 to 255");
+            // }
             probHistogram[id] = currentProb;
             return;
         }
@@ -292,6 +292,9 @@ int main(int argc, char *argv[])
         resolveType);
     // there are some compiling issues for using the CastAndCall direactly
     // vtkm::cont::CastAndCall(inFieldRaw, resolveType);
+
+    // inFieldRaw.GetData().CastAndCallForTypes<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
+    //     resolveType);
 
     std::cout << "===data summary after adding the field array:" << std::endl;
     inData.AddCellField("cross_prob", outArray1);
