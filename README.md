@@ -25,5 +25,13 @@ $ ./ubuntu_cpu/install/UCV/ucv_extract ../dataset/raw_data_123_208_208.vtk insta
 computing the probability marching cube:
 
 ```
-$ ./ubuntu_cpu/install/UCV/ucv_umc ../dataset/raw_data_123_208_208_Derived.vtk instance
+$ ./ubuntu_cpu/install/UCV/ucv_umc ../dataset/raw_data_123_208_208_Derived.vtk instance 900
 ```
+
+or combining two steps together (size of hixel block is 4 and isovalue is 900)
+
+```
+$ ./ubuntu_cpu/install/UCV/ucv_reduce_umc ../dataset/raw_data_123_208_208.vtk instance 4 900
+```
+
+The generated dataset raw_data_123_208_208_Prob.vtk contains the field such as cross_prob and entropy.
