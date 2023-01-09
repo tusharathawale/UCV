@@ -35,3 +35,9 @@ $ ./ubuntu_cpu/install/UCV/ucv_reduce_umc ../dataset/raw_data_123_208_208.vtk in
 ```
 
 The generated dataset raw_data_123_208_208_Prob.vtk contains the field such as cross_prob and entropy.
+
+
+### TODO
+
+adding the gaussian distribution version
+adding the multivariant version

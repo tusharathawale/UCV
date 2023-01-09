@@ -168,6 +168,7 @@ public:
         vtkm::FloatDefault entropyValue = 0;
         vtkm::Id nonzeroCases = 0;
         vtkm::FloatDefault templog = 0;
+
         for (int i = 0; i < totalNumCases; i++)
         {
             templog = 0;
