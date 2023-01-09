@@ -7,7 +7,7 @@
 class EntropyIndependentGaussian : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    EntropyIndependentGaussian(int isovalue)
+    EntropyIndependentGaussian(double isovalue)
         : m_isovalue(isovalue){};
 
     using ControlSignature = void(CellSetIn,
@@ -54,30 +54,14 @@ public:
 
         probHistogram.resize(totalNumCases);
 
-
         for (vtkm::IdComponent pointIndex = 0; pointIndex < numPoints; ++pointIndex)
         {
-            // TODO, computing mean and std based on the data in the neigoborhood
             vtkm::FloatDefault mean = inPointFieldVecMean[pointIndex];
             vtkm::FloatDefault stdev = inPointFieldVecStdev[pointIndex];
-            
-            // is this necessary for using min and max here?
-            //if (this->m_isovalue <= minV)
-            //{
-            //    positiveProb = 1.0;
-            //    negativeProb = 0.0;
-            //}
-            //else if (this->m_isovalue >= maxV)
-            //{
-            //    positiveProb = 0.0;
-            //    negativeProb = 1.0;
-            //}
-            //else
-            //{
-                // assuming we use the indepedent gaussian distribution
-                negativeProb = 0.5*(1 + std::erf((m_isovalue - mean)/(std::sqrt(2)*stdev)));
-                positiveProb = 1.0 - negativeProb;
-            //}
+
+            // assuming we use the indepedent gaussian distribution
+            negativeProb = 0.5 * (1 + std::erf((m_isovalue - mean) / (std::sqrt(2) * stdev)));
+            positiveProb = 1.0 - negativeProb;
 
             positiveProbList[pointIndex] = positiveProb;
             negativeProbList[pointIndex] = negativeProb;
@@ -120,7 +104,7 @@ public:
 
         if (allCrossProb != 0 || totalnonzeroProb != 0)
         {
-            //std::cout << "test " << allCrossProb << " " << totalnonzeroProb << std::endl;
+            // std::cout << "test " << allCrossProb << " " << totalnonzeroProb << std::endl;
         }
     }
 
@@ -151,8 +135,7 @@ public:
     }
 
 private:
-    int m_isovalue;
+    double m_isovalue;
 };
 
-
-#endif //UCV_ENTROPY_INDEPEDENT_GAUSSIAN_h
+#endif // UCV_ENTROPY_INDEPEDENT_GAUSSIAN_h

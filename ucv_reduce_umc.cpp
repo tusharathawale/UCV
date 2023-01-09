@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     std::string fieldName = argv[2];
     std::string distribution = argv[3];
     int blocksize = std::stoi(argv[4]);
-    int isovalue = std::stoi(argv[5]);
+    double isovalue = std::atof(argv[5]);
 
     // load the dataset (beetles data set, structured one)
     // TODO, the data set can be distributed between different ranks
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
 
     // using the same type as the assumption for the output type
 
-    std::cout << "===data summary after adding the field array:" << std::endl;
+    std::cout << "===data summary for reduced data with uncertainty:" << std::endl;
     reducedDataSet.AddCellField("cross_prob", result1);
     reducedDataSet.AddCellField("num_nonzero_prob", result2);
     reducedDataSet.AddCellField("entropy", result3);

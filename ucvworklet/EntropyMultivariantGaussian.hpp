@@ -7,7 +7,7 @@
 class EntropyMultivariantGaussian : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    EntropyUniform(int isovalue)
+    EntropyUniform(double isovalue)
         : m_isovalue(isovalue){};
 
     using ControlSignature = void(CellSetIn,
@@ -150,7 +150,7 @@ public:
     }
 
 private:
-    int m_isovalue;
+    double m_isovalue;
 };
 
 
