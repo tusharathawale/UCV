@@ -2,7 +2,7 @@
 #define UCV_ENTROPY_INDEPEDENT_GAUSSIAN_h
 
 #include <vtkm/worklet/WorkletMapTopology.h>
-
+#include <cmath>
 // TODO, update this into indepedent gaussian version
 class EntropyIndependentGaussian : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
@@ -22,17 +22,17 @@ public:
     // the first parameter is binded with the worklet
     using InputDomain = _1;
     // InPointFieldType should be a vector
-    template <typename InPointFieldMinType, typename InPointFieldMaxType, typename OutCellFieldType1, typename OutCellFieldType2, typename OutCellFieldType3>
+    template <typename InPointFieldMeanType, typename InPointFieldStdevType, typename OutCellFieldType1, typename OutCellFieldType2, typename OutCellFieldType3>
 
     VTKM_EXEC void operator()(
-        const InPointFieldMinType &inPointFieldVecMin,
-        const InPointFieldMaxType &inPointFieldVecMax,
+        const InPointFieldMeanType &inPointFieldVecMean,
+        const InPointFieldStdevType &inPointFieldVecStdev,
         OutCellFieldType1 &outCellFieldCProb,
         OutCellFieldType2 &outCellFieldNumNonzeroProb,
         OutCellFieldType3 &outCellFieldEntropy) const
     {
         // how to process the case where there are multiple variables
-        vtkm::IdComponent numPoints = inPointFieldVecMin.GetNumberOfComponents();
+        vtkm::IdComponent numPoints = inPointFieldVecMean.GetNumberOfComponents();
         // there are 8 points for each cell
 
         vtkm::FloatDefault allPositiveProb = 1.0;
@@ -58,25 +58,26 @@ public:
         for (vtkm::IdComponent pointIndex = 0; pointIndex < numPoints; ++pointIndex)
         {
             // TODO, computing mean and std based on the data in the neigoborhood
-            vtkm::FloatDefault minV = inPointFieldVecMin[pointIndex];
-            vtkm::FloatDefault maxV = inPointFieldVecMax[pointIndex];
-
-            if (this->m_isovalue <= minV)
-            {
-                positiveProb = 1.0;
-                negativeProb = 0.0;
-            }
-            else if (this->m_isovalue >= maxV)
-            {
-                positiveProb = 0.0;
-                negativeProb = 1.0;
-            }
-            else
-            {
-                // assuming we use the uniform distribution
-                positiveProb = (maxV - this->m_isovalue) / (maxV - minV);
-                negativeProb = 1.0 - positiveProb;
-            }
+            vtkm::FloatDefault mean = inPointFieldVecMean[pointIndex];
+            vtkm::FloatDefault stdev = inPointFieldVecStdev[pointIndex];
+            
+            // is this necessary for using min and max here?
+            //if (this->m_isovalue <= minV)
+            //{
+            //    positiveProb = 1.0;
+            //    negativeProb = 0.0;
+            //}
+            //else if (this->m_isovalue >= maxV)
+            //{
+            //    positiveProb = 0.0;
+            //    negativeProb = 1.0;
+            //}
+            //else
+            //{
+                // assuming we use the indepedent gaussian distribution
+                negativeProb = 0.5*(1 + std::erf((m_isovalue - mean)/(std::sqrt(2)*stdev)));
+                positiveProb = 1.0 - negativeProb;
+            //}
 
             positiveProbList[pointIndex] = positiveProb;
             negativeProbList[pointIndex] = negativeProb;

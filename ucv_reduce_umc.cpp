@@ -12,6 +12,8 @@
 
 #include "ucvworklet/CreateNewKey.hpp"
 #include "ucvworklet/ExtractingMinMax.hpp"
+#include "ucvworklet/ExtractingMeanStdev.hpp"
+
 #include "ucvworklet/EntropyUniform.hpp"
 #include "ucvworklet/EntropyIndependentGaussian.hpp"
 // compute the entropy based on uniform distribution
@@ -106,21 +108,9 @@ int main(int argc, char *argv[])
     // vtkm::io::VTKDataSetWriter write(outputFileName);
     // write.WriteDataSet(inData);
 
-    // Step2 extracting ensemble data based on new key
-    using DispatcherType = vtkm::worklet::DispatcherReduceByKey<ExtractingMinMax>;
-
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> minArray;
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> maxArray;
-    vtkm::worklet::Keys<vtkm::Id> keys(keyArrayNew);
-
-    auto resolveType = [&](const auto &concrete)
-    {
-        DispatcherType dispatcher;
-        dispatcher.Invoke(keys, concrete, minArray, maxArray);
-    };
-
-    field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
-        resolveType);
+    // TODO, the decision of the distribution should start from this position
+    // for uniform case, we extract min and max
+    // for gaussian case, we extract other values
 
     // create the new data sets for the reduced data
     // the dims for new data sets are numberBlockx*numberBlocky*numberBlockz
@@ -128,17 +118,6 @@ int main(int argc, char *argv[])
 
     vtkm::cont::DataSetBuilderUniform dataSetBuilder;
     vtkm::cont::DataSet reducedDataSet = dataSetBuilder.Create(reducedDims);
-
-    // generate the new data sets with min and max
-    // reducedDataSet.AddPointField("ensemble_min", minArray);
-    // reducedDataSet.AddPointField("ensemble_max", maxArray);
-    // reducedDataSet.PrintSummary(std::cout);
-
-    // output the dataset into the vtk file for results checking
-    // std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
-    // std::string outputFileName = fileSuffix + std::string("_ReduceDerived.vtk");
-    // vtkm::io::VTKDataSetWriter write(outputFileName);
-    // write.WriteDataSet(reducedDataSet);
 
     // Step3 computing entropy based on reduced data set
     // uniform, indepedent gaussian, multivariant gaussian
@@ -149,6 +128,33 @@ int main(int argc, char *argv[])
 
     if (distribution == "uni")
     {
+
+        // Step2 extracting ensemble data based on new key
+        using DispatcherType = vtkm::worklet::DispatcherReduceByKey<ExtractingMinMax>;
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> minArray;
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> maxArray;
+        vtkm::worklet::Keys<vtkm::Id> keys(keyArrayNew);
+
+        auto resolveType = [&](const auto &concrete)
+        {
+            DispatcherType dispatcher;
+            dispatcher.Invoke(keys, concrete, minArray, maxArray);
+        };
+
+        field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
+            resolveType);
+
+        // generate the new data sets with min and max
+        // reducedDataSet.AddPointField("ensemble_min", minArray);
+        // reducedDataSet.AddPointField("ensemble_max", maxArray);
+        // reducedDataSet.PrintSummary(std::cout);
+
+        // output the dataset into the vtk file for results checking
+        // std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
+        // std::string outputFileName = fileSuffix + std::string("_ReduceDerived.vtk");
+        // vtkm::io::VTKDataSetWriter write(outputFileName);
+        // write.WriteDataSet(reducedDataSet);
+
         // uniform distribution
         using WorkletType = EntropyUniform;
         using DispatcherEntropyUniform = vtkm::worklet::DispatcherMapTopology<WorkletType>;
@@ -159,16 +165,34 @@ int main(int argc, char *argv[])
     else if (distribution == "ig")
     {
         // indepedent gaussian
-                // uniform distribution
+        
+        // extracting mean and stdev
+
+        using DispatcherType = vtkm::worklet::DispatcherReduceByKey<ExtractingMeanStdev>;
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> stdevArray;
+        vtkm::worklet::Keys<vtkm::Id> keys(keyArrayNew);
+
+        auto resolveType = [&](const auto &concrete)
+        {
+            DispatcherType dispatcher;
+            dispatcher.Invoke(keys, concrete, meanArray, stdevArray);
+        };
+
+        field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
+            resolveType);
+            
+
         using WorkletType = EntropyIndependentGaussian;
         using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
         DispatcherEntropyIG dispatcherEntropyIG(EntropyIndependentGaussian{isovalue});
-        dispatcherEntropyIG.Invoke(reducedDataSet.GetCellSet(), minArray, maxArray, result1, result2, result3);
+        dispatcherEntropyIG.Invoke(reducedDataSet.GetCellSet(), meanArray, stdevArray, result1, result2, result3);
     }
     else if (distribution == "mg")
     {
         // multivariant gaussian
+        // TODO
     }
     else
     {
@@ -186,7 +210,7 @@ int main(int argc, char *argv[])
 
     // output the dataset into the vtk file for results checking
     std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
-    std::string outputFileName = fileSuffix + std::string("_Prob.vtk");
+    std::string outputFileName = fileSuffix + "_"+distribution + std::string("_Prob.vtk");
     vtkm::io::VTKDataSetWriter write(outputFileName);
     write.SetFileTypeToBinary();
     write.WriteDataSet(reducedDataSet);
