@@ -10,7 +10,7 @@ set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::rendering vtkm::source vtkm::vt
 find_package(MPI REQUIRED)
 
 #Fine eigen assume this is installed by apt-get install
-find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+find_package (Eigen3 3.3 REQUIRED)
  
 add_executable(ucv_extract ucv_extract.cpp)
 target_link_libraries(ucv_extract ${VTKm_LIBRARIES} MPI::MPI_CXX)
@@ -26,6 +26,9 @@ target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eige
 
 add_executable(test_composite test_composite.cpp)
 target_link_libraries(test_composite ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
+add_executable(test_mvgaussian test_mvgaussian.cpp)
+target_link_libraries(test_mvgaussian ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
 
 #add_executable(ucv_extract_vector ucv_extract_vector.cpp)
 #target_link_libraries(ucv_extract_vector ${VTKm_LIBRARIES} MPI::MPI_CXX)

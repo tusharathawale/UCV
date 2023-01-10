@@ -141,6 +141,7 @@ int main(int argc, char *argv[])
 
         dispatcher.Invoke(keyArray, keyArrayNew);
 
+
         // Step2 extracting ensemble data based on new key
         using DispatcherType = vtkm::worklet::DispatcherReduceByKey<ExtractingMinMax>;
         vtkm::cont::ArrayHandle<vtkm::FloatDefault> minArray;
