@@ -3,7 +3,7 @@
 
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <cmath>
-// TODO, update this into indepedent gaussian version
+// compute the entropy and other assocaited uncertainty values *per cell*
 class EntropyIndependentGaussian : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:

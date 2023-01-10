@@ -106,8 +106,21 @@ int main(int argc, char *argv[])
     // the dims for new data sets are numberBlockx*numberBlocky*numberBlockz
     const vtkm::Id3 reducedDims(numberBlockx, numberBlocky, numberBlockz);
 
+    auto coords = inData.GetCoordinateSystem();
+    auto bounds = coords.GetBounds();
+
+    auto reducedOrigin = bounds.MinCorner();
+
+    vtkm::FloatDefault spacex = (bounds.X.Max - bounds.X.Min) / (numberBlockx - 1);
+    vtkm::FloatDefault spacey = (bounds.Y.Max - bounds.Y.Min) / (numberBlocky - 1);
+    vtkm::FloatDefault spacez = (bounds.Z.Max - bounds.Z.Min) / (numberBlockz - 1);
+
+    vtkm::Vec3f_64 reducedSpaceing(spacex, spacey, spacez);
+
     vtkm::cont::DataSetBuilderUniform dataSetBuilder;
-    vtkm::cont::DataSet reducedDataSet = dataSetBuilder.Create(reducedDims);
+    // origin is {0,0,0} spacing is {blocksize,blocksize,blocksize} make sure the reduced data
+    // are in same shape with original data
+    vtkm::cont::DataSet reducedDataSet = dataSetBuilder.Create(reducedDims, reducedOrigin, reducedSpaceing);
 
     // Step3 computing entropy based on reduced data set
     // uniform, indepedent gaussian, multivariant gaussian
@@ -208,6 +221,17 @@ int main(int argc, char *argv[])
         // inorder to compute covariance matrix, we need to access 8*8 data block at once
         // the reduced data is twice smaller as original data
         // since it is based on the large blocks
+
+        // reduced value for uncertainty are per cell
+        // for 2d case, each cell contains 4 points 2*2
+        // in order to get the value for this 2*2 case
+        // the raw data is at least 8*8 and the hixel blcoks are 4
+
+        // two solutions
+        // 1 use 8*8 for each thread then compute the u and cov then the final entropy
+        // 2 use reduce by key 4*4 to compute u and variance
+        // use original data and reduced data to compute the covariance
+        // then the cross probability
     }
     else
     {
