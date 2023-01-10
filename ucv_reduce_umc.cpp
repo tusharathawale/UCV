@@ -88,16 +88,6 @@ int main(int argc, char *argv[])
     vtkm::Id numberBlocky = ydim % blocksize == 0 ? ydim / blocksize : ydim / blocksize + 1;
     vtkm::Id numberBlockz = zdim % blocksize == 0 ? zdim / blocksize : zdim / blocksize + 1;
 
-    vtkm::cont::ArrayHandle<vtkm::Id> keyArrayNew;
-
-    // Step1 creating new key
-    using DispatcherCreateKey = vtkm::worklet::DispatcherMapField<CreateNewKeyWorklet>;
-    DispatcherCreateKey dispatcher(CreateNewKeyWorklet{xdim, ydim, zdim,
-                                                       numberBlockx, numberBlocky, numberBlockz,
-                                                       blocksize});
-
-    dispatcher.Invoke(keyArray, keyArrayNew);
-
     // add key array into the dataset, and check the output
     // inData.AddPointField("keyArray", keyArrayNew);
     // std::cout << "------" << std::endl;
@@ -128,6 +118,15 @@ int main(int argc, char *argv[])
 
     if (distribution == "uni")
     {
+        // Step1 creating new key
+        vtkm::cont::ArrayHandle<vtkm::Id> keyArrayNew;
+
+        using DispatcherCreateKey = vtkm::worklet::DispatcherMapField<CreateNewKeyWorklet>;
+        DispatcherCreateKey dispatcher(CreateNewKeyWorklet{xdim, ydim, zdim,
+                                                           numberBlockx, numberBlocky, numberBlockz,
+                                                           blocksize});
+
+        dispatcher.Invoke(keyArray, keyArrayNew);
 
         // Step2 extracting ensemble data based on new key
         using DispatcherType = vtkm::worklet::DispatcherReduceByKey<ExtractingMinMax>;
@@ -165,7 +164,17 @@ int main(int argc, char *argv[])
     else if (distribution == "ig")
     {
         // indepedent gaussian
-        
+
+        // Step1 creating new key
+        vtkm::cont::ArrayHandle<vtkm::Id> keyArrayNew;
+
+        using DispatcherCreateKey = vtkm::worklet::DispatcherMapField<CreateNewKeyWorklet>;
+        DispatcherCreateKey dispatcher(CreateNewKeyWorklet{xdim, ydim, zdim,
+                                                           numberBlockx, numberBlocky, numberBlockz,
+                                                           blocksize});
+
+        dispatcher.Invoke(keyArray, keyArrayNew);
+
         // extracting mean and stdev
 
         using DispatcherType = vtkm::worklet::DispatcherReduceByKey<ExtractingMeanStdev>;
@@ -181,7 +190,6 @@ int main(int argc, char *argv[])
 
         field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
             resolveType);
-            
 
         using WorkletType = EntropyIndependentGaussian;
         using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
@@ -192,7 +200,14 @@ int main(int argc, char *argv[])
     else if (distribution == "mg")
     {
         // multivariant gaussian
-        // TODO
+        // For the multi variant gaussian case, we need to create another key
+        // to compute the covariance matrix
+        // in order to compute the covariance matrix, the data size
+        // assigned to each thread should be 2 times larger than original one
+        // assuming each original block is 4*4
+        // inorder to compute covariance matrix, we need to access 8*8 data block at once
+        // the reduced data is twice smaller as original data
+        // since it is based on the large blocks
     }
     else
     {
@@ -210,7 +225,7 @@ int main(int argc, char *argv[])
 
     // output the dataset into the vtk file for results checking
     std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
-    std::string outputFileName = fileSuffix + "_"+distribution + std::string("_Prob.vtk");
+    std::string outputFileName = fileSuffix + "_" + distribution + std::string("_Prob.vtk");
     vtkm::io::VTKDataSetWriter write(outputFileName);
     write.SetFileTypeToBinary();
     write.WriteDataSet(reducedDataSet);

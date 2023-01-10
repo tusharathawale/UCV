@@ -82,8 +82,8 @@ public:
         vtkm::Id nonzeroCases = 0;
         vtkm::FloatDefault templog = 0;
 
-        // test
-        vtkm::FloatDefault totalnonzeroProb = 0;
+        // use this to check the reuslts as needed
+        // vtkm::FloatDefault totalnonzeroProb = 0;
 
         for (int i = 0; i < totalNumCases; i++)
         {
@@ -92,20 +92,20 @@ public:
             {
                 nonzeroCases++;
                 templog = vtkm::Log2(probHistogram[i]);
-                if (i != 0 && i != totalNumCases - 1)
-                {
-                    totalnonzeroProb += probHistogram[i];
-                }
+                //if (i != 0 && i != totalNumCases - 1)
+                //{
+                //    totalnonzeroProb += probHistogram[i];
+                //}
             }
             entropyValue = entropyValue + (-probHistogram[i]) * templog;
         }
         outCellFieldNumNonzeroProb = nonzeroCases;
         outCellFieldEntropy = entropyValue;
 
-        if (allCrossProb != 0 || totalnonzeroProb != 0)
-        {
+        //if (allCrossProb != 0 || totalnonzeroProb != 0)
+        //{
             // std::cout << "test " << allCrossProb << " " << totalnonzeroProb << std::endl;
-        }
+        //}
     }
 
     // using recursive call to go through all possibilities
