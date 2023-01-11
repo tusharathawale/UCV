@@ -4,6 +4,7 @@
 #include <vector>
 #include <vtkm/worklet/WorkletReduceByKey.h>
 #include <Eigen/Dense>
+#include "./eigenmvn.h"
 
 class MultivariantGaussian : public vtkm::worklet::WorkletReduceByKey
 {
@@ -60,8 +61,8 @@ public:
             // the index for 2*2 grid
             vertexid = yidnew * 2 + xidnew;
 
-            //std::cout << "index " << index << " xid " << xid << " yid " << yid
-            //          << " xidnew " << xidnew << " yidnew " << yidnew << " vertexid " << vertexid << std::endl;
+            // std::cout << "index " << index << " xid " << xid << " yid " << yid
+            //           << " xidnew " << xidnew << " yidnew " << yidnew << " vertexid " << vertexid << std::endl;
 
             rawData[vertexid].push_back(originalValues[index]);
         }
@@ -94,6 +95,8 @@ public:
 
         // generate sample
 
+        Eigen::Vector4d meanMatrix;
+        meanMatrix << meanArray[0], meanArray[1], meanArray[2], meanArray[3];
         // generate mean and cov matrix
         Eigen::Vector4d cov4by4;
         cov4by4 << cov_matrix[0], cov_matrix[1], cov_matrix[2], cov_matrix[3],
@@ -103,6 +106,39 @@ public:
         // sample the results from the distribution function and compute the cross probability
 
         // how to check the accuracy of cov4by4?
+        vtkm::IdComponent numSamples = 100;
+        Eigen::EigenMultivariateNormal<vtkm::FloatDefault> normX_solver(meanMatrix, cov4by4);
+
+        std::cout << "try to normX_solver" <<std::endl;
+
+        auto R = normX_solver.samples(numSamples).transpose();
+        
+        std::cout << "ok to normX_solver" <<std::endl;
+
+        int numCrossings = 0;
+        for (int n = 0; n < numSamples; ++n)
+        {
+            std::cout << R.coeff(n, 0) << " " << R.coeff(n,1) << " " << R.coeff(n,2) << " " << R.coeff(n,3) << std::endl;
+
+            if ((m_isovalue <= R.coeff(n, 0)) && (m_isovalue <= R.coeff(n, 1)) && (m_isovalue <= R.coeff(n, 2)) && (m_isovalue <= R.coeff(n, 3)))
+            {
+                numCrossings = numCrossings + 0;
+            }
+            else if ((m_isovalue >= R.coeff(n, 0)) && (m_isovalue >= R.coeff(n, 1)) && (m_isovalue >= R.coeff(n, 2)) && (m_isovalue >= R.coeff(n, 3)))
+            {
+                numCrossings = numCrossings + 0;
+            }
+            else
+            {
+                numCrossings = numCrossings + 1;
+            }
+        }
+        std::cout << "ok to numCrossings" <<std::endl;
+
+        // cross probability
+        outputValue = 1.0*numCrossings / 1.0*numSamples;
+
+        std::cout << "numCrossings " << numCrossings << " outputValue " << outputValue << std::endl;
     }
 
     vtkm::FloatDefault find_mean(std::vector<vtkm::FloatDefault> &arr) const

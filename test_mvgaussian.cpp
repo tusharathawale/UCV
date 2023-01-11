@@ -67,25 +67,28 @@ void testMVGaussian1()
 
     // send data into the worklet to compute the cross probabilities
     using WorkletType = MultivariantGaussian;
-    using DispatcherEntropyNG = vtkm::worklet::DispatcherReduceByKey<WorkletType>;
+    using Dispatcher = vtkm::worklet::DispatcherReduceByKey<WorkletType>;
 
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> crossProbability;
     vtkm::worklet::Keys<vtkm::Id> keys(keyArrayNew);
 
     auto resolveType = [&](const auto &concrete)
     {
-        DispatcherEntropyNG dispatcher(MultivariantGaussian{10, blocksize});
+        Dispatcher dispatcher(MultivariantGaussian{1, blocksize});
         dispatcher.Invoke(keys, concrete, crossProbability);
     };
 
     testDataSet.GetField("data").GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
         resolveType);
+
+    std::cout << "crossProbability:" <<std::endl;
+    printSummary_ArrayHandle(crossProbability, std::cout);
+
 }
 
 // dir should contains the "/"
 void testMVGaussian2()
 {
-
     // assuming the ensemble data set is already been extracted out
     // we test results by this dataset
     // https://github.com/MengjiaoH/Probabilistic-Marching-Cubes-C-/tree/main/datasets/txt_files/wind_pressure_200
@@ -126,7 +129,7 @@ void testMVGaussian2()
 
     }
 
-    vtkmDataSet.AddPointField("ensemble", soaArray);
+    vtkmDataSet.AddPointField("ensembles", soaArray);
     vtkmDataSet.PrintSummary(std::cout);
 
     // check results
@@ -148,6 +151,6 @@ void testMVGaussian2()
 int main(int argc, char *argv[])
 {
 
-    // testMVGaussian1();
-    testMVGaussian2();
+    testMVGaussian1();
+    //testMVGaussian2();
 }
