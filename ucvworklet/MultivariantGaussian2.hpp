@@ -1,5 +1,5 @@
-#ifndef UCV_ENTROPY_INDEPEDENT_GAUSSIAN_h
-#define UCV_ENTROPY_INDEPEDENT_GAUSSIAN_h
+#ifndef UCV_MULTIVARIANT_GAUSSIAN2_h
+#define UCV_MULTIVARIANT_GAUSSIAN2_h
 
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <cmath>
@@ -32,10 +32,19 @@ public:
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
         // TODO, extracting data from 4 vertexies and compute the uncertainty things
+        // this is supposed to be 4
+        //std::cout << "size of numVertexies " << numVertexies << std::endl;
+        // this is supposed to be 15
+        //std::cout << "ensemble number " << inPointFieldVecEnsemble[0].GetNumberOfComponents() << std::endl;
+        
+
+        // this InPointFieldVecEnsemble here is supposed to be the Vec15
+        // TODO, compute the mean, cov and cross probability
+    
     }
 
 private:
     double m_isovalue;
 };
 
-#endif // UCV_ENTROPY_INDEPEDENT_GAUSSIAN_h
+#endif // UCV_MULTIVARIANT_GAUSSIAN2_h

@@ -22,11 +22,14 @@ using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::Int32,
                                   vtkm::UInt32,
                                   vtkm::Id>;
+
+using SupportedTypesVec = vtkm::List<vtkm::Vec<double, 15>>;
+
 void testMVGaussian1()
 {
     // create data sets with 8*8 dims for testing
-    vtkm::Id xdim = 9;
-    vtkm::Id ydim = 9;
+    vtkm::Id xdim = 8;
+    vtkm::Id ydim = 8;
     vtkm::Id zdim = 1;
 
     const vtkm::Id3 dims(xdim, ydim, zdim);
@@ -81,9 +84,8 @@ void testMVGaussian1()
     testDataSet.GetField("data").GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
         resolveType);
 
-    std::cout << "crossProbability:" <<std::endl;
+    std::cout << "crossProbability:" << std::endl;
     printSummary_ArrayHandle(crossProbability, std::cout);
-
 }
 
 // dir should contains the "/"
@@ -108,8 +110,7 @@ void testMVGaussian2()
 
     std::string windDataDir = "./wind_pressure_200/";
 
-    using Vec15 = vtkm::Vec<double, 15>;
-    vtkm::cont::ArrayHandleSOA<Vec15> soaArray;
+    std::vector<vtkm::cont::ArrayHandle<vtkm::Float64>> componentArrays;
 
     for (vtkm::IdComponent i = 0; i < 15; i++)
     {
@@ -125,32 +126,42 @@ void testMVGaussian2()
             d.push_back(element);
         }
 
-        // TODO, how to set the data to the soaArray?
-
+        // ArrayHandleSOA will group the components in each array and
+        // store them into Vec15 automatically.
+        // transfer vector into tha array handle
+        componentArrays.push_back(vtkm::cont::make_ArrayHandleMove(std::move(d)));
     }
+
+    using Vec15 = vtkm::Vec<double, 15>;
+    vtkm::cont::ArrayHandleSOA<Vec15> soaArray(componentArrays);
 
     vtkmDataSet.AddPointField("ensembles", soaArray);
     vtkmDataSet.PrintSummary(std::cout);
 
     // check results
 
-    // std::string outputFileName = "./wind_pressure_200.vtk";
-    // vtkm::io::VTKDataSetWriter write(outputFileName);
-    // write.WriteDataSet(vtkmDataSet);
+    std::string outputFileName = "./wind_pressure_200.vtk";
+    vtkm::io::VTKDataSetWriter write(outputFileName);
+    write.WriteDataSet(vtkmDataSet);
 
     // let the data set go through the multivariant gaussian filter
     using WorkletType = MultivariantGaussian2;
     using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> crossProbability;
+    double isovalue = 0.2;
+    auto resolveType = [&](const auto &concrete)
+    {
+        DispatcherType dispatcher(MultivariantGaussian2{isovalue});
+        dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability);
+    };
 
-    // DispatcherType dispatcher(MultivariantGaussian2{isovalue});
-    // dispatcher.Invoke(vtkmDataSet.GetCellSet(), minArray, maxArray, result1, result2, result3);
+    vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
 }
 
 int main(int argc, char *argv[])
 {
 
-    testMVGaussian1();
-    //testMVGaussian2();
+    //testMVGaussian1();
+    testMVGaussian2();
 }

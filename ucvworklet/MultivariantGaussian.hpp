@@ -1,5 +1,5 @@
 #ifndef UCV_MULTIVARIANT_GAUSSIAN_h
-#define UCV_ENTROPY_MULTIVARIANT_GAUSSIAN_h
+#define UCV_MULTIVARIANT_GAUSSIAN_h
 
 #include <vector>
 #include <vtkm/worklet/WorkletReduceByKey.h>
@@ -95,30 +95,29 @@ public:
 
         // generate sample
 
-        Eigen::Vector4d meanMatrix;
-        meanMatrix << meanArray[0], meanArray[1], meanArray[2], meanArray[3];
+        Eigen::Vector4d meanVector;
+        meanVector << meanArray[0], meanArray[1], meanArray[2], meanArray[3];
+
+        // std::cout << "cov_matrix size " << cov_matrix.size() << std::endl;
+
         // generate mean and cov matrix
-        Eigen::Vector4d cov4by4;
+        Eigen::Matrix4d cov4by4;
         cov4by4 << cov_matrix[0], cov_matrix[1], cov_matrix[2], cov_matrix[3],
             cov_matrix[1], cov_matrix[4], cov_matrix[5], cov_matrix[6],
             cov_matrix[2], cov_matrix[5], cov_matrix[7], cov_matrix[8],
             cov_matrix[3], cov_matrix[6], cov_matrix[8], cov_matrix[9];
+
         // sample the results from the distribution function and compute the cross probability
-
-        // how to check the accuracy of cov4by4?
         vtkm::IdComponent numSamples = 100;
-        Eigen::EigenMultivariateNormal<vtkm::FloatDefault> normX_solver(meanMatrix, cov4by4);
-
-        std::cout << "try to normX_solver" <<std::endl;
+        Eigen::EigenMultivariateNormal<vtkm::FloatDefault> normX_solver(meanVector, cov4by4);
 
         auto R = normX_solver.samples(numSamples).transpose();
-        
-        std::cout << "ok to normX_solver" <<std::endl;
 
-        int numCrossings = 0;
+        vtkm::Id numCrossings = 0;
+
         for (int n = 0; n < numSamples; ++n)
         {
-            std::cout << R.coeff(n, 0) << " " << R.coeff(n,1) << " " << R.coeff(n,2) << " " << R.coeff(n,3) << std::endl;
+            // std::cout << R.coeff(n, 0) << " " << R.coeff(n, 1) << " " << R.coeff(n, 2) << " " << R.coeff(n, 3) << std::endl;
 
             if ((m_isovalue <= R.coeff(n, 0)) && (m_isovalue <= R.coeff(n, 1)) && (m_isovalue <= R.coeff(n, 2)) && (m_isovalue <= R.coeff(n, 3)))
             {
@@ -133,12 +132,12 @@ public:
                 numCrossings = numCrossings + 1;
             }
         }
-        std::cout << "ok to numCrossings" <<std::endl;
+
+        std::cout << "ok to numCrossings" << std::endl;
 
         // cross probability
-        outputValue = 1.0*numCrossings / 1.0*numSamples;
-
-        std::cout << "numCrossings " << numCrossings << " outputValue " << outputValue << std::endl;
+        outputValue = 1.0 * numCrossings / 1.0 * numSamples;
+        // std::cout << "numCrossings " << numCrossings << " outputValue " << outputValue << std::endl;
     }
 
     vtkm::FloatDefault find_mean(std::vector<vtkm::FloatDefault> &arr) const
@@ -167,4 +166,4 @@ private:
     vtkm::Id m_hixelBlockDim;
 };
 
-#endif // UCV_ENTROPY_MULTIVARIANT_GAUSSIAN_h
+#endif // UCV_MULTIVARIANT_GAUSSIAN_h
