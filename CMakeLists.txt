@@ -24,11 +24,12 @@ target_link_libraries(ucv_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
 add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
 target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
 
-add_executable(test_composite test_composite.cpp)
-target_link_libraries(test_composite ${VTKm_LIBRARIES} MPI::MPI_CXX)
+add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
+target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
 
-add_executable(test_mvgaussian test_mvgaussian.cpp)
-target_link_libraries(test_mvgaussian ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
+add_executable(test_mvgaussian_3d test_mvgaussian_3d.cpp)
+target_link_libraries(test_mvgaussian_3d ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
+
 
 #add_executable(ucv_extract_vector ucv_extract_vector.cpp)
 #target_link_libraries(ucv_extract_vector ${VTKm_LIBRARIES} MPI::MPI_CXX)

@@ -1,17 +1,18 @@
-#ifndef UCV_MULTIVARIANT_GAUSSIAN2_h
-#define UCV_MULTIVARIANT_GAUSSIAN2_h
+#ifndef UCV_MULTIVARIANT_GAUSSIAN2D_h
+#define UCV_MULTIVARIANT_GAUSSIAN2D_h
 
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <cmath>
-
+#include <Eigen/Dense>
+#include "./eigenmvn.h"
 // this worklet is for the input data that put the different data in a separate array
 // for the wind data here https://github.com/MengjiaoH/Probabilistic-Marching-Cubes-C-/tree/main/datasets/txt_files/wind_pressure_200
 // there are 15 numbers (ensemble extraction) each data is put in a different file
 
-class MultivariantGaussian2 : public vtkm::worklet::WorkletVisitCellsWithPoints
+class MVGaussianWithEnsemble2D : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    MultivariantGaussian2(double isovalue)
+    MVGaussianWithEnsemble2D(double isovalue)
         : m_isovalue(isovalue){};
 
     using ControlSignature = void(CellSetIn,
@@ -155,4 +156,4 @@ private:
     double m_isovalue;
 };
 
-#endif // UCV_MULTIVARIANT_GAUSSIAN2_h
+#endif // UCV_MULTIVARIANT_GAUSSIAN2D_h

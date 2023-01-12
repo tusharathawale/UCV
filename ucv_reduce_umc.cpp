@@ -17,7 +17,8 @@
 #include "ucvworklet/EntropyUniform.hpp"
 #include "ucvworklet/EntropyIndependentGaussian.hpp"
 
-#include "ucvworklet/MultivariantGaussian.hpp"
+#include "ucvworklet/ExtractingMeanRaw.hpp"
+#include "ucvworklet/MVGaussianWithEnsemble3D.hpp"
 
 using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::Float64,
@@ -123,24 +124,23 @@ int main(int argc, char *argv[])
     // are in same shape with original data
     vtkm::cont::DataSet reducedDataSet = dataSetBuilder.Create(reducedDims, reducedOrigin, reducedSpaceing);
 
-    // Step3 computing entropy based on reduced data set
-    // uniform, indepedent gaussian, multivariant gaussian
+    // declare results array
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> crossProb;
+    vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> entropyResult;
 
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> result1;
-    vtkm::cont::ArrayHandle<vtkm::Id> result2;
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> result3;
+    // Step1 creating new key
+    vtkm::cont::ArrayHandle<vtkm::Id> keyArrayNew;
+
+    using DispatcherCreateKey = vtkm::worklet::DispatcherMapField<CreateNewKeyWorklet>;
+    DispatcherCreateKey dispatcher(CreateNewKeyWorklet{xdim, ydim, zdim,
+                                                       numberBlockx, numberBlocky, numberBlockz,
+                                                       blocksize});
+
+    dispatcher.Invoke(keyArray, keyArrayNew);
 
     if (distribution == "uni")
     {
-        // Step1 creating new key
-        vtkm::cont::ArrayHandle<vtkm::Id> keyArrayNew;
-
-        using DispatcherCreateKey = vtkm::worklet::DispatcherMapField<CreateNewKeyWorklet>;
-        DispatcherCreateKey dispatcher(CreateNewKeyWorklet{xdim, ydim, zdim,
-                                                           numberBlockx, numberBlocky, numberBlockz,
-                                                           blocksize});
-
-        dispatcher.Invoke(keyArray, keyArrayNew);
 
         // Step2 extracting ensemble data based on new key
         using DispatcherType = vtkm::worklet::DispatcherReduceByKey<ExtractingMinMax>;
@@ -173,21 +173,11 @@ int main(int argc, char *argv[])
         using DispatcherEntropyUniform = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
         DispatcherEntropyUniform dispatcherEntropyUniform(EntropyUniform{isovalue});
-        dispatcherEntropyUniform.Invoke(reducedDataSet.GetCellSet(), minArray, maxArray, result1, result2, result3);
+        dispatcherEntropyUniform.Invoke(reducedDataSet.GetCellSet(), minArray, maxArray, crossProb, numNonZeroProb, entropyResult);
     }
     else if (distribution == "ig")
     {
         // indepedent gaussian
-
-        // Step1 creating new key
-        vtkm::cont::ArrayHandle<vtkm::Id> keyArrayNew;
-
-        using DispatcherCreateKey = vtkm::worklet::DispatcherMapField<CreateNewKeyWorklet>;
-        DispatcherCreateKey dispatcher(CreateNewKeyWorklet{xdim, ydim, zdim,
-                                                           numberBlockx, numberBlocky, numberBlockz,
-                                                           blocksize});
-
-        dispatcher.Invoke(keyArray, keyArrayNew);
 
         // extracting mean and stdev
 
@@ -209,76 +199,48 @@ int main(int argc, char *argv[])
         using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
         DispatcherEntropyIG dispatcherEntropyIG(EntropyIndependentGaussian{isovalue});
-        dispatcherEntropyIG.Invoke(reducedDataSet.GetCellSet(), meanArray, stdevArray, result1, result2, result3);
+        dispatcherEntropyIG.Invoke(reducedDataSet.GetCellSet(), meanArray, stdevArray, crossProb, numNonZeroProb, entropyResult);
     }
     else if (distribution == "mg")
     {
-        // We only support 2d cases currently,
-        // there are some issues for computing the covariance for 3d case
-        if (zdim > 1)
+        // multivariant gaussian
+        // extracting the mean and rawdata for each hixel block
+        // the raw data is used to compute the covariance matrix
+        if (xdim % 4 != 0 || ydim % 4 != 0 || zdim % 4 != 0)
         {
-            throw std::runtime_error("mg is only work for 2d case currently");
+            // if the data size is not divided by blocksize
+            // we can reample or padding the data set before hand
+            // it will be convenient to compute cov matrix by this way
+            throw std::runtime_error("only support blocksize = 4 and the case where xyz dim is diveide dy blocksize for current mg");
         }
 
-        // multivariant gaussian
-        // For the multi variant gaussian case, we need to create another key
-        // to compute the covariance matrix
-        // in order to compute the covariance matrix, the data size
-        // assigned to each thread should be 2 times larger than original one
-        // assuming each original block is 4*4
-        // inorder to compute covariance matrix, we need to access 8*8 data block at once
-        // the reduced data is twice smaller as original data
-        // since it is based on the large blocks
+        // Step2 extracting the soa raw array
+        // the value here should be same with the elements in each hixel
 
-        // reduced value for uncertainty are per cell
-        // for 2d case, each cell contains 4 points 2*2
-        // in order to get the value for this 2*2 case
-        // the raw data is at least 8*8 and the hixel blcoks are 4
+        using WorkletType = ExtractingMeanRaw;
+        using DispatcherType = vtkm::worklet::DispatcherReduceByKey<WorkletType>;
 
-        // two solutions
-        // 1 use 8*8 for each thread then compute the u and cov then the final entropy
-        // 2 use reduce by key 4*4 to compute u and variance
-        // use original data and reduced data to compute the covariance
-        // then the cross probability
-
-        vtkm::Id mgblocksize = blocksize * 2;
-        vtkm::Id mgnumberBlockx = xdim % mgblocksize == 0 ? xdim / mgblocksize : xdim / mgblocksize + 1;
-        vtkm::Id mgnumberBlocky = ydim % mgblocksize == 0 ? ydim / mgblocksize : ydim / mgblocksize + 1;
-        vtkm::Id mgnumberBlockz = zdim % mgblocksize == 0 ? zdim / mgblocksize : zdim / mgblocksize + 1;
-
-        vtkm::cont::ArrayHandle<vtkm::Id> keyArrayNew;
-        using DispatcherCreateKey = vtkm::worklet::DispatcherMapField<CreateNewKeyWorklet>;
-        DispatcherCreateKey dispatcher(CreateNewKeyWorklet{xdim, ydim, zdim,
-                                                           mgnumberBlockx, mgnumberBlocky, mgnumberBlockz,
-                                                           mgblocksize});
-
-        dispatcher.Invoke(keyArray, keyArrayNew);
-
-        inData.AddPointField("keyarray", keyArrayNew);
-        // std::cout <<"summary new array" << std::endl;
-        // printSummary_ArrayHandle(keyArrayNew, std::cout);
-
-        std::string outputFileName = std::string("TestMGData.vtk");
-        vtkm::io::VTKDataSetWriter write(outputFileName);
-        write.WriteDataSet(inData);
-
-        // send data into the worklet to compute the cross probabilities
-        using WorkletType = MultivariantGaussian;
-        using Dispatcher = vtkm::worklet::DispatcherReduceByKey<WorkletType>;
-
-        vtkm::cont::ArrayHandle<vtkm::FloatDefault> crossProbability;
+        using VecType = vtkm::Vec<vtkm::FloatDefault, 4 * 4 * 4>;
+        vtkm::cont::ArrayHandle<VecType> SOARawArray;
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
+        // Pay attention to transfer the arrayHandle into the Keys type
         vtkm::worklet::Keys<vtkm::Id> keys(keyArrayNew);
 
         auto resolveType = [&](const auto &concrete)
         {
-            Dispatcher dispatcher(MultivariantGaussian{isovalue, mgblocksize});
-            dispatcher.Invoke(keys, concrete, crossProbability);
+            DispatcherType dispatcher;
+            dispatcher.Invoke(keys, concrete, meanArray, SOARawArray);
         };
 
         field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
             resolveType);
 
-        reducedDataSet.AddCellField("mg_cross_prob", crossProbability);
+        // step3 computing the cross probability
+        using WorkletTypeMVG = MVGaussianWithEnsemble3D;
+        using DispatcherTypeMVG = vtkm::worklet::DispatcherMapTopology<WorkletTypeMVG>;
+
+        DispatcherTypeMVG dispatcherMVG(MVGaussianWithEnsemble3D{isovalue, 1000});
+        dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb);
     }
     else
     {
@@ -286,11 +248,16 @@ int main(int argc, char *argv[])
     }
 
     // using the same type as the assumption for the output type
-
     std::cout << "===data summary for reduced data with uncertainty:" << std::endl;
-    reducedDataSet.AddCellField("cross_prob", result1);
-    reducedDataSet.AddCellField("num_nonzero_prob", result2);
-    reducedDataSet.AddCellField("entropy", result3);
+
+    if (distribution != "mg")
+    {
+
+        reducedDataSet.AddCellField("entropy", entropyResult);
+        reducedDataSet.AddCellField("num_nonzero_prob", numNonZeroProb);
+    }
+
+    reducedDataSet.AddCellField("cross_prob", crossProb);
 
     reducedDataSet.PrintSummary(std::cout);
 
