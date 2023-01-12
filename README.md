@@ -16,28 +16,21 @@ $ export LD_LIBRARY_PATH=/home/zw/cworkspace/UCV/install_scripts/ubuntu_cpu/inst
 
 ### Example
 
-extracting the ensemble dataset:
 
+using the uniform distribution
 ```
-$ ./ubuntu_cpu/install/UCV/ucv_extract ../dataset/raw_data_123_208_208.vtk instance
-```
-
-computing the probability marching cube:
-
-```
-$ ./ubuntu_cpu/install/UCV/ucv_umc ../dataset/raw_data_123_208_208_Derived.vtk instance 900
+$ ./ucv_reduce_umc ../../../../dataset/raw_data_128_208_208.vtk instance uni 4 900
 ```
 
-or combining two steps together (size of hixel block is 4 and isovalue is 900)
+using the indepednet gaussian distribution
 
 ```
-$ ./ubuntu_cpu/install/UCV/ucv_reduce_umc ../dataset/raw_data_123_208_208.vtk instance 4 900
+$ ./ucv_reduce_umc ../../../../dataset/raw_data_128_208_208.vtk instance ig 4 900
 ```
 
-The generated dataset raw_data_123_208_208_Prob.vtk contains the field such as cross_prob and entropy.
+using the multivariant gaussian distribution (only works for hixlesize=4 currently)
 
+```
+$ ./ucv_reduce_umc ../../../../dataset/raw_data_128_208_208.vtk instance mg 4 900
+```
 
-### TODO
-
-adding the gaussian distribution version
-adding the multivariant version
