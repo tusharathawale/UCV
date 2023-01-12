@@ -16,7 +16,8 @@
 
 #include "ucvworklet/EntropyUniform.hpp"
 #include "ucvworklet/EntropyIndependentGaussian.hpp"
-// compute the entropy based on uniform distribution
+
+#include "ucvworklet/MultivariantGaussian.hpp"
 
 using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::Float64,
@@ -141,7 +142,6 @@ int main(int argc, char *argv[])
 
         dispatcher.Invoke(keyArray, keyArrayNew);
 
-
         // Step2 extracting ensemble data based on new key
         using DispatcherType = vtkm::worklet::DispatcherReduceByKey<ExtractingMinMax>;
         vtkm::cont::ArrayHandle<vtkm::FloatDefault> minArray;
@@ -213,6 +213,13 @@ int main(int argc, char *argv[])
     }
     else if (distribution == "mg")
     {
+        // We only support 2d cases currently,
+        // there are some issues for computing the covariance for 3d case
+        if (zdim > 1)
+        {
+            throw std::runtime_error("mg is only work for 2d case currently");
+        }
+
         // multivariant gaussian
         // For the multi variant gaussian case, we need to create another key
         // to compute the covariance matrix
@@ -233,6 +240,45 @@ int main(int argc, char *argv[])
         // 2 use reduce by key 4*4 to compute u and variance
         // use original data and reduced data to compute the covariance
         // then the cross probability
+
+        vtkm::Id mgblocksize = blocksize * 2;
+        vtkm::Id mgnumberBlockx = xdim % mgblocksize == 0 ? xdim / mgblocksize : xdim / mgblocksize + 1;
+        vtkm::Id mgnumberBlocky = ydim % mgblocksize == 0 ? ydim / mgblocksize : ydim / mgblocksize + 1;
+        vtkm::Id mgnumberBlockz = zdim % mgblocksize == 0 ? zdim / mgblocksize : zdim / mgblocksize + 1;
+
+        vtkm::cont::ArrayHandle<vtkm::Id> keyArrayNew;
+        using DispatcherCreateKey = vtkm::worklet::DispatcherMapField<CreateNewKeyWorklet>;
+        DispatcherCreateKey dispatcher(CreateNewKeyWorklet{xdim, ydim, zdim,
+                                                           mgnumberBlockx, mgnumberBlocky, mgnumberBlockz,
+                                                           mgblocksize});
+
+        dispatcher.Invoke(keyArray, keyArrayNew);
+
+        inData.AddPointField("keyarray", keyArrayNew);
+        // std::cout <<"summary new array" << std::endl;
+        // printSummary_ArrayHandle(keyArrayNew, std::cout);
+
+        std::string outputFileName = std::string("TestMGData.vtk");
+        vtkm::io::VTKDataSetWriter write(outputFileName);
+        write.WriteDataSet(inData);
+
+        // send data into the worklet to compute the cross probabilities
+        using WorkletType = MultivariantGaussian;
+        using Dispatcher = vtkm::worklet::DispatcherReduceByKey<WorkletType>;
+
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> crossProbability;
+        vtkm::worklet::Keys<vtkm::Id> keys(keyArrayNew);
+
+        auto resolveType = [&](const auto &concrete)
+        {
+            Dispatcher dispatcher(MultivariantGaussian{isovalue, mgblocksize});
+            dispatcher.Invoke(keys, concrete, crossProbability);
+        };
+
+        field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
+            resolveType);
+
+        reducedDataSet.AddCellField("mg_cross_prob", crossProbability);
     }
     else
     {

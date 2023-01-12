@@ -14,12 +14,10 @@ public:
           m_hixelBlockDim(hixelBlockDim){};
 
     using ControlSignature = void(KeysIn, ValuesIn, ReducedValuesOut);
-    using ExecutionSignature = void(_1, _2, _3);
+    using ExecutionSignature = void(_2, _3);
     using InputDomain = _1;
-    template <typename KeyType, typename OriginalValuesType, typename OutputType>
-    VTKM_EXEC void operator()(KeyType key,
-                              const OriginalValuesType &originalValues, OutputType &outputValue) const
-
+    template <typename OriginalValuesType, typename OutputType>
+    VTKM_EXEC void operator()(const OriginalValuesType &originalValues, OutputType &outputValue) const
     {
 
         vtkm::IdComponent numComponents = originalValues.GetNumberOfComponents();
@@ -70,11 +68,11 @@ public:
         // The operations here are same with
         // https://github.com/MengjiaoH/Probabilistic-Marching-Cubes-C-/blob/main/covariance.h
         // compute u00 u10 u01 u11
-        std::vector<vtkm::FloatDefault> meanArray(4, 0);
-        meanArray[0] = find_mean(rawData[0]);
-        meanArray[1] = find_mean(rawData[1]);
-        meanArray[2] = find_mean(rawData[2]);
-        meanArray[3] = find_mean(rawData[3]);
+            std::vector<vtkm::FloatDefault> meanArray(4, 0);
+            meanArray[0] = find_mean(rawData[0]);
+            meanArray[1] = find_mean(rawData[1]);
+            meanArray[2] = find_mean(rawData[2]);
+            meanArray[3] = find_mean(rawData[3]);
 
         // compute cov 4*4
         std::vector<vtkm::FloatDefault> cov_matrix;
@@ -82,12 +80,6 @@ public:
         {
             for (int q = p; q < 4; ++q)
             {
-                if (p == q)
-                {
-                    cov_matrix.push_back(1.0);
-                    continue;
-                }
-
                 float cov = find_covariance(rawData[p], rawData[q], meanArray[p], meanArray[q]);
                 cov_matrix.push_back(cov);
             }
