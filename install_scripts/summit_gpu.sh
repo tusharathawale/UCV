@@ -4,6 +4,7 @@ set -e
 module load cuda
 module load gcc
 module load cmake
+module load eigen/3.3.9
 
 build_jobs=1
 mkdir -p summit_gpu
@@ -65,6 +66,7 @@ else
     -DVTKm_ENABLE_CUDA=ON \
     -DVTKm_ENABLE_TESTING=OFF \
     -DVTKm_CUDA_Architecture=volta \
+    -DCMAKE_CUDA_ARCHITECTURES=70 \
     -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
 
     cmake --build ${VTKM_BUILD_DIR} -j${build_jobs}
