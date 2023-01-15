@@ -11,6 +11,17 @@ find_package(MPI REQUIRED)
 
 #Fine eigen assume this is installed by apt-get install
 find_package (Eigen3 3.3 REQUIRED)
+
+OPTION (USE_GPU OFF)
+message ("USE_GPU is setting as: " ${USE_GPU})
+if(USE_GPU)
+
+set_source_files_properties(ucv_reduce_umc.cpp PROPERTIES LANGUAGE "CUDA")
+add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
+set_target_properties(ucv_reduce_umc PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
+
+else()
  
 add_executable(ucv_extract ucv_extract.cpp)
 target_link_libraries(ucv_extract ${VTKm_LIBRARIES} MPI::MPI_CXX)
@@ -30,17 +41,7 @@ target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3
 add_executable(test_mvgaussian_3d test_mvgaussian_3d.cpp)
 target_link_libraries(test_mvgaussian_3d ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
 
+endif()
 
-#add_executable(ucv_extract_vector ucv_extract_vector.cpp)
-#target_link_libraries(ucv_extract_vector ${VTKm_LIBRARIES} MPI::MPI_CXX)
-
-#add_executable(ucv_umc_vector ucv_umc_vector.cpp)
-#target_link_libraries(ucv_umc_vector ${VTKm_LIBRARIES} MPI::MPI_CXX)
-
-#add_executable(point_to_cell point_to_cell.cxx)
-#target_link_libraries(point_to_cell ${VTKm_LIBRARIES})
-
-#add_executable(extract_edges extract_edges.cxx)
-#target_link_libraries(extract_edges ${VTKm_LIBRARIES})
 
 
