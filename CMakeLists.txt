@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12...3.15 FATAL_ERROR)
-project(ucv LANGUAGES CXX CUDA)
+project(ucv LANGUAGES CXX)
 add_compile_options(-std=c++14)
 
 #Find the VTK-m package
@@ -16,7 +16,7 @@ OPTION (USE_GPU OFF)
 message ("USE_GPU is setting as: " ${USE_GPU})
 if(USE_GPU)
 
-set_source_files_properties(ucv_reduce_umc.cpp PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(ucv_reduce_umc_cuda_test.cpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(EntropyUniform.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ExtractingMeanRaw.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ExtractingMeanStdev.hpp PROPERTIES LANGUAGE "CUDA")
@@ -24,11 +24,11 @@ set_source_files_properties(ExtractingMinMax.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(MVGaussianWithEnsemble2D.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(MVGaussianWithEnsemble3D.hpp PROPERTIES LANGUAGE "CUDA")
 
-add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
+add_executable(ucv_reduce_umc_cuda_test ucv_reduce_umc_cuda_test.cpp)
 
-set_target_properties(ucv_reduce_umc PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(ucv_reduce_umc_cuda_test PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
-target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
+target_link_libraries(ucv_reduce_umc_cuda_test ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
 
 else()
  

@@ -115,7 +115,7 @@ namespace Eigen {
 	  else
 	    {
 	      //throw std::runtime_error("Failed computing the Cholesky decomposition. Use solver instead");
-        std::cout << "Failed computing the Cholesky decomposition. Use solver instead" << std::endl;
+        printf("Failed computing the Cholesky decomposition. Use solver instead\n");
       }
 	}
       else

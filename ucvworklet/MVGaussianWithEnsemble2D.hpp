@@ -144,7 +144,7 @@ public:
         if (arr1.GetNumberOfComponents() != arr2.GetNumberOfComponents())
         {
             //cuda does not support exception
-            std::cout << "error  failed to compute find_covariance, the array size should be equal with each other" << std::endl;
+            printf("error, failed to compute find_covariance, the array size should be equal with each other\n");
             return 0;
         }
         vtkm::Id arraySize = arr1.GetNumberOfComponents();

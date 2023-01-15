@@ -34,6 +34,12 @@ public:
         vtkm::IdComponent numPoints = inPointFieldVecMin.GetNumberOfComponents();
         // there are 8 points for each cell
 
+        if (numPoints != 8)
+        {
+            printf("this is the 3d version for 8 vertecies\n");
+            return;
+        }
+
         vtkm::FloatDefault allPositiveProb = 1.0;
         vtkm::FloatDefault allNegativeProb = 1.0;
         vtkm::FloatDefault allCrossProb = 0.0;
@@ -41,19 +47,24 @@ public:
         vtkm::FloatDefault positiveProb;
         vtkm::FloatDefault negativeProb;
 
-        std::vector<vtkm::FloatDefault> positiveProbList;
-        std::vector<vtkm::FloatDefault> negativeProbList;
+        // cuda version can not use the std vector
+        // std::vector<vtkm::FloatDefault> positiveProbList;
+        // std::vector<vtkm::FloatDefault> negativeProbList;
 
-        positiveProbList.resize(numPoints);
-        negativeProbList.resize(numPoints);
+        // positiveProbList.resize(numPoints);
+        // negativeProbList.resize(numPoints);
+
+        vtkm::Vec<vtkm::FloatDefault, 8> positiveProbList;
+        vtkm::Vec<vtkm::FloatDefault, 8> negativeProbList;
 
         // there are 2^n total cases
         int totalNumCases = static_cast<int>(vtkm::Pow(2.0, static_cast<vtkm::FloatDefault>(numPoints)));
-        std::vector<vtkm::FloatDefault> probHistogram;
 
-        probHistogram.resize(totalNumCases);
+        // std::vector<vtkm::FloatDefault> probHistogram;
+        // probHistogram.resize(totalNumCases);
+        //  std::cout << "debug totalNumCases " << totalNumCases << std::endl;
 
-        // std::cout << "debug totalNumCases " << totalNumCases << std::endl;
+        vtkm::Vec<vtkm::FloatDefault, 256> probHistogram;
 
         for (vtkm::IdComponent pointIndex = 0; pointIndex < numPoints; ++pointIndex)
         {
@@ -88,6 +99,8 @@ public:
         outCellFieldCProb = allCrossProb;
 
         // TODO, use the number of vertesies as another parameter
+        // there is recursion call and the nvlink might give warning
+        // such as the stack size can not be determined statically
         traverse(1.0, 0, 0, numPoints, positiveProbList, negativeProbList, probHistogram);
 
         // extracting the entropy or other values based on probHistogram
@@ -118,15 +131,15 @@ public:
 
         if (allCrossProb != 0 || totalnonzeroProb != 0)
         {
-            //std::cout << "test " << allCrossProb << " " << totalnonzeroProb << std::endl;
+            // std::cout << "test " << allCrossProb << " " << totalnonzeroProb << std::endl;
         }
     }
 
     // using recursive call to go through all possibilities
-    void traverse(vtkm::FloatDefault currentProb, int depth, int id, const int numPoints,
-                  std::vector<vtkm::FloatDefault> &positiveProbList,
-                  std::vector<vtkm::FloatDefault> &negativeProbList,
-                  std::vector<vtkm::FloatDefault> &probHistogram) const
+    VTKM_EXEC inline void traverse(vtkm::FloatDefault currentProb, int depth, int id, const int numPoints,
+                                   vtkm::Vec<vtkm::FloatDefault, 8> &positiveProbList,
+                                   vtkm::Vec<vtkm::FloatDefault, 8> &negativeProbList,
+                                   vtkm::Vec<vtkm::FloatDefault, 256> &probHistogram) const
     {
         // TODO, make this as a private variable
         // how to set it as a private variable of the worklet
@@ -152,5 +165,4 @@ private:
     double m_isovalue;
 };
 
-
-#endif //UCV_ENTROPY_UNIFORM_h
+#endif // UCV_ENTROPY_UNIFORM_h

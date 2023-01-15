@@ -35,21 +35,21 @@ public:
         if (numVertexies != 8)
         {
             //throw std::runtime_error("MVGaussianWithEnsemble3D expects 8 vertecies");
-            std::cout << "MVGaussianWithEnsemble3D expects 8 vertecies" << std::cout;
+            printf("MVGaussianWithEnsemble3D expects 8 vertecies\n");
             return;
         }
 
         if (inMeanArray.GetNumberOfComponents() != 8)
         {
             //throw std::runtime_error("inMeanArray in MVGaussianWithEnsemble3D expects 8 vertecies");
-            std::cout << "inMeanArray in MVGaussianWithEnsemble3D expects 8 vertecies" << std::cout;
+            printf("inMeanArray in MVGaussianWithEnsemble3D expects 8 vertecies\n");
             return;
         }
 
         if (inPointFieldVecEnsemble[0].GetNumberOfComponents() != 64)
         {
             //throw std::runtime_error("only support ensemble size 64 for blockSize equals to 4");
-            std::cout << "only support ensemble size 64 for blockSize equals to 4" << std::cout;
+            printf("only support ensemble size 64 for blockSize equals to 4\n");
             return;
         }
 
@@ -137,7 +137,7 @@ public:
     {
         if (arr1.GetNumberOfComponents() != arr2.GetNumberOfComponents())
         {
-            std::cout << "error  failed to compute find_covariance, the array size should be equal with each other" << std::endl;
+            printf("error, failed to compute find_covariance, the array size should be equal with each other\n");
             return 0;
         }
         vtkm::Id arraySize = arr1.GetNumberOfComponents();
