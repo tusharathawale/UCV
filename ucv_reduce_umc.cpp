@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
         using WorkletTypeMVG = MVGaussianWithEnsemble3D;
         using DispatcherTypeMVG = vtkm::worklet::DispatcherMapTopology<WorkletTypeMVG>;
 
-        DispatcherTypeMVG dispatcherMVG(MVGaussianWithEnsemble3D{isovalue, 1000});
+        DispatcherTypeMVG dispatcherMVG(MVGaussianWithEnsemble3D{isovalue, 100});
         dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb);
     }
     else
