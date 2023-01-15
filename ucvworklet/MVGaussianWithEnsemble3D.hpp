@@ -34,17 +34,23 @@ public:
 
         if (numVertexies != 8)
         {
-            throw std::runtime_error("MVGaussianWithEnsemble3D expects 8 vertecies");
+            //throw std::runtime_error("MVGaussianWithEnsemble3D expects 8 vertecies");
+            std::cout << "MVGaussianWithEnsemble3D expects 8 vertecies" << std::cout;
+            return;
         }
 
         if (inMeanArray.GetNumberOfComponents() != 8)
         {
-            throw std::runtime_error("inMeanArray in MVGaussianWithEnsemble3D expects 8 vertecies");
+            //throw std::runtime_error("inMeanArray in MVGaussianWithEnsemble3D expects 8 vertecies");
+            std::cout << "inMeanArray in MVGaussianWithEnsemble3D expects 8 vertecies" << std::cout;
+            return;
         }
 
         if (inPointFieldVecEnsemble[0].GetNumberOfComponents() != 64)
         {
-            throw std::runtime_error("only support ensemble size 64 for blockSize equals to 4");
+            //throw std::runtime_error("only support ensemble size 64 for blockSize equals to 4");
+            std::cout << "only support ensemble size 64 for blockSize equals to 4" << std::cout;
+            return;
         }
 
 
