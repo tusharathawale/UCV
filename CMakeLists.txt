@@ -16,8 +16,6 @@ OPTION (USE_GPU OFF)
 message ("USE_GPU is setting as: " ${USE_GPU})
 if(USE_GPU)
 
-
-
 set_source_files_properties(ucv_reduce_umc.cpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(EntropyUniform.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ExtractingMeanRaw.hpp PROPERTIES LANGUAGE "CUDA")
