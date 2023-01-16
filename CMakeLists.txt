@@ -17,14 +17,15 @@ message ("USE_GPU is setting as: " ${USE_GPU})
 if(USE_GPU)
 
 set_source_files_properties(ucv_reduce_umc_cuda_test.cpp PROPERTIES LANGUAGE "CUDA")
-set_source_files_properties(EntropyUniform.hpp PROPERTIES LANGUAGE "CUDA")
-set_source_files_properties(ExtractingMeanRaw.hpp PROPERTIES LANGUAGE "CUDA")
-set_source_files_properties(ExtractingMeanStdev.hpp PROPERTIES LANGUAGE "CUDA")
-set_source_files_properties(ExtractingMinMax.hpp PROPERTIES LANGUAGE "CUDA")
-set_source_files_properties(MVGaussianWithEnsemble2D.hpp PROPERTIES LANGUAGE "CUDA")
-set_source_files_properties(MVGaussianWithEnsemble3D.hpp PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(ucvworklet/EntropyUniform.hpp PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(ucvworklet/ExtractingMeanRaw.hpp PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(ucvworklet/ExtractingMeanStdev.hpp PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(ucvworklet/ExtractingMinMax.hpp PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(ucvworklet/eigenmvn.hpp PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(ucvworklet/MVGaussianWithEnsemble2D.hpp PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(ucvworklet/MVGaussianWithEnsemble3D.hpp PROPERTIES LANGUAGE "CUDA")
 
-add_executable(ucv_reduce_umc_cuda_test ucv_reduce_umc_cuda_test.cpp)
+add_executable(ucv_reduce_umc_cuda_test ucv_reduce_umc_cuda_test.cu)
 
 set_target_properties(ucv_reduce_umc_cuda_test PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 

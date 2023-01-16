@@ -17,6 +17,9 @@
 #include "ucvworklet/EntropyUniform.hpp"
 #include "ucvworklet/EntropyIndependentGaussian.hpp"
 
+#include "ucvworklet/ExtractingMeanRaw.hpp"
+#include "ucvworklet/MVGaussianWithEnsemble3D.hpp"
+
 using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::Float64,
                                   vtkm::Int8,
@@ -224,6 +227,47 @@ int main(int argc, char *argv[])
     }
     else if (distribution == "mg")
     {
+        // There are still some issues about making it works on cuda within the vtk
+
+        // multivariant gaussian
+        // extracting the mean and rawdata for each hixel block
+        // the raw data is used to compute the covariance matrix
+        if (xdim % 4 != 0 || ydim % 4 != 0 || zdim % 4 != 0)
+        {
+            // if the data size is not divided by blocksize
+            // we can reample or padding the data set before hand
+            // it will be convenient to compute cov matrix by this way
+            throw std::runtime_error("only support blocksize = 4 and the case where xyz dim is diveide dy blocksize for current mg");
+        }
+
+        // Step2 extracting the soa raw array
+        // the value here should be same with the elements in each hixel
+
+        using WorkletType = ExtractingMeanRaw;
+        using DispatcherType = vtkm::worklet::DispatcherReduceByKey<WorkletType>;
+
+        using VecType = vtkm::Vec<vtkm::FloatDefault, 4 * 4 * 4>;
+        vtkm::cont::ArrayHandle<VecType> SOARawArray;
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
+        // Pay attention to transfer the arrayHandle into the Keys type
+        vtkm::worklet::Keys<vtkm::Id> keys(keyArrayNew);
+
+        auto resolveType = [&](const auto &concrete)
+        {
+            DispatcherType dispatcher;
+            dispatcher.Invoke(keys, concrete, meanArray, SOARawArray);
+        };
+
+        field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
+            resolveType);
+
+        // step3 computing the cross probability
+        using WorkletTypeMVG = MVGaussianWithEnsemble3D;
+        using DispatcherTypeMVG = vtkm::worklet::DispatcherMapTopology<WorkletTypeMVG>;
+
+        DispatcherTypeMVG dispatcherMVG(MVGaussianWithEnsemble3D{isovalue, 100});
+        dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb);
+
     }
     else
     {
@@ -245,11 +289,14 @@ int main(int argc, char *argv[])
     reducedDataSet.PrintSummary(std::cout);
 
     // output the dataset into the vtk file for results checking
+    /*
+    
     std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
     std::string outputFileName = fileSuffix + "_" + distribution + std::string("_Prob.vtk");
     vtkm::io::VTKDataSetWriter write(outputFileName);
     write.SetFileTypeToBinary();
     write.WriteDataSet(reducedDataSet);
+    */
 
     return 0;
 }

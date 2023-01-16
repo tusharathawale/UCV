@@ -30,12 +30,13 @@
  * License along with this library.
  */
 
-#ifndef __EIGENMULTIVARIATENORMAL_HPP
-#define __EIGENMULTIVARIATENORMAL_HPP
+#ifndef __EIGENMULTIVARIATENORMAL_THRUST_HPP
+#define __EIGENMULTIVARIATENORMAL_THRUST_HPP
 
 #include <Eigen/Dense>
 #include <random>
-
+#include <thrust/random/linear_congruential_engine.h>
+#include <thrust/random/normal_distribution.h>
 /*
   We need a functor that can pretend it's const,
   but to be a good random number generator
@@ -52,18 +53,16 @@ namespace Eigen
     template <typename Scalar>
     struct scalar_normal_dist_op
     {
-      static std::mt19937 rng;                       // The uniform pseudo-random algorithm
-      mutable std::normal_distribution<Scalar> norm; // gaussian combinator
+      thrust::minstd_rand rng;  
+      thrust::random::normal_distribution<Scalar> norm;     // The uniform pseudo-random algorithm
 
       EIGEN_EMPTY_STRUCT_CTOR(scalar_normal_dist_op)
 
       template <typename Index>
-      inline const Scalar operator()(Index, Index = 0) const { return norm(rng); }
-      inline void seed(const uint64_t &s) { rng.seed(s); }
+      VTKM_EXEC inline const Scalar operator()(Index, Index = 0) const { return norm(rng); }
+      VTKM_EXEC inline void seed(const uint64_t &s) { rng.seed(s); }
     };
 
-    template <typename Scalar>
-    std::mt19937 scalar_normal_dist_op<Scalar>::rng;
 
     template <typename Scalar>
     struct functor_traits<scalar_normal_dist_op<Scalar>>
@@ -93,8 +92,8 @@ namespace Eigen
     SelfAdjointEigenSolver<Matrix<Scalar, Dynamic, Dynamic>> _eigenSolver; // drawback: this creates a useless eigenSolver when using Cholesky decomposition, but it yields access to eigenvalues and vectors
 
   public:
-    EigenMultivariateNormal(const Matrix<Scalar, Dynamic, 1> &mean, const Matrix<Scalar, Dynamic, Dynamic> &covar,
-                            const bool use_cholesky = false, const uint64_t &seed = std::mt19937::default_seed)
+    VTKM_EXEC EigenMultivariateNormal(const Matrix<Scalar, Dynamic, 1> &mean, const Matrix<Scalar, Dynamic, Dynamic> &covar,
+                            const bool use_cholesky = false, const uint64_t &seed = thrust::minstd_rand::default_seed)
         : _use_cholesky(use_cholesky)
     {
       randN.seed(seed);
@@ -102,8 +101,8 @@ namespace Eigen
       setCovar(covar);
     }
 
-    void setMean(const Matrix<Scalar, Dynamic, 1> &mean) { _mean = mean; }
-    void setCovar(const Matrix<Scalar, Dynamic, Dynamic> &covar)
+    VTKM_EXEC void setMean(const Matrix<Scalar, Dynamic, 1> &mean) { _mean = mean; }
+    VTKM_EXEC void setCovar(const Matrix<Scalar, Dynamic, Dynamic> &covar)
     {
       _covar = covar;
 
@@ -138,7 +137,7 @@ namespace Eigen
 
     /// Draw nn samples from the gaussian and return them
     /// as columns in a Dynamic by nn matrix
-    Matrix<Scalar, Dynamic, -1> samples(int nn)
+    VTKM_EXEC Matrix<Scalar, Dynamic, -1> samples(int nn)
     {
       return (_transform * Matrix<Scalar, Dynamic, -1>::NullaryExpr(_covar.rows(), nn, randN)).colwise() + _mean;
     }

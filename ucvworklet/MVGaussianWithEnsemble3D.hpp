@@ -4,7 +4,16 @@
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <cmath>
 #include <Eigen/Dense>
+
+//for cpu version
+#ifdef VTKM_CUDA
+//for gpu version, testing
+#include "./eigenmvn_thrust.h"
+#else
 #include "./eigenmvn.h"
+#endif // VTKM_CUDA
+
+
 
 class MVGaussianWithEnsemble3D : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
@@ -54,13 +63,16 @@ public:
         }
 
 
-        std::vector<double> cov_matrix;
+        //std::vector<double> cov_matrix;
+        vtkm::Vec<vtkm::FloatDefault,36> cov_matrix;
+        vtkm::IdComponent index = 0;
         for (int p = 0; p < numVertexies; ++p)
         {
             for (int q = p; q < numVertexies; ++q)
             {
                 float cov = find_covariance(inPointFieldVecEnsemble[p], inPointFieldVecEnsemble[q], inMeanArray[p], inMeanArray[q]);
-                cov_matrix.push_back(cov);
+                cov_matrix[index]=cov;
+                index++;
             }
         }
 
@@ -74,7 +86,7 @@ public:
 
         // generate mean and cov matrix
         Eigen::MatrixXd covMatrix(numVertexies, numVertexies);
-        ;
+        
         int covindex = 0;
         for (int p = 0; p < numVertexies; ++p)
         {
@@ -91,9 +103,14 @@ public:
             }
         }
         // sample the results from the distribution function and compute the cross probability
+        
+        
         vtkm::IdComponent numSamples = this->m_numSamples;
+        
         Eigen::EigenMultivariateNormal<vtkm::FloatDefault> normX_solver(meanVector, covMatrix);
-
+        /*
+        
+        
         auto R = normX_solver.samples(numSamples).transpose();
 
         vtkm::Id numCrossings = 0;
@@ -116,7 +133,9 @@ public:
             }
         }
         // cross probability
+        
         outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
+        */
     }
 
     // how to get this vtkm::Vec<double, 64> in an more efficient way
@@ -132,7 +151,7 @@ public:
         return mean;
     }
 
-    vtkm::FloatDefault find_covariance(const vtkm::Vec<vtkm::FloatDefault, 64> &arr1, const vtkm::Vec<vtkm::FloatDefault, 64> &arr2,
+    VTKM_EXEC inline vtkm::FloatDefault find_covariance(const vtkm::Vec<vtkm::FloatDefault, 64> &arr1, const vtkm::Vec<vtkm::FloatDefault, 64> &arr2,
                            const vtkm::FloatDefault &mean1, const vtkm::FloatDefault &mean2) const
     {
         if (arr1.GetNumberOfComponents() != arr2.GetNumberOfComponents())
