@@ -34,25 +34,24 @@ public:
         // how to process the case where there are multiple variables
         vtkm::IdComponent numPoints = inPointFieldVecMean.GetNumberOfComponents();
         // there are 8 points for each cell
-
+        if (numPoints != 8)
+        {
+            printf("this is the 3d version for 8 vertecies\n");
+            return;
+        }
         vtkm::FloatDefault allPositiveProb = 1.0;
         vtkm::FloatDefault allNegativeProb = 1.0;
         vtkm::FloatDefault allCrossProb = 0.0;
 
-        vtkm::FloatDefault positiveProb;
-        vtkm::FloatDefault negativeProb;
+        vtkm::FloatDefault positiveProb = 0.0;
+        vtkm::FloatDefault negativeProb = 0.0;
 
-        std::vector<vtkm::FloatDefault> positiveProbList;
-        std::vector<vtkm::FloatDefault> negativeProbList;
-
-        positiveProbList.resize(numPoints);
-        negativeProbList.resize(numPoints);
+        vtkm::Vec<vtkm::Vec2f, 8> ProbList;
 
         // there are 2^n total cases
-        int totalNumCases = static_cast<int>(vtkm::Pow(2.0, static_cast<vtkm::FloatDefault>(numPoints)));
-        std::vector<vtkm::FloatDefault> probHistogram;
-
-        probHistogram.resize(totalNumCases);
+        // int totalNumCases = static_cast<int>(vtkm::Pow(2.0, static_cast<vtkm::FloatDefault>(numPoints)));
+        int totalNumCases = 256;
+        vtkm::Vec<vtkm::FloatDefault, 256> probHistogram;
 
         for (vtkm::IdComponent pointIndex = 0; pointIndex < numPoints; ++pointIndex)
         {
@@ -63,19 +62,21 @@ public:
             negativeProb = 0.5 * (1 + std::erf((m_isovalue - mean) / (std::sqrt(2) * stdev)));
             positiveProb = 1.0 - negativeProb;
 
-            positiveProbList[pointIndex] = positiveProb;
-            negativeProbList[pointIndex] = negativeProb;
-
             allPositiveProb *= positiveProb;
             allNegativeProb *= negativeProb;
+
+            ProbList[pointIndex][0] = negativeProb;
+            ProbList[pointIndex][1] = positiveProb;
         }
 
         allCrossProb = 1 - allPositiveProb - allNegativeProb;
         outCellFieldCProb = allCrossProb;
 
         // TODO, use the number of vertesies as another parameter
-        traverse(1.0, 0, 0, numPoints, positiveProbList, negativeProbList, probHistogram);
-
+        // traverseRec(1.0, 0, 0, numPoints, ProbList, probHistogram);
+        traverseBit(ProbList, probHistogram);
+        // go through each option in the case table
+        // 1 is positive 0 is negative
         // extracting the entropy or other values based on probHistogram
 
         vtkm::FloatDefault entropyValue = 0;
@@ -83,7 +84,7 @@ public:
         vtkm::FloatDefault templog = 0;
 
         // use this to check the reuslts as needed
-        // vtkm::FloatDefault totalnonzeroProb = 0;
+        vtkm::FloatDefault totalnonzeroProb = 0;
 
         for (int i = 0; i < totalNumCases; i++)
         {
@@ -92,27 +93,57 @@ public:
             {
                 nonzeroCases++;
                 templog = vtkm::Log2(probHistogram[i]);
-                //if (i != 0 && i != totalNumCases - 1)
-                //{
-                //    totalnonzeroProb += probHistogram[i];
-                //}
+                if (i != 0 && i != totalNumCases - 1)
+                {
+                    totalnonzeroProb += probHistogram[i];
+                }
             }
             entropyValue = entropyValue + (-probHistogram[i]) * templog;
         }
         outCellFieldNumNonzeroProb = nonzeroCases;
         outCellFieldEntropy = entropyValue;
 
-        //if (allCrossProb != 0 || totalnonzeroProb != 0)
-        //{
-            // std::cout << "test " << allCrossProb << " " << totalnonzeroProb << std::endl;
-        //}
+        if (allCrossProb != 0 || totalnonzeroProb != 0)
+        {
+            // this is for correctness checking
+            if (fabs(allCrossProb - totalnonzeroProb) > 0.001)
+            {
+                //std::cout << "bad value " << allCrossProb << " " << totalnonzeroProb << std::endl;
+            }
+        }
+
+    }
+
+    VTKM_EXEC inline void traverseBit(vtkm::Vec<vtkm::Vec2f, 8> &ProbList,
+                                      vtkm::Vec<vtkm::FloatDefault, 256> &probHistogram) const
+    {
+
+        // go through each option in the case table
+        // 1 is positive 0 is negative
+        for (uint i = 0; i < 256; i++)
+        {
+            vtkm::FloatDefault currProb = 1.0;
+            for (uint j = 0; j < 8; j++)
+            {
+                if (i & (1 << j))
+                {
+                    // positive case
+                    currProb = currProb * ProbList[j][1];
+                }
+                else
+                {
+                    // negative case
+                    currProb = currProb * ProbList[j][0];
+                }
+            }
+            probHistogram[i] = currProb;
+        }
     }
 
     // using recursive call to go through all possibilities
-    void traverse(vtkm::FloatDefault currentProb, int depth, int id, const int numPoints,
-                  std::vector<vtkm::FloatDefault> &positiveProbList,
-                  std::vector<vtkm::FloatDefault> &negativeProbList,
-                  std::vector<vtkm::FloatDefault> &probHistogram) const
+    void traverseRec(vtkm::FloatDefault currentProb, int depth, int id, const int numPoints,
+                     vtkm::Vec<vtkm::Vec2f, 8> &ProbList,
+                     vtkm::Vec<vtkm::FloatDefault, 256> &probHistogram) const
     {
         // TODO, make this as a private variable
         // how to set it as a private variable of the worklet
@@ -126,11 +157,11 @@ public:
             return;
         }
         // two branches for current node
-        vtkm::FloatDefault nextPosProb = currentProb * positiveProbList[depth];
-        vtkm::FloatDefault nextNegProb = currentProb * negativeProbList[depth];
+        vtkm::FloatDefault nextPosProb = currentProb * ProbList[depth][1];
+        vtkm::FloatDefault nextNegProb = currentProb * ProbList[depth][0];
 
-        traverse(nextPosProb, depth + 1, 1 + (id << 1), numPoints, positiveProbList, negativeProbList, probHistogram);
-        traverse(nextNegProb, depth + 1, id << 1, numPoints, positiveProbList, negativeProbList, probHistogram);
+        traverseRec(nextPosProb, depth + 1, 1 + (id << 1), numPoints, ProbList, probHistogram);
+        traverseRec(nextNegProb, depth + 1, id << 1, numPoints, ProbList, probHistogram);
         return;
     }
 

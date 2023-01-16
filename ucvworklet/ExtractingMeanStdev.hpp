@@ -14,7 +14,6 @@ struct ExtractingMeanStdev : public vtkm::worklet::WorkletReduceByKey
         const OriginalValuesType &originalValues, OutputType &meanValue, OutputType &stdevValue) const
     {
         vtkm::FloatDefault boxSum = 0;
-        vtkm::FloatDefault sqSum = 0;
 
         vtkm::IdComponent NumComponents = originalValues.GetNumberOfComponents();
 

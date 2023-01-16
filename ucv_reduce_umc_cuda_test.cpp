@@ -12,12 +12,10 @@
 
 #include "ucvworklet/CreateNewKey.hpp"
 #include "ucvworklet/ExtractingMinMax.hpp"
+#include "ucvworklet/ExtractingMeanStdev.hpp"
 
 #include "ucvworklet/EntropyUniform.hpp"
-
-#ifdef VTKM_CUDA
-#include <vtkm/cont/cuda/internal/ScopedCudaStackSize.h>
-#endif
+#include "ucvworklet/EntropyIndependentGaussian.hpp"
 
 using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::Float64,
@@ -55,11 +53,11 @@ int main(int argc, char *argv[])
     {
         std::cout << "using backend cuda" << std::endl;
         vtkm::cont::GetRuntimeDeviceTracker().ForceDevice(vtkm::cont::DeviceAdapterTagCuda{});
-#ifdef VTKM_CUDA
+//#ifdef VTKM_CUDA
         // This worklet needs some extra space on CUDA.
-        vtkm::cont::cuda::internal::ScopedCudaStackSize stack(16 * 1024);
-        (void)stack;
-#endif // VTKM_CUDA
+        // vtkm::cont::cuda::internal::ScopedCudaStackSize stack(16 * 1024);
+        // (void)stack;
+//#endif // VTKM_CUDA
     }
     else
     {
@@ -200,6 +198,29 @@ int main(int argc, char *argv[])
     }
     else if (distribution == "ig")
     {
+                // indepedent gaussian
+
+        // extracting mean and stdev
+
+        using DispatcherType = vtkm::worklet::DispatcherReduceByKey<ExtractingMeanStdev>;
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> stdevArray;
+        vtkm::worklet::Keys<vtkm::Id> keys(keyArrayNew);
+
+        auto resolveType = [&](const auto &concrete)
+        {
+            DispatcherType dispatcher;
+            dispatcher.Invoke(keys, concrete, meanArray, stdevArray);
+        };
+
+        field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
+            resolveType);
+
+        using WorkletType = EntropyIndependentGaussian;
+        using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
+
+        DispatcherEntropyIG dispatcherEntropyIG(EntropyIndependentGaussian{isovalue});
+        dispatcherEntropyIG.Invoke(reducedDataSet.GetCellSet(), meanArray, stdevArray, crossProb, numNonZeroProb, entropyResult);
     }
     else if (distribution == "mg")
     {

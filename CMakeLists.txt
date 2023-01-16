@@ -50,6 +50,10 @@ target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3
 add_executable(test_mvgaussian_3d test_mvgaussian_3d.cpp)
 target_link_libraries(test_mvgaussian_3d ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
 
+add_executable(compute_cases compute_cases.cpp)
+target_link_libraries(compute_cases)
+
+
 endif()
 
 
