@@ -144,7 +144,7 @@ public:
 
     // using recursive call to go through all possibilities
     // there are some cuda issue with the recursive call here
-    VTKM_EXEC inline void traverseRec(vtkm::FloatDefault currentProb, int depth, int id, const int numPoints,
+    VTKM_EXEC inline void traverse(vtkm::FloatDefault currentProb, int depth, int id, const int numPoints,
                                    vtkm::Vec<vtkm::FloatDefault, 8> &positiveProbList,
                                    vtkm::Vec<vtkm::FloatDefault, 8> &negativeProbList,
                                    vtkm::Vec<vtkm::FloatDefault, 256> &probHistogram) const

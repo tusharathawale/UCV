@@ -15,6 +15,10 @@
 
 #include "ucvworklet/EntropyUniform.hpp"
 
+#ifdef VTKM_CUDA
+#include <vtkm/cont/cuda/internal/ScopedCudaStackSize.h>
+#endif
+
 using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::Float64,
                                   vtkm::Int8,
@@ -49,8 +53,13 @@ int main(int argc, char *argv[])
     }
     else if (backend == "cuda")
     {
+        std::cout << "using backend cuda" << std::endl;
         vtkm::cont::GetRuntimeDeviceTracker().ForceDevice(vtkm::cont::DeviceAdapterTagCuda{});
+#ifdef VTKM_CUDA
+        // This worklet needs some extra space on CUDA.
         vtkm::cont::cuda::internal::ScopedCudaStackSize stack(16 * 1024);
+        (void)stack;
+#endif // VTKM_CUDA
     }
     else
     {
