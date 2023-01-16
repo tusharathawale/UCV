@@ -51,6 +51,8 @@ else
 
     # TODO, the gpu version can be different here
     # we only use the cpu version here
+    # there are still some issues to run gpu and cpu backend
+    # by the same binary? the gpu is dorced to be used anyway?
 
     cmake -B ${VTKM_BUILD_DIR} -S ${VTKM_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=Release \

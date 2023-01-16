@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
     else if (backend == "cuda")
     {
         vtkm::cont::GetRuntimeDeviceTracker().ForceDevice(vtkm::cont::DeviceAdapterTagCuda{});
+        vtkm::cont::cuda::internal::ScopedCudaStackSize stack(16 * 1024);
     }
     else
     {
