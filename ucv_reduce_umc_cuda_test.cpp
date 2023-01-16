@@ -30,9 +30,9 @@ int main(int argc, char *argv[])
     // init the vtkm (set the backend and log level here)
     vtkm::cont::Initialize(argc, argv);
 
-    if (argc != 6)
+    if (argc != 7)
     {
-        std::cout << "executable <filename> <fieldname> <distribution> <blocksize> <isovalue>" << std::endl;
+        std::cout << "executable <filename> <fieldname> <distribution> <blocksize> <isovalue> <backend>" << std::endl;
         exit(0);
     }
 
@@ -41,6 +41,20 @@ int main(int argc, char *argv[])
     std::string distribution = argv[3];
     int blocksize = std::stoi(argv[4]);
     double isovalue = std::atof(argv[5]);
+    std::string backend = argv[6];
+
+    if (backend == "openmp")
+    {
+        vtkm::cont::GetRuntimeDeviceTracker().ForceDevice(vtkm::cont::DeviceAdapterTagOpenMP{});
+    }
+    else if (backend == "cuda")
+    {
+        vtkm::cont::GetRuntimeDeviceTracker().ForceDevice(vtkm::cont::DeviceAdapterTagCuda{});
+    }
+    else
+    {
+        std::cout << "unsuported backend" << std::endl;
+    }
 
     // load the dataset (beetles data set, structured one)
     // TODO, the data set can be distributed between different ranks
@@ -134,7 +148,7 @@ int main(int argc, char *argv[])
 
     dispatcher.Invoke(keyArray, keyArrayNew);
 
-    std::cout << "ok to generate the key" <<std::endl;
+    std::cout << "ok to generate the key" << std::endl;
 
     if (distribution == "uni")
     {
@@ -154,7 +168,7 @@ int main(int argc, char *argv[])
         field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
             resolveType);
 
-        std::cout << "ok to extract min max" <<std::endl;
+        std::cout << "ok to extract min max" << std::endl;
 
         // generate the new data sets with min and max
         // reducedDataSet.AddPointField("ensemble_min", minArray);
@@ -176,11 +190,9 @@ int main(int argc, char *argv[])
     }
     else if (distribution == "ig")
     {
-       
     }
     else if (distribution == "mg")
     {
-        
     }
     else
     {

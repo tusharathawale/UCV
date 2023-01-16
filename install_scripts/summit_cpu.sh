@@ -1,14 +1,13 @@
 #!/bin/bash
 set -e
 
-module load cuda
 module load gcc
 module load cmake
 module load eigen/3.3.9
 
 build_jobs=4
-mkdir -p summit_gpu
-cd summit_gpu
+mkdir -p summit_cpu
+cd summit_cpu
 
 HERE=`pwd`
 source $HERE/../settings.sh
@@ -54,7 +53,7 @@ else
 
     cmake -B ${VTKM_BUILD_DIR} -S ${VTKM_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_SHARED_LIBS=OFF \
+    -DBUILD_SHARED_LIBS=ON \
     -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
     -DVTKm_USE_DOUBLE_PRECISION=ON \
     -DVTKm_USE_64BIT_IDS=OFF \
@@ -62,12 +61,7 @@ else
     -DVTKm_ENABLE_MPI=ON \
     -DVTKm_ENABLE_OPENMP=ON \
     -DVTKm_ENABLE_LOGGING=ON \
-    -DVTKm_ENABLE_RENDERING=ON \
-    -DVTKm_ENABLE_CUDA=ON \
     -DVTKm_ENABLE_TESTING=OFF \
-    -DVTKm_CUDA_Architecture=volta \
-    -DCMAKE_CUDA_ARCHITECTURES=70 \
-    -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
 
     cmake --build ${VTKM_BUILD_DIR} -j${build_jobs}
 
@@ -91,10 +85,8 @@ else
 
     cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_SHARED_LIBS=OFF \
-    -DUSE_GPU=ON \
+    -DBUILD_SHARED_LIBS=ON \
     -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 \
-    -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
     
     cd $HERE
 
