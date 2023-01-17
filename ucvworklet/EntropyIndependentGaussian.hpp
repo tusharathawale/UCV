@@ -84,7 +84,7 @@ public:
         vtkm::FloatDefault templog = 0;
 
         // use this to check the reuslts as needed
-        vtkm::FloatDefault totalnonzeroProb = 0;
+        // vtkm::FloatDefault totalnonzeroProb = 0;
 
         for (int i = 0; i < totalNumCases; i++)
         {
@@ -103,14 +103,14 @@ public:
         outCellFieldNumNonzeroProb = nonzeroCases;
         outCellFieldEntropy = entropyValue;
 
-        if (allCrossProb != 0 || totalnonzeroProb != 0)
-        {
+        //if (allCrossProb != 0 || totalnonzeroProb != 0)
+        //{
             // this is for correctness checking
-            if (fabs(allCrossProb - totalnonzeroProb) > 0.001)
-            {
+            //if (fabs(allCrossProb - totalnonzeroProb) > 0.001)
+            //{
                 //std::cout << "bad value " << allCrossProb << " " << totalnonzeroProb << std::endl;
-            }
-        }
+            //}
+        //}
 
     }
 

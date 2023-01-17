@@ -110,7 +110,7 @@ public:
         // printf("debug cuda, ok probHistogram\n");
 
         // test
-        vtkm::FloatDefault totalnonzeroProb = 0;
+        // vtkm::FloatDefault totalnonzeroProb = 0;
 
         for (int i = 0; i < totalNumCases; i++)
         {
@@ -130,13 +130,13 @@ public:
         outCellFieldNumNonzeroProb = nonzeroCases;
         outCellFieldEntropy = entropyValue;
 
-        if (allCrossProb != 0 || totalnonzeroProb != 0)
-        {
-            if (fabs(allCrossProb - totalnonzeroProb) > 0.001)
-            {
+        //if (allCrossProb != 0 || totalnonzeroProb != 0)
+        //{
+        //    if (fabs(allCrossProb - totalnonzeroProb) > 0.001)
+        //    {
                 //std::cout << "bad value " << allCrossProb << " " << totalnonzeroProb << std::endl;
-            }
-        }
+        //    }
+        //}
         // printf("debug cuda, ok entropy\n");
     }
 
