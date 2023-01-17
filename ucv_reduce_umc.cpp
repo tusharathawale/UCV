@@ -17,8 +17,12 @@
 #include "ucvworklet/EntropyUniform.hpp"
 #include "ucvworklet/EntropyIndependentGaussian.hpp"
 
+#ifdef VTKM_CUDA
+#else
+// the case three does not works well for cuda at this step
 #include "ucvworklet/ExtractingMeanRaw.hpp"
 #include "ucvworklet/MVGaussianWithEnsemble3D.hpp"
+#endif // VTKM_CUDA
 
 using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::Float64,
@@ -203,6 +207,10 @@ int main(int argc, char *argv[])
     }
     else if (distribution == "mg")
     {
+#ifdef VTKM_CUDA
+        std::cout << "multivariant gaussian does not work well for cuda now" << std::endl;
+        exit(0);
+#else
         // multivariant gaussian
         // extracting the mean and rawdata for each hixel block
         // the raw data is used to compute the covariance matrix
@@ -213,7 +221,6 @@ int main(int argc, char *argv[])
             // it will be convenient to compute cov matrix by this way
             throw std::runtime_error("only support blocksize = 4 and the case where xyz dim is diveide dy blocksize for current mg");
         }
-
         // Step2 extracting the soa raw array
         // the value here should be same with the elements in each hixel
 
@@ -241,6 +248,7 @@ int main(int argc, char *argv[])
 
         DispatcherTypeMVG dispatcherMVG(MVGaussianWithEnsemble3D{isovalue, 100});
         dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb);
+#endif // VTKM_CUDA
     }
     else
     {

@@ -37,6 +37,7 @@
 #include <random>
 #include <thrust/random/linear_congruential_engine.h>
 #include <thrust/random/normal_distribution.h>
+
 /*
   We need a functor that can pretend it's const,
   but to be a good random number generator
@@ -62,6 +63,9 @@ namespace Eigen
       VTKM_EXEC inline const Scalar operator()(Index, Index = 0) const { return norm(rng); }
       VTKM_EXEC inline void seed(const uint64_t &s) { rng.seed(s); }
     };
+
+    template <typename Scalar>
+    thrust::minstd_rand scalar_normal_dist_op<Scalar>::rng;
 
 
     template <typename Scalar>

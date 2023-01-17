@@ -61,6 +61,7 @@ namespace Eigen
       inline const Scalar operator()(Index, Index = 0) const { return norm(rng); }
       inline void seed(const uint64_t &s) { rng.seed(s); }
     };
+    
 
     template <typename Scalar>
     std::mt19937 scalar_normal_dist_op<Scalar>::rng;

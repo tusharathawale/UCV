@@ -5,13 +5,8 @@
 #include <cmath>
 #include <Eigen/Dense>
 
-//for cpu version
-#ifdef VTKM_CUDA
-//for gpu version, testing
-#include "./eigenmvn_thrust.h"
-#else
 #include "./eigenmvn.h"
-#endif // VTKM_CUDA
+
 
 
 
@@ -107,8 +102,10 @@ public:
         
         vtkm::IdComponent numSamples = this->m_numSamples;
         
+        // TODO There are still some issues to make it work properly on for cuda version
+        // Maybe look at the possible alternative functions in future
         Eigen::EigenMultivariateNormal<vtkm::FloatDefault> normX_solver(meanVector, covMatrix);
-        /*
+        
         
         
         auto R = normX_solver.samples(numSamples).transpose();
@@ -135,7 +132,7 @@ public:
         // cross probability
         
         outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
-        */
+        
     }
 
     // how to get this vtkm::Vec<double, 64> in an more efficient way

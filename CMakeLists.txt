@@ -16,7 +16,7 @@ OPTION (USE_GPU OFF)
 message ("USE_GPU is setting as: " ${USE_GPU})
 if(USE_GPU)
 
-set_source_files_properties(ucv_reduce_umc_cuda_test.cpp PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(ucv_reduce_umc.cpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/EntropyUniform.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/ExtractingMeanRaw.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/ExtractingMeanStdev.hpp PROPERTIES LANGUAGE "CUDA")
@@ -25,11 +25,11 @@ set_source_files_properties(ucvworklet/eigenmvn.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/MVGaussianWithEnsemble2D.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/MVGaussianWithEnsemble3D.hpp PROPERTIES LANGUAGE "CUDA")
 
-add_executable(ucv_reduce_umc_cuda_test ucv_reduce_umc_cuda_test.cu)
+add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
 
-set_target_properties(ucv_reduce_umc_cuda_test PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+set_target_properties(ucv_reduce_umc PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
-target_link_libraries(ucv_reduce_umc_cuda_test ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
+target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
 
 else()
  
