@@ -29,12 +29,12 @@ cp $DATASETPATH .
 
 # one process cases
 # using default options for all
-jsrun python3 ./beetle_uniform.py &> beetle_uniform.log
+jsrun -n1 -a1 -g0 python3 ./beetle_uniform.py &> beetle_uniform.log
 
-jsrun python3 ./beetle_gaussian.py &> beetle_gaussian.log
+jsrun -n1 -a1 -g0 python3 ./beetle_gaussian.py &> beetle_gaussian.log
 
 # copy things back
-cp -r *.log $CURRDIR/$LOGDIRNAME
+cp *.log $CURRDIR/$LOGDIRNAME
 
 # clean the run dir
 #cd ..

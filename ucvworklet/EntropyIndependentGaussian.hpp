@@ -93,10 +93,10 @@ public:
             {
                 nonzeroCases++;
                 templog = vtkm::Log2(probHistogram[i]);
-                if (i != 0 && i != totalNumCases - 1)
-                {
-                    totalnonzeroProb += probHistogram[i];
-                }
+                //if (i != 0 && i != totalNumCases - 1)
+                //{
+                //    totalnonzeroProb += probHistogram[i];
+                //}
             }
             entropyValue = entropyValue + (-probHistogram[i]) * templog;
         }

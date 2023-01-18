@@ -37,7 +37,7 @@ import random
 # Load ground truth
 myarray = np.fromfile('stagbeetle832x832x494.dat', dtype='H')
 
-print(len(myarray))
+print(len(myarray),flush=True)
 
 newarray = myarray[3: len(myarray)]
 
@@ -51,7 +51,7 @@ ground_truth = newarray.reshape((494, 832, 832))
 ensemble = np.zeros((123,208,208,64),dtype='H')
 
 time1 = time.perf_counter()
-print("start timer1")
+print("start timer1",flush=True)
 # why it is 492 not 494 here (divisable by 4)
 # the value of i is 0 4 8 12 ...
 for i in range(0,492,4):
@@ -396,14 +396,14 @@ def probabilisticMarchingSquares(positiveProbabilitiesGrid, negativeProbabilitie
     return crossingProbabilities
 
 time2 = time.perf_counter()
-print("start timer2")
+print("start timer2",flush=True)
 isovalue = 900
 
 #[positiveProbabilitiesGrid, negativeProbabilitiesGrid,  maximumGrid, minimumGrid, mostProbableGrid] = computePositiveNegativeProbabilities(ensemble, isovalue, 100, 'Gaussian')
 [positiveProbabilitiesGrid, negativeProbabilitiesGrid,  maximumGrid, minimumGrid, mostProbableGrid] = computePositiveNegativeProbabilities(ensemble, isovalue, 100, 'uniform')
 
 time3 = time.perf_counter()
-print("start timer3")
+print("start timer3",flush=True)
 #plt.figure()
 #plt.imshow(positiveProbabilitiesGrid)
 #plt.contour(positiveProbabilitiesGrid, levels=[0.5])
@@ -411,9 +411,9 @@ print("start timer3")
 MStopologyCasesProbabilities,entropy,numCases = computeMSTopologyCasesProbabilities(positiveProbabilitiesGrid, negativeProbabilitiesGrid)
 time4 = time.perf_counter()
 
-print(f"extracting ensembles in {time2 - time1:0.3f} seconds")
-print(f"computing properties of hixel blocks in {time3 - time2:0.3f} seconds")
-print(f"computing uncertainty metrics in {time4 - time3:0.3f} seconds")
+print(f"extracting ensembles in {time2 - time1:0.3f} seconds",flush=True)
+print(f"computing properties of hixel blocks in {time3 - time2:0.3f} seconds",flush=True)
+print(f"computing uncertainty metrics in {time4 - time3:0.3f} seconds",flush=True)
 
 ## do not do this for performance test
 '''

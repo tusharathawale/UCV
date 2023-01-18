@@ -17,6 +17,8 @@
 #include "ucvworklet/EntropyUniform.hpp"
 #include "ucvworklet/EntropyIndependentGaussian.hpp"
 
+#include <chrono>
+
 #ifdef VTKM_CUDA
 #else
 // the case three does not works well for cuda at this step
@@ -60,6 +62,9 @@ int main(int argc, char *argv[])
 
     // check the property of the data
     inData.PrintSummary(std::cout);
+
+    // TODO timer start to extract key
+    auto timer1 = std::chrono::steady_clock::now();
 
     auto field = inData.GetField(fieldName);
 
@@ -143,6 +148,11 @@ int main(int argc, char *argv[])
 
     dispatcher.Invoke(keyArray, keyArrayNew);
 
+    auto timer2 = std::chrono::steady_clock::now();
+    float extractKey =
+        std::chrono::duration<float, std::milli>(timer2 - timer1).count();
+    std::cout << "extractKey time: " << extractKey << std::endl;
+
     if (distribution == "uni")
     {
 
@@ -161,6 +171,12 @@ int main(int argc, char *argv[])
         field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
             resolveType);
 
+        // TODO timer ok to extract property
+        auto timer3 = std::chrono::steady_clock::now();
+        float extractMinMax =
+            std::chrono::duration<float, std::milli>(timer3 - timer2).count();
+        std::cout << "extractMinMax time: " << extractMinMax << std::endl;
+
         // generate the new data sets with min and max
         // reducedDataSet.AddPointField("ensemble_min", minArray);
         // reducedDataSet.AddPointField("ensemble_max", maxArray);
@@ -178,6 +194,12 @@ int main(int argc, char *argv[])
 
         DispatcherEntropyUniform dispatcherEntropyUniform(EntropyUniform{isovalue});
         dispatcherEntropyUniform.Invoke(reducedDataSet.GetCellSet(), minArray, maxArray, crossProb, numNonZeroProb, entropyResult);
+
+        // TODO timer ok to compute uncertainty
+        auto timer4 = std::chrono::steady_clock::now();
+        float EntropyUniformTime =
+            std::chrono::duration<float, std::milli>(timer4 - timer3).count();
+        std::cout << "EntropyUniformTime time: " << EntropyUniformTime << std::endl;
     }
     else if (distribution == "ig")
     {
@@ -199,11 +221,23 @@ int main(int argc, char *argv[])
         field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
             resolveType);
 
+        // TODO timer ok to extract properties
+        auto timer3 = std::chrono::steady_clock::now();
+        float ExtractingMeanStdevTime =
+            std::chrono::duration<float, std::milli>(timer3 - timer2).count();
+        std::cout << "ExtractingMeanStdev time: " << ExtractingMeanStdevTime << std::endl;
+
         using WorkletType = EntropyIndependentGaussian;
         using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
         DispatcherEntropyIG dispatcherEntropyIG(EntropyIndependentGaussian{isovalue});
         dispatcherEntropyIG.Invoke(reducedDataSet.GetCellSet(), meanArray, stdevArray, crossProb, numNonZeroProb, entropyResult);
+
+        // TODO timer ok to compute uncertianty
+        auto timer4 = std::chrono::steady_clock::now();
+        float EIGaussianTime =
+            std::chrono::duration<float, std::milli>(timer4 - timer3).count();
+        std::cout << "EIGaussianTime time: " << EIGaussianTime << std::endl;
     }
     else if (distribution == "mg")
     {
@@ -242,12 +276,23 @@ int main(int argc, char *argv[])
         field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
             resolveType);
 
+        auto timer3 = std::chrono::steady_clock::now();
+        float ExtractingMeanRawTime =
+            std::chrono::duration<float, std::milli>(timer3 - timer2).count();
+        std::cout << "ExtractingMeanRawTime time: " << ExtractingMeanRawTime << std::endl;
+
         // step3 computing the cross probability
         using WorkletTypeMVG = MVGaussianWithEnsemble3D;
         using DispatcherTypeMVG = vtkm::worklet::DispatcherMapTopology<WorkletTypeMVG>;
 
         DispatcherTypeMVG dispatcherMVG(MVGaussianWithEnsemble3D{isovalue, 100});
         dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb);
+
+        auto timer4 = std::chrono::steady_clock::now();
+        float MVGTime =
+            std::chrono::duration<float, std::milli>(timer4 - timer3).count();
+        std::cout << "MVGTime time: " << MVGTime << std::endl;
+
 #endif // VTKM_CUDA
     }
     else
@@ -256,7 +301,7 @@ int main(int argc, char *argv[])
     }
 
     // using the same type as the assumption for the output type
-    std::cout << "===data summary for reduced data with uncertainty:" << std::endl;
+    //std::cout << "===data summary for reduced data with uncertainty:" << std::endl;
 
     if (distribution != "mg")
     {
@@ -267,7 +312,7 @@ int main(int argc, char *argv[])
 
     reducedDataSet.AddCellField("cross_prob", crossProb);
 
-    reducedDataSet.PrintSummary(std::cout);
+    //reducedDataSet.PrintSummary(std::cout);
 
     // output the dataset into the vtk file for results checking
     std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
