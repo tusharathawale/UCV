@@ -44,12 +44,15 @@ jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_umc_cpu $DATASETPATH ground_truth ig 4 
 export OMP_NUM_THREADS=1
 
 # vtkm only use one gpu
+# the time of extracting key will be influenced by the cache time of cpu
+# how to reset the gpu memory to avoid it?
 
-nvidia-smi --gpu-reset
 
-jsrun -n1 -a1 -c1 -g1 ./ucv_umc_gpu $DATASETPATH ground_truth uni 4 900 &> ucv_umc_gpu_uni.log
+jsrun -n1 -a1 -c1 -g1 ./ucv_umc_gpu $DATASETPATH ground_truth uni 4 900 &> ucv_umc_gpu_uni_1.log
 
-nvidia-smi --gpu-reset
+# executing it another time, it seems there are some extra work or cache for the first tun
+jsrun -n1 -a1 -c1 -g1 ./ucv_umc_gpu $DATASETPATH ground_truth uni 4 900 &> ucv_umc_gpu_uni_2.log
+
 
 jsrun -n1 -a1 -c1 -g1 ./ucv_umc_gpu $DATASETPATH ground_truth ig 4 900 &> ucv_umc_gpu_ig.log
 
