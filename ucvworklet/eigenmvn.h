@@ -123,6 +123,7 @@ namespace Eigen
         {
           // Use cholesky solver
           _transform = cholSolver.matrixL();
+
         }
         else
         {
