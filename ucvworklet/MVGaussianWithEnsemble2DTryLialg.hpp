@@ -42,21 +42,25 @@ public:
         // this InPointFieldVecEnsemble here is supposed to be the Vec15
         // TODO, compute the mean, cov and cross probability
 
-        std::vector<vtkm::Float64> meanArray(4, 0);
-
+        // vector is not good in cuda
+        // std::vector<vtkm::Float64> meanArray(4, 0);
+        vtkm::Vec<vtkm::FloatDefault,4> meanArray;
         // derive type
         meanArray[0] = find_mean(inPointFieldVecEnsemble[0]);
         meanArray[1] = find_mean(inPointFieldVecEnsemble[1]);
         meanArray[2] = find_mean(inPointFieldVecEnsemble[2]);
         meanArray[3] = find_mean(inPointFieldVecEnsemble[3]);
 
-        std::vector<double> cov_matrix;
+        //std::vector<double> cov_matrix;
+        vtkm::Vec<vtkm::FloatDefault,10> cov_matrix;
+        vtkm::IdComponent =10;
         for (int p = 0; p < 4; ++p)
         {
             for (int q = p; q < 4; ++q)
             {
                 float cov = find_covariance(inPointFieldVecEnsemble[p], inPointFieldVecEnsemble[q], meanArray[p], meanArray[q]);
-                cov_matrix.push_back(cov);
+                cov_matrix[index]=cov;
+                index++;
             }
         }
 
