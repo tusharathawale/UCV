@@ -8,13 +8,17 @@
 #include <stdbool.h>
 #include <cassert>
 
+#include <vtkm/Types.h>
+
+namespace UCVMATH{
+
 typedef struct
 {
     int m, n; // m is row, n is column
     double **v;
 } mat_t, *mat;
 
-inline mat matrix_new(int m, int n)
+VTKM_EXEC inline mat matrix_new(int m, int n)
 {
     mat x = (mat)malloc(sizeof(mat_t));
     x->v = (double **)malloc(sizeof(double *) * m);
@@ -27,7 +31,7 @@ inline mat matrix_new(int m, int n)
     return x;
 }
 
-inline mat matrix_new_eye(int m, int n)
+VTKM_EXEC inline mat matrix_new_eye(int m, int n)
 {
     mat x = (mat)malloc(sizeof(mat_t));
     x->v = (double **)malloc(sizeof(double *) * m);
@@ -42,14 +46,14 @@ inline mat matrix_new_eye(int m, int n)
     return x;
 }
 
-inline void matrix_delete(mat m)
+VTKM_EXEC inline void matrix_delete(mat m)
 {
     free(m->v[0]);
     free(m->v);
     free(m);
 }
 
-inline void matrix_transpose(mat m)
+VTKM_EXEC inline void matrix_transpose(mat m)
 {
     for (int i = 0; i < m->m; i++)
     {
@@ -74,7 +78,7 @@ inline mat matrix_copy(int n,  int m, double a[m][n])
 }
 */
 
-inline mat matrix_copy_mat(mat x)
+VTKM_EXEC inline mat matrix_copy_mat(mat x)
 {
     mat y = matrix_new(x->m, x->n);
     for (int i = 0; i < x->m; i++)
@@ -83,7 +87,7 @@ inline mat matrix_copy_mat(mat x)
     return y;
 }
 
-inline void matrix_mul_toz(mat x, mat y, mat *z)
+VTKM_EXEC inline void matrix_mul_toz(mat x, mat y, mat *z)
 {
     if (x->n != y->m)
     {
@@ -97,7 +101,7 @@ inline void matrix_mul_toz(mat x, mat y, mat *z)
                 (*z)->v[i][j] += x->v[i][k] * y->v[k][j];
 }
 
-inline mat matrix_mul(mat x, mat y)
+VTKM_EXEC inline mat matrix_mul(mat x, mat y)
 {
     if (x->n != y->m)
         return 0;
@@ -109,7 +113,7 @@ inline mat matrix_mul(mat x, mat y)
     return r;
 }
 
-inline mat matrix_minor(mat x, int d)
+VTKM_EXEC inline mat matrix_minor(mat x, int d)
 {
     mat m = matrix_new(x->m, x->n);
     for (int i = 0; i < d; i++)
@@ -121,7 +125,7 @@ inline mat matrix_minor(mat x, int d)
 }
 
 /* c = a + b * s */
-inline double *vmadd(double a[], double b[], double s, double c[], int n)
+VTKM_EXEC inline double *vmadd(double a[], double b[], double s, double c[], int n)
 {
     for (int i = 0; i < n; i++)
         c[i] = a[i] + s * b[i];
@@ -129,7 +133,7 @@ inline double *vmadd(double a[], double b[], double s, double c[], int n)
 }
 
 /* m = I - v v^T */
-inline mat vmul(double v[], int n)
+VTKM_EXEC inline mat vmul(double v[], int n)
 {
     mat x = matrix_new(n, n);
     for (int i = 0; i < n; i++)
@@ -142,7 +146,7 @@ inline mat vmul(double v[], int n)
 }
 
 /* ||x|| */
-inline double vnorm(double x[], int n)
+VTKM_EXEC inline double vnorm(double x[], int n)
 {
     double sum = 0;
     for (int i = 0; i < n; i++)
@@ -151,7 +155,7 @@ inline double vnorm(double x[], int n)
 }
 
 /* y = x / d */
-inline double *vdiv(double x[], double d, double y[], int n)
+VTKM_EXEC inline double *vdiv(double x[], double d, double y[], int n)
 {
     for (int i = 0; i < n; i++)
         y[i] = x[i] / d;
@@ -159,14 +163,14 @@ inline double *vdiv(double x[], double d, double y[], int n)
 }
 
 /* take c-th column of m, put in v */
-inline double *mcol(mat m, double *v, int c)
+VTKM_EXEC inline double *mcol(mat m, double *v, int c)
 {
     for (int i = 0; i < m->m; i++)
         v[i] = m->v[i][c];
     return v;
 }
 
-inline void matrix_show(mat m)
+VTKM_EXEC inline void matrix_show(mat m)
 {
     for (int i = 0; i < m->m; i++)
     {
@@ -179,7 +183,7 @@ inline void matrix_show(mat m)
     printf("\n");
 }
 
-inline void householder(mat m, mat *R, mat *Q)
+VTKM_EXEC inline void householder(mat m, mat *R, mat *Q)
 {
     mat q[m->m];
     mat z = m, z1;
@@ -225,7 +229,7 @@ inline void householder(mat m, mat *R, mat *Q)
     matrix_transpose(*Q);
 }
 
-inline bool matrix_is_upper_triangular(mat m, double tol)
+VTKM_EXEC inline bool matrix_is_upper_triangular(mat m, double tol)
 {
     // For now, only treat square matricies. */
     assert(m->m == m->n);
@@ -243,7 +247,7 @@ inline bool matrix_is_upper_triangular(mat m, double tol)
 }
 
 // only tested for n*n matrix and it is symetric
-inline void eigen_solve_eigenvalues(mat x, double tol, int max_iter, double *eigen_array)
+VTKM_EXEC inline void eigen_solve_eigenvalues(mat x, double tol, int max_iter, double *eigen_array)
 {
     // refer to https://www.andreinc.net/2021/01/25/computing-eigenvalues-and-eigenvectors-using-qr-decomposition
     mat ak = matrix_copy_mat(x);
@@ -286,6 +290,8 @@ inline void eigen_solve_eigenvalues(mat x, double tol, int max_iter, double *eig
     {
         eigen_array[i] = ak->v[i][i];
     }
+}
+
 }
 
 #endif

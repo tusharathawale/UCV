@@ -21,15 +21,16 @@ set_source_files_properties(ucvworklet/EntropyUniform.hpp PROPERTIES LANGUAGE "C
 set_source_files_properties(ucvworklet/ExtractingMeanRaw.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/ExtractingMeanStdev.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/ExtractingMinMax.hpp PROPERTIES LANGUAGE "CUDA")
-set_source_files_properties(ucvworklet/eigenmvn.hpp PROPERTIES LANGUAGE "CUDA")
-set_source_files_properties(ucvworklet/MVGaussianWithEnsemble2D.hpp PROPERTIES LANGUAGE "CUDA")
-set_source_files_properties(ucvworklet/MVGaussianWithEnsemble3D.hpp PROPERTIES LANGUAGE "CUDA")
 
 add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
-
 set_target_properties(ucv_reduce_umc PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-
 target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
+
+set_source_files_properties(test_mvgaussian_wind.cpp PROPERTIES LANGUAGE "CUDA")
+add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
+set_target_properties(test_mvgaussian_wind PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES})
+
 
 else()
  
@@ -51,11 +52,11 @@ target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3
 add_executable(test_mvgaussian_3d test_mvgaussian_3d.cpp)
 target_link_libraries(test_mvgaussian_3d ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
 
-add_executable(test_ucv_matrix ./ucvworklet/linalg/test_ucv_matrix.cpp)
-target_link_libraries(test_ucv_matrix ${VTKm_LIBRARIES})
-
 add_executable(compute_cases compute_cases.cpp)
 target_link_libraries(compute_cases)
+
+add_executable(test_ucv_matrix ./ucvworklet/linalg/test_ucv_matrix.cpp)
+target_link_libraries(test_ucv_matrix ${VTKm_LIBRARIES})
 
 
 endif()

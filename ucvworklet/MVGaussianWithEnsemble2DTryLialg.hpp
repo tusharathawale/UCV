@@ -73,7 +73,7 @@ public:
         // std::cout << "cov_matrix size " << cov_matrix.size() << std::endl;
 
         // generate mean and cov matrix
-        mat cov4by4 = matrix_new(4, 4);
+        UCVMATH::mat cov4by4 = UCVMATH::matrix_new(4, 4);
         // Eigen::Matrix4d cov4by4(4, 4);
         // cov4by4 << cov_matrix[0], cov_matrix[1], cov_matrix[2], cov_matrix[3],
         //      cov_matrix[1], cov_matrix[4], cov_matrix[5], cov_matrix[6],
@@ -100,7 +100,7 @@ public:
                 covindex++;
             }
         }
-        matrix_show(cov4by4);
+        UCVMATH::matrix_show(cov4by4);
         /*
 
                 // sample the results from the distribution function and compute the cross probability
