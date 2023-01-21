@@ -50,6 +50,15 @@ VTKM_EXEC inline mat matrix_new(int m, int n)
     return x;
 }
 
+VTKM_EXEC inline mat* matrix_new_array(int m, int n, int array_num){
+    mat* m_array = (mat*)malloc(sizeof(mat)*array_num);
+    for(int i=0;i<array_num;i++){
+        m_array[i]=matrix_new(m,n);
+    }
+    return m_array;
+}
+
+
 VTKM_EXEC inline mat matrix_new_eye(int m, int n)
 {
     mat x = (mat)malloc(sizeof(mat_t));
@@ -204,7 +213,10 @@ VTKM_EXEC inline void matrix_show(mat m)
 
 VTKM_EXEC inline void householder(mat m, mat *R, mat *Q)
 {
-    mat q[m->m];
+    //cuda compiler does not allow this dynamic allocation
+    //mat q[m->m];
+    mat* q = matrix_new_array(m->m,m->m,m->m);
+
     mat z = m, z1;
     for (int k = 0; k < m->n && k < m->m - 1; k++)
     {
