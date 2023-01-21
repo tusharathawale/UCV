@@ -2,6 +2,8 @@
 #include "./ucv_matrix.h"
 #include <cassert>
 
+using namespace UCVMATH;
+
 // for symetric matrix
 double in4_1[4][4] = {
     {0.20, 0.60, 0.40, 0.80},

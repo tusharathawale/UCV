@@ -15,8 +15,27 @@ namespace UCVMATH{
 typedef struct
 {
     int m, n; // m is row, n is column
-    double **v;
+    double **v =NULL;
 } mat_t, *mat;
+
+typedef struct{
+    int len;
+    double *v =NULL;
+} vec_t, *vec;
+
+
+VTKM_EXEC inline vec_t vec_new(int len){
+    vec_t v;
+    v.len=len;
+    v.v = (double*)calloc(sizeof(double), len);
+    return v;
+}
+
+VTKM_EXEC inline void vec_delete(vec v){
+    if(v->v!=NULL){
+        free(v->v);
+    }
+}
 
 VTKM_EXEC inline mat matrix_new(int m, int n)
 {
@@ -189,27 +208,35 @@ VTKM_EXEC inline void householder(mat m, mat *R, mat *Q)
     mat z = m, z1;
     for (int k = 0; k < m->n && k < m->m - 1; k++)
     {
-        double e[m->m], x[m->m], a;
+        //in c++ we can not declare array by this way
+        //double e[m->m], x[m->m], a;
+        double a;
+        vec_t e = vec_new(m->m);
+        vec_t x = vec_new(m->m);
         z1 = matrix_minor(z, k);
         if (z != m)
             matrix_delete(z);
         z = z1;
 
-        mcol(z, x, k);
-        a = vnorm(x, m->m);
+        mcol(z, x.v, k);
+        a = vnorm(x.v, m->m);
         if (m->v[k][k] > 0)
             a = -a;
 
         for (int i = 0; i < m->m; i++)
-            e[i] = (i == k) ? 1 : 0;
+            e.v[i] = (i == k) ? 1 : 0;
 
-        vmadd(x, e, a, e, m->m);
-        vdiv(e, vnorm(e, m->m), e, m->m);
-        q[k] = vmul(e, m->m);
+        //vmadd(x, e, a, e, m->m);
+        vmadd(x.v, e.v, a, e.v, m->m);
+        vdiv(e.v, vnorm(e.v, m->m), e.v, m->m);
+        q[k] = vmul(e.v, m->m);
         z1 = matrix_mul(q[k], z);
         if (z != m)
             matrix_delete(z);
         z = z1;
+
+        vec_delete(&e);
+        vec_delete(&x);
     }
     matrix_delete(z);
     *Q = q[0];

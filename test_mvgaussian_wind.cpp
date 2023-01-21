@@ -22,7 +22,7 @@ void exampleDataSet(int pointNum, std::vector<std::vector<double>> &data)
 
     int version = 15;
 
-    for (int i = 0; i < 15; i++)
+    for (int i = 0; i < version; i++)
     {
         std::vector<double> d;
         for (int j = 0; j < pointNum * pointNum; j++)
