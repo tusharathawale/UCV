@@ -115,6 +115,10 @@ int main(int argc, char *argv[])
 
     vtkmDataSet.AddPointField("ensembles", dataArraySOA);
 
+    std::cout << "checking input dataset" << std::endl;
+    vtkmDataSet.PrintSummary(std::cout);
+
+
     // check results
 
     // std::string outputFileNameOriginal = "./wind_pressure_200_original.vtk";
@@ -142,7 +146,6 @@ int main(int argc, char *argv[])
 
     // check results
     vtkmDataSet.AddCellField("cross_prob", crossProbability);
-    vtkmDataSet.PrintSummary(std::cout);
     std::string outputFileName = "./wind_pressure_200.vtk";
     vtkm::io::VTKDataSetWriter writeCross(outputFileName);
     writeCross.WriteDataSet(vtkmDataSet);

@@ -44,22 +44,23 @@ public:
 
         // vector is not good in cuda
         // std::vector<vtkm::Float64> meanArray(4, 0);
-        vtkm::Vec<vtkm::FloatDefault,4> meanArray;
+        vtkm::Vec<vtkm::FloatDefault, 4> meanArray;
         // derive type
         meanArray[0] = find_mean(inPointFieldVecEnsemble[0]);
         meanArray[1] = find_mean(inPointFieldVecEnsemble[1]);
         meanArray[2] = find_mean(inPointFieldVecEnsemble[2]);
         meanArray[3] = find_mean(inPointFieldVecEnsemble[3]);
 
-        //std::vector<double> cov_matrix;
-        vtkm::Vec<vtkm::FloatDefault,10> cov_matrix;
-        vtkm::IdComponent =10;
+        // std::vector<double> cov_matrix;
+        // for 4*4 matrix, there are 10 numbers at upper conner
+        vtkm::Vec<vtkm::FloatDefault, 10> cov_matrix;
+        vtkm::IdComponent index = 0;
         for (int p = 0; p < 4; ++p)
         {
             for (int q = p; q < 4; ++q)
             {
                 float cov = find_covariance(inPointFieldVecEnsemble[p], inPointFieldVecEnsemble[q], meanArray[p], meanArray[q]);
-                cov_matrix[index]=cov;
+                cov_matrix[index] = cov;
                 index++;
             }
         }
@@ -99,12 +100,22 @@ public:
                 if (p != q)
                 {
                     // assign value to another helf
-                     cov4by4->v[q][p] = cov4by4->v[p][q];
+                    cov4by4->v[q][p] = cov4by4->v[p][q];
                 }
                 covindex++;
             }
         }
+        printf("\nshow cov matrix on device kernel func\n");
         UCVMATH::matrix_show(cov4by4);
+
+        double eigenresult[4];
+        UCVMATH::eigen_solve_eigenvalues(cov4by4, 0.0001, 20, eigenresult);
+
+        for (int i = 0; i < 4; i++)
+        {
+            printf("%f ", eigenresult[i]);
+        }
+        printf("\n");
         /*
 
                 // sample the results from the distribution function and compute the cross probability
@@ -139,7 +150,7 @@ public:
     }
 
     // how to get this vtkm::Vec<double, 15> in an more efficient way
-    vtkm::Float64 find_mean(const vtkm::Vec<double, 15> &arr) const
+    VTKM_EXEC vtkm::Float64 find_mean(const vtkm::Vec<double, 15> &arr) const
     {
         vtkm::Float64 sum = 0;
         vtkm::Id num = arr.GetNumberOfComponents();
@@ -151,8 +162,8 @@ public:
         return mean;
     }
 
-    double find_covariance(const vtkm::Vec<double, 15> &arr1, const vtkm::Vec<double, 15> &arr2,
-                           double &mean1, double &mean2) const
+    VTKM_EXEC double find_covariance(const vtkm::Vec<double, 15> &arr1, const vtkm::Vec<double, 15> &arr2,
+                                     double &mean1, double &mean2) const
     {
         if (arr1.GetNumberOfComponents() != arr2.GetNumberOfComponents())
         {

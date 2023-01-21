@@ -27,7 +27,10 @@ typedef struct{
 VTKM_EXEC inline vec_t vec_new(int len){
     vec_t v;
     v.len=len;
-    v.v = (double*)calloc(sizeof(double), len);
+    v.v = (double*)malloc(sizeof(double)*len);
+    for(int i=0;i<len;i++){
+        v.v[i]=0;
+    }
     return v;
 }
 
@@ -42,7 +45,12 @@ VTKM_EXEC inline mat matrix_new(int m, int n)
     mat x = (mat)malloc(sizeof(mat_t));
     x->v = (double **)malloc(sizeof(double *) * m);
     // the init memory are all zero
-    x->v[0] = (double *)calloc(sizeof(double), m * n);
+    // cuda does not like calloc, malloc then give zero to it manually
+    // x->v[0] = (double *)calloc(sizeof(double), m * n);
+    x->v[0] = (double *)malloc(sizeof(double)*m * n);
+    for(int i = 0; i < m*n; i++){
+        x->v[0][i]=0;
+    }
     for (int i = 0; i < m; i++)
         x->v[i] = x->v[0] + n * i;
     x->m = m;
@@ -63,7 +71,12 @@ VTKM_EXEC inline mat matrix_new_eye(int m, int n)
 {
     mat x = (mat)malloc(sizeof(mat_t));
     x->v = (double **)malloc(sizeof(double *) * m);
-    x->v[0] = (double *)calloc(sizeof(double), m * n);
+    //cuda do not like calloc
+    //x->v[0] = (double *)calloc(sizeof(double), m * n);
+    x->v[0] = (double *)malloc(sizeof(double)* m * n);
+    for(int i = 0; i < m*n; i++){
+        x->v[0][i]=0;
+    }
     for (int i = 0; i < m; i++)
     {
         x->v[i] = x->v[0] + n * i;
