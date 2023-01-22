@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-build_jobs=1
+build_jobs=6
 mkdir -p ubuntu_cpu
 cd ubuntu_cpu
 
@@ -36,7 +36,9 @@ else
     cd $SOFTWARE_SRC_DIR
     git clone $VTKM_REPO
     cd $VTKM_SRC_DIR
-    git checkout v2.0.0-rc1
+    #git checkout v2.0.0-rc1
+    git checkout master
+    
     fi
     
     cd $HERE
@@ -78,9 +80,11 @@ if [ -d $UCV_INSTALL_DIR ]; then
     echo "====> skip, $UCV_INSTALL_DIR already exists," \
              "please remove it if you want to reinstall it"
 else
-
+    
+    #-DCMAKE_BUILD_TYPE=Release \
+    # using Debug mode for enabling the assert option in testing
     cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
-    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_BUILD_TYPE=Debug \
     -DBUILD_SHARED_LIBS=ON \
     -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 \
     

@@ -1,6 +1,6 @@
 
 #include "./ucv_matrix.h"
-#include <cassert>
+#include <assert.h> 
 
 using namespace UCVMATH;
 
@@ -22,9 +22,9 @@ double in4_2[4][4] = {
     {7.0, 6.0, 5.0, 6.0},
     {8.0, 7.0, 6.0, 5.0}};
 
-int compare_double(double a, double b)
+int equal_double(double a, double b)
 {
-    if (fabs(a - b) < 0.001)
+    if (fabs(a - b) < 0.0001)
     {
         return 1;
     }
@@ -55,15 +55,15 @@ void eigen_vectors_3by3()
     }
 
     printf("\n");
-    assert(compare_double(result[0], 13.94740) == 1);
-    assert(compare_double(result[1], -4.67428) == 1);
-    assert(compare_double(result[2], -1.27311) == 1);
+    assert(equal_double(result[0], 13.94740) == 1);
+    assert(equal_double(result[1], -4.67428) == 1);
+    assert(equal_double(result[2], -1.27311) == 1);
 }
 
 void eigen_vectors_4by4()
 {
 
-    int dim=4;
+    int dim = 4;
     mat x = matrix_new(dim, dim);
     for (int i = 0; i < dim; i++)
     {
@@ -82,10 +82,11 @@ void eigen_vectors_4by4()
     }
 
     printf("\n");
-    assert(compare_double(result[0], 6) == 1);
-    assert(compare_double(result[1], 0) == 1);
-    assert(compare_double(result[2], 0) == 1);
-    assert(compare_double(result[3], 0) == 1);
+    //the assert only works for debug case
+    assert(equal_double(result[0], 6.0)==1);
+    assert(equal_double(result[1], 0.0)==1);
+    assert(equal_double(result[2], 0.0)==1);
+    assert(equal_double(result[3], 0.0)==1);
 }
 
 void basic_qr_test()
@@ -118,11 +119,66 @@ void basic_qr_test()
     matrix_delete(m);
 }
 
+void test_invert_4by4matrix()
+{
+    int dim = 4;
+    mat x = matrix_new(dim, dim);
+    mat x_inv = matrix_new(dim, dim);
+    for (int i = 0; i < dim; i++)
+    {
+        for (int j = 0; j < dim; j++)
+        {
+            x->v[i][j] = in4_2[i][j];
+        }
+    }
+
+    bool inv_ok = invert4by4matrix(x, x_inv);
+
+    puts("x");
+    matrix_show(x);
+    puts("x_inv");
+    matrix_show(x_inv);
+
+    mat c1 = matrix_mul(x, x_inv);
+
+    puts("x*x_inv");
+    matrix_show(c1);
+
+    mat c2 = matrix_mul(x_inv, x);
+
+    puts("x_inv*x");
+    matrix_show(c2);
+
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            if (i == j)
+            {
+                assert(equal_double(c1->v[i][j], 1.0) == 1);
+                assert(equal_double(c1->v[i][j], 1.0) == 1);
+            }
+            else
+            {
+                assert(equal_double(c2->v[i][j], 0.0) == 1);
+                assert(equal_double(c2->v[i][j], 0.0) == 1);
+            }
+        }
+    }
+
+    matrix_delete(x);
+    matrix_delete(x_inv);
+    matrix_delete(c1);
+    matrix_delete(c2);
+
+    assert(inv_ok == true);
+}
+
 int main()
 {
-    // basic_qr_test();
+    basic_qr_test();
     eigen_vectors_3by3();
     eigen_vectors_4by4();
-
+    test_invert_4by4matrix();
     return 0;
 }

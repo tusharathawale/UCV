@@ -39,10 +39,26 @@ K_3 = np.array([[1.0,3.0,7.0,8.0],
                 [7.0,6.0,5.0,6.0],
                 [8.0,7.0,6.0,5.0]])
 
-w, v = LA.eig(K_2)
+# do not add -0 in the input parameter
+K_4 = np.array([[0.000,  0.000,    0.000,    0.000],
+                [0.000,   20.000,   60.000,   40.000],
+                [0.000,   60.000 , 180.000 , 120.000],
+                [0.000,   40.000,  120.000,   80.000]])
+
+K_5 = np.array([
+                [20.000,   60.000,   40.000],
+                [60.000 , 180.000 , 120.000],
+                [40.000,  120.000,   80.000]])
+
+w, v = LA.eig(K_4)
 
 # compute eigen values
 print("eigen values")
+
+for index, content in enumerate(w):
+    if content>-0.00001 and content < 0.00001:
+        w[index]=0
+
 print(w)
 #print(w[0])
 #print(w[1])
@@ -72,3 +88,9 @@ print(A)
 
 print("A*A^t")
 print(np.matmul(A, A.transpose()))
+
+index=0
+for i in range(4):
+    for j in range(4):
+        print(f'{index}:[{i}][{j}]')
+        index=index+1
