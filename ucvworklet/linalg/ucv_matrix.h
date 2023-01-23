@@ -37,12 +37,23 @@ namespace UCVMATH
         return v;
     }
 
+    VTKM_EXEC inline void vec_show(vec v)
+    {
+
+        for (int i = 0; i < v->len; i++)
+        {
+            printf("%f ", v->v[i]);
+        }
+        printf("\n");
+    }
+
     VTKM_EXEC inline void vec_delete(vec v)
     {
         if (v->v != NULL)
         {
             free(v->v);
         }
+        v->v = NULL;
     }
 
     VTKM_EXEC inline mat matrix_new(int m, int n)
@@ -52,11 +63,13 @@ namespace UCVMATH
         // the init memory are all zero
         // cuda does not like calloc, malloc then give zero to it manually
         // x->v[0] = (double *)calloc(sizeof(double), m * n);
+        // continus m*n elements
         x->v[0] = (double *)malloc(sizeof(double) * m * n);
         for (int i = 0; i < m * n; i++)
         {
             x->v[0][i] = 0;
         }
+        // set the position of the first pointer in each row
         for (int i = 0; i < m; i++)
             x->v[i] = x->v[0] + n * i;
         x->m = m;
@@ -136,7 +149,7 @@ namespace UCVMATH
         return y;
     }
 
-    VTKM_EXEC inline void matrix_mul_toz(mat x, mat y, mat *z)
+    VTKM_EXEC inline void matrix_mul_toz(mat x, mat y, mat z)
     {
         if (x->n != y->m)
         {
@@ -148,9 +161,9 @@ namespace UCVMATH
             for (int j = 0; j < y->n; j++)
             {
                 // init specific position of z as zero
-                (*z)->v[i][j] = 0;
+                z->v[i][j] = 0;
                 for (int k = 0; k < x->n; k++)
-                    (*z)->v[i][j] += x->v[i][k] * y->v[k][j];
+                    z->v[i][j] += x->v[i][k] * y->v[k][j];
             }
     }
 
@@ -207,14 +220,77 @@ namespace UCVMATH
         return sqrt(sum);
     }
 
+    VTKM_EXEC inline bool vec_equal(vec v1, vec v2)
+    {
+        if (v1->len != v2->len)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < v1->len; i++)
+        {
+            if (fabs(v1->v[i] - v2->v[i]) > 0.0001)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    VTKM_EXEC inline void vnorm_self(vec v)
+    {
+        double sum = 0;
+        for (int i = 0; i < v->len; i++)
+            sum += v->v[i] * v->v[i];
+
+        assert(sum != 0);
+
+        for (int i = 0; i < v->len; i++)
+        {
+            v->v[i] = v->v[i] / sqrt(sum);
+        }
+    }
+
     /* y = x / d */
+    // in the qr decomposition example
+    // the d might be zero, which is not good, how to handle this
     VTKM_EXEC inline double *vdiv(double x[], double d, double y[], int n)
     {
+        // check the norm value
+        // do not supposed to be zero
+        // printf("value of d %f\n",d);
+        // assert(fabs(d - 0.0) > 0.00001);
         for (int i = 0; i < n; i++)
-            y[i] = x[i] / d;
+        {
+            //just set it to 0 if the norm is zero
+            if (fabs(d - 0.0) < 0.00001)
+            {
+                y[i] = 0;
+            }
+            else
+            {
+                y[i] = x[i] / d;
+            }
+        }
+
         return y;
     }
 
+    /* matric times a vector, result is a vector*/
+    VTKM_EXEC inline void matrix_mul_vec(mat x, vec v, vec xv)
+    {
+        assert(x->n == v->len);
+        assert(x->m == xv->len);
+        for (int i = 0; i < x->m; i++)
+        {
+            for (int j = 0; j < x->n; j++)
+            {
+                // for each row
+                xv->v[i] += x->v[i][j] * v->v[j];
+            }
+        }
+        return;
+    }
     /* take c-th column of m, put in v */
     VTKM_EXEC inline double *mcol(mat m, double *v, int c)
     {
@@ -235,7 +311,7 @@ namespace UCVMATH
         }
         printf("\n");
     }
-
+    
     VTKM_EXEC inline void householder(mat m, mat *R, mat *Q)
     {
         // cuda compiler does not allow this dynamic allocation
@@ -316,6 +392,7 @@ namespace UCVMATH
         // refer to https://www.andreinc.net/2021/01/25/computing-eigenvalues-and-eigenvectors-using-qr-decomposition
         mat ak = matrix_copy_mat(x);
         mat qq = matrix_new_eye(x->m, x->m);
+        // matrix_show(qq);
         int i = 0;
         while (true)
         {
@@ -323,12 +400,18 @@ namespace UCVMATH
             // the hoiseholder will assign new r and q each time
             // TODO update householder to reuse the matrix
             householder(ak, &R, &Q);
+
             // mat m = matrix_mul(R, Q);
-            matrix_mul_toz(R, Q, &ak);
+            // puts("eigen m");
+            // matrix_show(m);
+
+            matrix_mul_toz(R, Q, ak);
             // ak = matrix_copy_mat(m);
-            // puts("Q");
+            // puts("eigen ak");
+            // matrix_show(ak);
+            // puts("eigen Q");
             // matrix_show(Q);
-            // puts("R");
+            // puts("eigen R");
             // matrix_show(R);
             // puts("m");
             // matrix_show(m);
@@ -344,7 +427,7 @@ namespace UCVMATH
             if (matrix_is_upper_triangular(ak, tol) || i > max_iter)
             {
                 // matrix_show(m);
-                // printf("iter %d\n", i);
+                //printf("iter %d\n", i);
                 break;
             }
             // delete m when it is not qualified
@@ -363,6 +446,8 @@ namespace UCVMATH
     // for large matrix, we need to use other method such as qr things to solve
     // the linear system
     // there is a mesa version online
+
+    // TODO, checking singularity for inverting the matrix 
 
     VTKM_EXEC inline bool invert4by4matrix(mat m, mat inv_m)
     {
@@ -500,17 +585,118 @@ namespace UCVMATH
         return true;
     }
 
-
     // go through each eigen values
     // if the eigen value is 0, the associated eigen vector is 0
     // other wise, using the inverse iteration algorithm to compute the eigen vector
     // https://en.wikipedia.org/wiki/Inverse_iteration
-    VTKM_EXEC inline void eigen_solve_eigen_values(double* eigen_vec_array, int num_eigen_vec)
+    VTKM_EXEC inline mat eigen_solve_eigen_vectors(mat m, double *eigen_value_array, int len_eigen_vec, int num_eigen_value, int iter_max)
     {
-        
 
+        // only works for 4*4 now, since the matirc reverse is designed for 4*4
+        // add more flexible linear system solver in future
+        assert(m->m == 4);
+        assert(m->n == 4);
+
+        // create the empty eigen vectors matrix
+        // raw of matrix represents the size of eigen vec
+        // col of matrix represents the number of eigen values
+        mat e_vec = matrix_new(len_eigen_vec, num_eigen_value);
+
+        // reuse this matrix each time
+        mat m_minus_lambda_i = matrix_new(m->m, m->n);
+        mat m_minus_lambda_i_inv = matrix_new(m->m, m->n);
+
+        // init b0
+        vec_t b_curr = vec_new(len_eigen_vec);
+        vec_t b_prev = vec_new(len_eigen_vec);
+        // puts("init bcurr");
+        // vec_show(&b_curr);
+
+        // init as 1
+        for (int i = 0; i < len_eigen_vec; i++)
+        {
+            b_prev.v[i] = 1.0;
+        }
+        // puts("init b_prev");
+        // vec_show(&b_prev);
+        //  go through each eigen value j
+        //  this is the colm of matrix
+        for (int j = 0; j < num_eigen_value; j++)
+        {
+            if (fabs(eigen_value_array[j] - 0) < 0.0001)
+            {
+                continue;
+            }
+            // finding iegen vector in an iterative way
+            int iter_num = 0;
+            // Preturb the eigenvalue a litle to prevent our right hand side matrix
+            // from becoming singular.
+            double lambda = eigen_value_array[j] + ((double)rand() / (double)RAND_MAX) * 0.000001;
+            // double lambda = eigen_value_array[j];
+            //  reset the m_minus_lambda_i
+            for (int ii = 0; ii < m->m; ii++)
+            {
+                for (int jj = 0; jj < m->n; jj++)
+                {
+                    if (ii == jj)
+                    {
+                        m_minus_lambda_i->v[ii][jj] = m->v[ii][jj] - lambda;
+                    }
+                    else
+                    {
+                        m_minus_lambda_i->v[ii][jj] = m->v[ii][jj];
+                    }
+                }
+            }
+
+            // puts("m_minus_lambda_i");
+            // matrix_show(m_minus_lambda_i);
+            //  solve equation bk+1 = m_minus_lambda_i_rev * bk i
+            bool invertok = invert4by4matrix(m_minus_lambda_i, m_minus_lambda_i_inv);
+            assert(invertok == true);
+            // puts("m_minus_lambda_i_inv");
+            // matrix_show(m_minus_lambda_i_inv);
+
+            while (iter_num < iter_max)
+            {
+                // check the diff between curr and prev
+                matrix_mul_vec(m_minus_lambda_i_inv, &b_prev, &b_curr);
+                // vec_show(&b_curr);
+                //  norm
+                vnorm_self(&b_curr);
+
+                if (vec_equal(&b_curr, &b_prev))
+                {
+                    // reult convert
+                    break;
+                }
+
+                // assign curr to prev
+                for (int i = 0; i < b_curr.len; i++)
+                {
+                    b_prev.v[i] = b_curr.v[i];
+                }
+
+                iter_num++;
+            }
+            // assign to the matrix
+            // printf("iter number %d\n", iter_num);
+            for (int i = 0; i < len_eigen_vec; i++)
+            {
+                e_vec->v[i][j] = b_curr.v[i];
+            }
+        }
+
+        matrix_delete(m_minus_lambda_i);
+        matrix_delete(m_minus_lambda_i_inv);
+
+        vec_delete(&b_curr);
+        vec_delete(&b_prev);
+
+        // if it is zero, the ith column of the eigen vector is zero
+
+        return e_vec;
     }
-
 
 }
 

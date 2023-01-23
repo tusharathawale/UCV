@@ -40,15 +40,20 @@ K_3 = np.array([[1.0,3.0,7.0,8.0],
                 [8.0,7.0,6.0,5.0]])
 
 # do not add -0 in the input parameter
-K_4 = np.array([[0.000,  0.000,    0.000,    0.000],
-                [0.000,   20.000,   60.000,   40.000],
-                [0.000,   60.000 , 180.000 , 120.000],
-                [0.000,   40.000,  120.000,   80.000]])
+K_4 = np.array([[0.0,  0.0,   0.0,   0.0],
+                [0.0,   20.000,   60.000,   40.000],
+                [0.0,   60.000 , 180.000 , 120.000],
+                [0.0,   40.000,  120.000,   80.000]])
 
 K_5 = np.array([
                 [20.000,   60.000,   40.000],
                 [60.000 , 180.000 , 120.000],
                 [40.000,  120.000,   80.000]])
+
+K_6 = np.array([[0.20, 0.60, 0.40, 0.80],
+                [0.60, 1.80, 1.20, 2.40],
+                [0.40, 1.20, 0.80, 1.60],
+                [0.80, 2.40, 1.60, 3.20]])
 
 w, v = LA.eig(K_4)
 
@@ -89,8 +94,11 @@ print(A)
 print("A*A^t")
 print(np.matmul(A, A.transpose()))
 
-index=0
-for i in range(4):
-    for j in range(4):
-        print(f'{index}:[{i}][{j}]')
-        index=index+1
+q, r = np.linalg.qr(K_6)
+
+print("q",q)
+print("r",r)
+  
+# Calculating the inverse of the matrix
+print("checking singular",np.linalg.det(K_6))
+print("checking singular", np.linalg.inv(K_6))
