@@ -70,11 +70,11 @@ public:
 
         // generate sample
 
-        UCVMATH::vec_t ucvmeanv = UCVMATH::vec_new(4);
+        UCVMATH::vec ucvmeanv = UCVMATH::vec_new(4);
 
         for (int i = 0; i < 4; i++)
         {
-            ucvmeanv.v[i] = meanArray[i];
+            ucvmeanv->v[i] = meanArray[i];
         }
 
         vtkm::IdComponent numSamples = 1000;
@@ -99,16 +99,24 @@ public:
             }
         }
         //printf("\nshow cov matrix for ucv_matrix func\n");
-        //UCVMATH::matrix_show(cov4by4);
+        //UCVMATH::matrix_show(ucvcov4by4);
+
+        
+        double result[4]={0};
+        UCVMATH::eigen_solve_eigenvalues(ucvcov4by4, 0.0001, 20, result);
+        //printf("updated eigen values %f %f %f %f\n",result[0],result[1],result[2],result[3]);
 
         // we have set the eigen value as 0 when it is
         // a really small negative value
-        UCVMATH::mat A = UCVMATH::eigen_vector_decomposition(ucvcov4by4);
+        // UCVMATH::mat A = UCVMATH::eigen_vector_decomposition(ucvcov4by4);:q
         //printf("\nucv computing transform matrix:\n");
         //UCVMATH::matrix_show(A);
         //std::cout << std::endl;
 
-        UCVMATH::mat sampleU = UCVMATH::eigen_vector_decomposition(4, numSamples);
+
+        /*
+        UCVMATH::mat sampleU = UCVMATH::norm_sampling(4, numSamples);
+        
         //printf("\nucv computing sampling matrix:\n");
         //UCVMATH::matrix_show(sampleU);
 
@@ -135,16 +143,16 @@ public:
                 numCrossings = numCrossings + 1;
             }
         }
-
+*/
         // cross probability
         //std::cout << "ucv numCrossings " << numCrossings << std::endl;
         outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
 
-        UCVMATH::matrix_delete(AUM);
-        UCVMATH::matrix_delete(sampleU);
-        UCVMATH::matrix_delete(A);
+        //UCVMATH::matrix_delete(AUM);
+        //UCVMATH::matrix_delete(sampleU);
+        //UCVMATH::matrix_delete(A);
         UCVMATH::matrix_delete(ucvcov4by4);
-        UCVMATH::vec_delete(&ucvmeanv);
+        UCVMATH::vec_delete(ucvmeanv);
 
        /*
         for debuging, comparing with eigen reuslts

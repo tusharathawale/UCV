@@ -33,14 +33,16 @@ namespace UCVMATH
         double *v = NULL;
     } vec_t, *vec;
 
-    VTKM_EXEC inline vec_t vec_new(int len)
+    VTKM_EXEC inline vec vec_new(int len)
     {
-        vec_t v;
-        v.len = len;
-        v.v = (double *)malloc(sizeof(double) * len);
+        vec v = (vec)malloc(sizeof(vec_t));
+        assert(v != NULL);
+        v->len = len;
+        v->v = (double *)malloc(sizeof(double) * len);
+        assert(v->v != NULL);
         for (int i = 0; i < len; i++)
         {
-            v.v[i] = 0;
+            v->v[i] = 0;
         }
         return v;
     }
@@ -61,18 +63,24 @@ namespace UCVMATH
         {
             free(v->v);
         }
-        v->v = NULL;
+        if (v != NULL)
+        {
+            free(v);
+        }
     }
 
     VTKM_EXEC inline mat matrix_new(int m, int n)
     {
         mat x = (mat)malloc(sizeof(mat_t));
+        assert(x != NULL);
         x->v = (double **)malloc(sizeof(double *) * m);
+        assert(x->v != NULL);
         // the init memory are all zero
         // cuda does not like calloc, malloc then give zero to it manually
         // x->v[0] = (double *)calloc(sizeof(double), m * n);
         // continus m*n elements
         x->v[0] = (double *)malloc(sizeof(double) * m * n);
+        assert(x->v[0] != NULL);
         for (int i = 0; i < m * n; i++)
         {
             x->v[0][i] = 0;
@@ -85,13 +93,14 @@ namespace UCVMATH
         return x;
     }
 
-    VTKM_EXEC inline mat *matrix_new_array(int m, int n, int array_num)
+    VTKM_EXEC inline mat *matrix_new_array_entry(int m, int n, int array_num)
     {
         mat *m_array = (mat *)malloc(sizeof(mat) * array_num);
-        for (int i = 0; i < array_num; i++)
-        {
-            m_array[i] = matrix_new(m, n);
-        }
+        assert(m_array != NULL);
+        //for (int i = 0; i < array_num; i++)
+        //{
+        //    m_array[i] = matrix_new(m, n);
+        //}
         return m_array;
     }
 
@@ -147,6 +156,15 @@ namespace UCVMATH
         return x;
     }
     */
+
+    VTKM_EXEC inline void matrix_copy_mat_exist(mat x, mat y)
+    {
+        assert(x->m==y->m);
+        assert(x->n==y->n);
+        for (int i = 0; i < x->m; i++)
+            for (int j = 0; j < x->n; j++)
+                y->v[i][j] = x->v[i][j];
+    }
 
     VTKM_EXEC inline mat matrix_copy_mat(mat x)
     {
@@ -226,7 +244,7 @@ namespace UCVMATH
         return c;
     }
 
-    /* m = I - v v^T */
+    /* m = I - 2* v v^T */
     VTKM_EXEC inline mat vmul(double v[], int n)
     {
         mat x = matrix_new(n, n);
@@ -344,7 +362,7 @@ namespace UCVMATH
     {
         // cuda compiler does not allow this dynamic allocation
         // mat q[m->m];
-        mat *q = matrix_new_array(m->m, m->m, m->m);
+        mat *q = matrix_new_array_entry(m->m, m->m, (m->m)-1);
 
         mat z = m, z1;
         for (int k = 0; k < m->n && k < m->m - 1; k++)
@@ -352,36 +370,46 @@ namespace UCVMATH
             // in c++ we can not declare array by this way
             // double e[m->m], x[m->m], a;
             double a;
-            vec_t e = vec_new(m->m);
-            vec_t x = vec_new(m->m);
+            vec e = vec_new(m->m);
+            vec x = vec_new(m->m);
+
+
             z1 = matrix_minor(z, k);
+
+
             if (z != m)
                 matrix_delete(z);
             z = z1;
 
-            mcol(z, x.v, k);
-            a = vnorm(x.v, m->m);
+
+            mcol(z, x->v, k);
+            a = vnorm(x->v, m->m);
+
+
             if (m->v[k][k] > 0)
                 a = -a;
 
             for (int i = 0; i < m->m; i++)
-                e.v[i] = (i == k) ? 1 : 0;
+                e->v[i] = (i == k) ? 1 : 0;
+
 
             // vmadd(x, e, a, e, m->m);
-            vmadd(x.v, e.v, a, e.v, m->m);
-            vdiv(e.v, vnorm(e.v, m->m), e.v, m->m);
-            q[k] = vmul(e.v, m->m);
+            vmadd(x->v, e->v, a, e->v, m->m);
+            vdiv(e->v, vnorm(e->v, m->m), e->v, m->m);
+            q[k] = vmul(e->v, m->m);
             z1 = matrix_mul(q[k], z);
             if (z != m)
                 matrix_delete(z);
             z = z1;
 
-            vec_delete(&e);
-            vec_delete(&x);
+            vec_delete(e);
+            vec_delete(x);
+
         }
         matrix_delete(z);
         *Q = q[0];
         *R = matrix_mul(q[0], m);
+
         for (int i = 1; i < m->n && i < m->m - 1; i++)
         {
             z1 = matrix_mul(q[i], *Q);
@@ -390,7 +418,12 @@ namespace UCVMATH
             *Q = z1;
             matrix_delete(q[i]);
         }
+
+        
         matrix_delete(q[0]);
+        //free entry itsself
+        free(q);
+
         z = matrix_mul(*Q, m);
         matrix_delete(*R);
         *R = z;
@@ -419,11 +452,15 @@ namespace UCVMATH
     {
         // refer to https://www.andreinc.net/2021/01/25/computing-eigenvalues-and-eigenvectors-using-qr-decomposition
         mat ak = matrix_copy_mat(x);
+
+
         mat qq = matrix_new_eye(x->m, x->m);
-        // matrix_show(qq);
+
         int i = 0;
         while (true)
         {
+
+            // it is not ok to init the empty pointer on cuda device by this way
             mat R, Q;
             // the hoiseholder will assign new r and q each time
             // TODO update householder to reuse the matrix
@@ -437,16 +474,16 @@ namespace UCVMATH
             // ak = matrix_copy_mat(m);
             // puts("eigen ak");
             // matrix_show(ak);
-            // puts("eigen Q");
-            // matrix_show(Q);
-            // puts("eigen R");
-            // matrix_show(R);
+            //printf("eigen Q\n");
+            //matrix_show(Q);
+            //printf("eigen R\n");
+            //matrix_show(R);
             // puts("m");
             // matrix_show(m);
 
             mat newq = matrix_mul(qq, Q);
             // update the qq to newq
-            qq = matrix_copy_mat(newq);
+            matrix_copy_mat_exist(newq, qq);
 
             matrix_delete(R);
             matrix_delete(Q);
@@ -474,6 +511,10 @@ namespace UCVMATH
                 eigen_array[i] = ak->v[i][i];
             }
         }
+
+        matrix_delete(ak);
+        matrix_delete(qq);
+
     }
 
     // inverse 4*4 matrix
@@ -604,8 +645,13 @@ namespace UCVMATH
                      m->v[0][2] * inv_m->v[2][0] +
                      m->v[0][3] * inv_m->v[3][0];
 
-        if (det == 0)
+        if (det == 0){
+            printf("singular matrix\n");
+            //matrix_show(m);
             return false;
+
+        }
+            
 
         det = 1.0 / det;
 
@@ -642,15 +688,15 @@ namespace UCVMATH
         mat m_minus_lambda_i_inv = matrix_new(m->m, m->n);
 
         // init b0
-        vec_t b_curr = vec_new(len_eigen_vec);
-        vec_t b_prev = vec_new(len_eigen_vec);
+        vec b_curr = vec_new(len_eigen_vec);
+        vec b_prev = vec_new(len_eigen_vec);
         // puts("init bcurr");
         // vec_show(&b_curr);
 
         // init as 1
         for (int i = 0; i < len_eigen_vec; i++)
         {
-            b_prev.v[i] = 1.0;
+            b_prev->v[i] = 1.0;
         }
         // puts("init b_prev");
         // vec_show(&b_prev);
@@ -667,7 +713,7 @@ namespace UCVMATH
             // Preturb the eigenvalue a litle to prevent our right hand side matrix
             // from becoming singular.
             // double lambda = eigen_value_array[j] + ((double)rand() / (double)RAND_MAX) * 0.000001;
-            double lambda = eigen_value_array[j];
+            double lambda = eigen_value_array[j]+0.000001;
             //  reset the m_minus_lambda_i
             for (int ii = 0; ii < m->m; ii++)
             {
@@ -695,21 +741,21 @@ namespace UCVMATH
             while (iter_num < iter_max)
             {
                 // check the diff between curr and prev
-                matrix_mul_vec(m_minus_lambda_i_inv, &b_prev, &b_curr);
+                matrix_mul_vec(m_minus_lambda_i_inv, b_prev, b_curr);
                 // vec_show(&b_curr);
                 //  norm
-                vnorm_self(&b_curr);
+                vnorm_self(b_curr);
 
-                if (vec_equal(&b_curr, &b_prev))
+                if (vec_equal(b_curr, b_prev))
                 {
                     // reult convert
                     break;
                 }
 
                 // assign curr to prev
-                for (int i = 0; i < b_curr.len; i++)
+                for (int i = 0; i < b_curr->len; i++)
                 {
-                    b_prev.v[i] = b_curr.v[i];
+                    b_prev->v[i] = b_curr->v[i];
                 }
 
                 iter_num++;
@@ -718,15 +764,15 @@ namespace UCVMATH
             // printf("iter number %d\n", iter_num);
             for (int i = 0; i < len_eigen_vec; i++)
             {
-                e_vec->v[i][j] = b_curr.v[i];
+                e_vec->v[i][j] = b_curr->v[i];
             }
         }
 
         matrix_delete(m_minus_lambda_i);
         matrix_delete(m_minus_lambda_i_inv);
 
-        vec_delete(&b_curr);
-        vec_delete(&b_prev);
+        vec_delete(b_curr);
+        vec_delete(b_prev);
 
         // if it is zero, the ith column of the eigen vector is zero
 
@@ -739,6 +785,7 @@ namespace UCVMATH
 
         // assuming m has eigen value and eigen vectors
         // assuming it is not singular matrix
+
         double result[4];
         eigen_solve_eigenvalues(x, 0.0001, 20, result);
 
@@ -763,8 +810,8 @@ namespace UCVMATH
         return A;
     }
 
-    // uniform distribution sampling matrix
-    VTKM_EXEC inline mat eigen_vector_decomposition(int row, int samples)
+    // gaussian distribution sampling matrix
+    VTKM_EXEC inline mat norm_sampling(int row, int samples)
     {
         // the row is legth of each sample vector
         // the col is the number of samples

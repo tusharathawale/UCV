@@ -33,9 +33,61 @@ void exampleDataSet(int pointNum, std::vector<std::vector<double>> &data)
     }
 }
 
+void initBackend()
+{
+  // init the vtkh device
+  char const *tmp = getenv("UCV_VTKM_BACKEND");
+  std::string backend;
+  if (tmp == nullptr)
+  {
+    std::cout << "no UCV_VTKM_BACKEND env, use openmp" << std::endl;
+    backend = "openmp";
+  }
+  else
+  {
+    backend = std::string(tmp);
+  }
+
+  //if (rank == 0)
+  //{
+    std::cout << "vtkm backend is:" << backend << std::endl;
+  //}
+
+  if (backend == "serial")
+  {
+      vtkm::cont::RuntimeDeviceTracker &device_tracker
+    = vtkm::cont::GetRuntimeDeviceTracker();
+  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagSerial());
+    
+  }
+  else if (backend == "openmp")
+  {
+      vtkm::cont::RuntimeDeviceTracker &device_tracker
+    = vtkm::cont::GetRuntimeDeviceTracker();
+  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagOpenMP());
+    
+  }
+  else if (backend == "cuda")
+  {
+      vtkm::cont::RuntimeDeviceTracker &device_tracker
+    = vtkm::cont::GetRuntimeDeviceTracker();
+  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
+    
+  }
+  else
+  {
+    std::cerr << " unrecognized backend " << backend << std::endl;
+  }
+  return;
+}
+
 int main(int argc, char *argv[])
 {
     vtkm::cont::Initialize(argc, argv);
+
+    // set backend
+    initBackend();
+
     // assuming the ensemble data set is already been extracted out
     // we test results by this dataset
     // https://github.com/MengjiaoH/Probabilistic-Marching-Cubes-C-/tree/main/datasets/txt_files/wind_pressure_200
@@ -52,11 +104,12 @@ int main(int argc, char *argv[])
 
     vtkm::Id xdim = 240;
     vtkm::Id ydim = 121;
-    vtkm::Id zdim = 1;
-
-    // vtkm::Id xdim = 2;
-    // vtkm::Id ydim = 2;
-    // vtkm::Id zdim = 1;
+    //vtkm::Id zdim = 1;
+     
+     //there are cuda errors start with the xdim=40 ydim =40
+     //vtkm::Id xdim = 40;
+     //vtkm::Id ydim = 40;
+     vtkm::Id zdim = 1;
 
     const vtkm::Id3 dims(xdim, ydim, zdim);
     vtkm::cont::DataSetBuilderUniform dataSetBuilder;
@@ -105,7 +158,9 @@ int main(int argc, char *argv[])
     // change aos array to soa array
     // for each points, there are 15 version
     int index = 0;
-    for (vtkm::IdComponent i = 0; i < gxdim * gydim; i++)
+    
+    //for (vtkm::IdComponent i = 0; i < gxdim * gydim; i++)
+    for (vtkm::IdComponent i = 0; i < xdim * ydim; i++)
     {
         Vec15 ensemble;
         //if (i == 0 || i == 1 || i == 240 || i == 241)
@@ -113,7 +168,6 @@ int main(int argc, char *argv[])
             // only insert for specific one for testing
             for (vtkm::IdComponent j = 0; j < 15; j++)
             {
-
                 ensemble[j] = dataArray[j][i];
             }
             dataArraySOA.WritePortal().Set(index, ensemble);

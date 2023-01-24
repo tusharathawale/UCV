@@ -55,6 +55,8 @@ K_6 = np.array([[0.20, 0.60, 0.40, 0.80],
                 [0.40, 1.20, 0.80, 1.60],
                 [0.80, 2.40, 1.60, 3.20]])
 
+
+
 w, v = LA.eig(K_4)
 
 # compute eigen values
@@ -101,4 +103,15 @@ print("r",r)
   
 # Calculating the inverse of the matrix
 print("checking singular",np.linalg.det(K_6))
-print("checking singular", np.linalg.inv(K_6))
+#print("checking singular", np.linalg.inv(K_6))
+
+
+
+K_7 = np.array([[-280.000,    0.000,    0.000,    0.000],
+                [0.000, -260.000,   60.000,   40.000],
+                [    0.000,   60.000, -100.000,  120.000],
+                [    0.000,   40.000,  120.000, -200.000]])
+
+print("checking singular k7",np.linalg.det(K_7))
+print("checking inverse", np.linalg.inv(K_7))
+

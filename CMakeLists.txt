@@ -32,6 +32,9 @@ set_target_properties(test_mvgaussian_wind PROPERTIES CUDA_SEPARABLE_COMPILATION
 target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES})
 
 
+add_executable(test_ucv_matrix ./ucvworklet/linalg/test_ucv_matrix.cpp)
+target_link_libraries(test_ucv_matrix ${VTKm_LIBRARIES})
+
 else()
  
 add_executable(ucv_extract ucv_extract.cpp)

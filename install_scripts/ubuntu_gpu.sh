@@ -94,7 +94,7 @@ if [ -d $UCV_INSTALL_DIR ]; then
 else
 
     cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
-    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_BUILD_TYPE=Debug \
     -DBUILD_SHARED_LIBS=OFF \
     -DUSE_GPU=ON \
     -DVTKm_CUDA_Architecture=${GPU_ARCHITECTURE} \

@@ -11,7 +11,12 @@
  * - fixed Cholesky by using LLT decomposition instead of LDLT that was not yielding
  *   a correctly rotated variance
  *   (see this http://stats.stackexchange.com/questions/48749/how-to-sample-from-a-multivariate-normal-given-the-pt-ldlt-p-decomposition-o )
+ 
+ *  the original code of this repo is here
+ *  https://github.com/MengjiaoH/Probabilistic-Marching-Cubes-C-
  */
+
+ 
 
 /**
  * Copyright (c) 2014 by Emmanuel Benazera beniz@droidnik.fr, All rights reserved.

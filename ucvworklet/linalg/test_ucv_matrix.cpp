@@ -76,7 +76,7 @@ void eigen_values_3by3()
         }
     }
 
-    double result[3];
+    double result[3]={0};
     eigen_solve_eigenvalues(x, 0.0001, 5, result);
 
     for (int i = 0; i < 3; i++)
@@ -88,6 +88,8 @@ void eigen_values_3by3()
     assert(equal_double(result[0], 13.94740) == 1);
     assert(equal_double(result[1], -4.67428) == 1);
     assert(equal_double(result[2], -1.27311) == 1);
+
+    matrix_delete(x);
 }
 
 void eigen_values_4by4()
@@ -104,7 +106,7 @@ void eigen_values_4by4()
         }
     }
 
-    double result[4];
+    double result[4]={0};
     eigen_solve_eigenvalues(x, 0.0001, 20, result);
 
     for (int i = 0; i < dim; i++)
@@ -118,6 +120,8 @@ void eigen_values_4by4()
     assert(equal_double(result[1], 0.0) == 1);
     assert(equal_double(result[2], 0.0) == 1);
     assert(equal_double(result[3], 0.0) == 1);
+
+    matrix_delete(x);
 }
 
 void basic_qr_test()
@@ -241,7 +245,7 @@ void eigen_vectors_4by4()
 
     // the assert only works for debug case
 
-    double result[4];
+    double result[4]={0};
     eigen_solve_eigenvalues(x, 0.0001, 20, result);
     for (int i = 0; i < 4; i++)
     {
@@ -264,6 +268,7 @@ void eigen_vectors_4by4()
     matrix_delete(R);
     matrix_delete(m);
     matrix_delete(x);
+    matrix_delete(eigen_vectors);
 }
 
 void test_eigen_vectors_decomposition()
