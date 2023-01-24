@@ -47,8 +47,8 @@ namespace Eigen
 {
   namespace internal
   {
-    //There are some issues to make the std library works on the cuda
-    //maybe use thrust to replace this
+    // There are some issues to make the std library works on the cuda
+    // maybe use thrust to replace this
     template <typename Scalar>
     struct scalar_normal_dist_op
     {
@@ -61,7 +61,6 @@ namespace Eigen
       inline const Scalar operator()(Index, Index = 0) const { return norm(rng); }
       inline void seed(const uint64_t &s) { rng.seed(s); }
     };
-    
 
     template <typename Scalar>
     std::mt19937 scalar_normal_dist_op<Scalar>::rng;
@@ -86,6 +85,7 @@ namespace Eigen
   template <typename Scalar>
   class EigenMultivariateNormal
   {
+  public:
     Matrix<Scalar, Dynamic, Dynamic> _covar;
     Matrix<Scalar, Dynamic, Dynamic> _transform;
     Matrix<Scalar, Dynamic, 1> _mean;
@@ -93,7 +93,6 @@ namespace Eigen
     bool _use_cholesky;
     SelfAdjointEigenSolver<Matrix<Scalar, Dynamic, Dynamic>> _eigenSolver; // drawback: this creates a useless eigenSolver when using Cholesky decomposition, but it yields access to eigenvalues and vectors
 
-  public:
     EigenMultivariateNormal(const Matrix<Scalar, Dynamic, 1> &mean, const Matrix<Scalar, Dynamic, Dynamic> &covar,
                             const bool use_cholesky = false, const uint64_t &seed = std::mt19937::default_seed)
         : _use_cholesky(use_cholesky)
@@ -123,7 +122,6 @@ namespace Eigen
         {
           // Use cholesky solver
           _transform = cholSolver.matrixL();
-
         }
         else
         {
@@ -139,10 +137,41 @@ namespace Eigen
     }
 
     /// Draw nn samples from the gaussian and return them
-    /// as columns in a Dynamic by nn matrix
+    /// as columns in a Dynamic by nn matrix, the number of column is nn
     Matrix<Scalar, Dynamic, -1> samples(int nn)
     {
-      return (_transform * Matrix<Scalar, Dynamic, -1>::NullaryExpr(_covar.rows(), nn, randN)).colwise() + _mean;
+      // std::cout << "NullaryExpr:" << std::endl;
+      //std::cout << Matrix<Scalar, Dynamic, -1>::NullaryExpr(_covar.rows(), nn, randN) << std::endl;
+
+      //std::cout << "_transform:" << std::endl;
+      //std::cout << _transform << std::endl;
+
+      //std::cout << "_transform*NullaryExpr:" << std::endl;
+
+      auto transN = _transform * Matrix<Scalar, Dynamic, -1>::NullaryExpr(_covar.rows(), nn, randN);
+      // std::cout << transN.rows() << " " << transN.cols() << std::endl;
+
+      // deep copy for checking the reulsts
+      // it seems that the random matrix is recreated each time it is called
+      //MatrixXd a(4, 20);
+      //for (int i = 0; i < 4; i++)
+      //{
+      //  for (int j = 0; j < 20; j++)
+      //  {
+      //    a(i, j) = transN(i, j);
+      //  }
+      //}
+      //std::cout << a << std::endl;
+
+      //std::cout << "mean" << std::endl;
+      // std::cout << _mean << std::endl;
+
+      // std::cout << "trancolmean" << std::endl;
+      // std::cout << (a).colwise() + _mean << std::endl;
+      // std::cout << (a).colwise() + _mean << std::endl;
+      // std::cout << (a).colwise() + _mean << std::endl;
+
+      return transN.colwise() + _mean;
     }
   }; // end class EigenMultivariateNormal
 } // end namespace Eigen

@@ -10,6 +10,14 @@
 
 #include <vtkm/Types.h>
 
+#ifdef VTKM_CUDA
+#include <thrust/random/linear_congruential_engine.h>
+#include <thrust/random/normal_distribution.h>
+#else
+// using the std library
+#include <random>
+#endif // VTKM_CUDA
+
 namespace UCVMATH
 {
 
@@ -179,6 +187,26 @@ namespace UCVMATH
         return r;
     }
 
+    // compute A*U+M, the M will be added to each column of the matrix
+    VTKM_EXEC inline mat matrix_mul_add_vector(mat A, mat U, vec M)
+    {
+        mat AU = matrix_mul(A, U);
+
+        assert(AU->m == M->len);
+
+        // go through each col of the matrix
+        for (int j = 0; j < AU->n; j++)
+        {
+            // adding vector into the matrix
+            for (int i = 0; i < AU->m; i++)
+            {
+                AU->v[i][j] += M->v[i];
+            }
+        }
+
+        return AU;
+    }
+
     VTKM_EXEC inline mat matrix_minor(mat x, int d)
     {
         mat m = matrix_new(x->m, x->n);
@@ -262,7 +290,7 @@ namespace UCVMATH
         // assert(fabs(d - 0.0) > 0.00001);
         for (int i = 0; i < n; i++)
         {
-            //just set it to 0 if the norm is zero
+            // just set it to 0 if the norm is zero
             if (fabs(d - 0.0) < 0.00001)
             {
                 y[i] = 0;
@@ -311,7 +339,7 @@ namespace UCVMATH
         }
         printf("\n");
     }
-    
+
     VTKM_EXEC inline void householder(mat m, mat *R, mat *Q)
     {
         // cuda compiler does not allow this dynamic allocation
@@ -427,7 +455,7 @@ namespace UCVMATH
             if (matrix_is_upper_triangular(ak, tol) || i > max_iter)
             {
                 // matrix_show(m);
-                //printf("iter %d\n", i);
+                // printf("iter %d\n", i);
                 break;
             }
             // delete m when it is not qualified
@@ -437,7 +465,14 @@ namespace UCVMATH
         // TODO, only consider n*n matrix now
         for (int i = 0; i < ak->m; i++)
         {
-            eigen_array[i] = ak->v[i][i];
+            if (fabs(ak->v[i][i] - 0) < 0.00001)
+            {
+                eigen_array[i] = 0.0;
+            }
+            else
+            {
+                eigen_array[i] = ak->v[i][i];
+            }
         }
     }
 
@@ -447,7 +482,7 @@ namespace UCVMATH
     // the linear system
     // there is a mesa version online
 
-    // TODO, checking singularity for inverting the matrix 
+    // TODO, checking singularity for inverting the matrix
 
     VTKM_EXEC inline bool invert4by4matrix(mat m, mat inv_m)
     {
@@ -631,8 +666,8 @@ namespace UCVMATH
             int iter_num = 0;
             // Preturb the eigenvalue a litle to prevent our right hand side matrix
             // from becoming singular.
-            double lambda = eigen_value_array[j] + ((double)rand() / (double)RAND_MAX) * 0.000001;
-            // double lambda = eigen_value_array[j];
+            // double lambda = eigen_value_array[j] + ((double)rand() / (double)RAND_MAX) * 0.000001;
+            double lambda = eigen_value_array[j];
             //  reset the m_minus_lambda_i
             for (int ii = 0; ii < m->m; ii++)
             {
@@ -698,6 +733,65 @@ namespace UCVMATH
         return e_vec;
     }
 
+    // input m and get its eigen vector decomposition a where a*a^t = m
+    VTKM_EXEC inline mat eigen_vector_decomposition(mat x)
+    {
+
+        // assuming m has eigen value and eigen vectors
+        // assuming it is not singular matrix
+        double result[4];
+        eigen_solve_eigenvalues(x, 0.0001, 20, result);
+
+        // update this when we have flexible linear system solver
+        assert(x->m == 4);
+        assert(x->n == 4);
+        mat eigen_vectors = eigen_solve_eigen_vectors(x, result, 4, 4, 20);
+
+        // create the diaganal matrix
+        mat diag = matrix_new(x->m, x->n);
+
+        for (int i = 0; i < x->m; i++)
+        {
+            diag->v[i][i] = sqrt(result[i]);
+        }
+
+        mat A = matrix_mul(eigen_vectors, diag);
+
+        matrix_delete(eigen_vectors);
+        matrix_delete(diag);
+
+        return A;
+    }
+
+    // uniform distribution sampling matrix
+    VTKM_EXEC inline mat eigen_vector_decomposition(int row, int samples)
+    {
+        // the row is legth of each sample vector
+        // the col is the number of samples
+
+        // use the thrust library on gpu here
+
+#ifdef VTKM_CUDA
+        thrust::minstd_rand rng;
+        thrust::random::normal_distribution<double> norm;
+#else
+        std::mt19937 rng;
+        rng.seed(std::mt19937::default_seed);
+        std::normal_distribution<double> norm;
+#endif // VTKM_CUDA
+
+        mat sample_matrix = matrix_new(row, samples);
+        for (int j = 0; j < samples; j++)
+        {
+            for (int i = 0; i < row; i++)
+            {
+                // using other sample mechanism such as thrust as needed
+                sample_matrix->v[i][j] = norm(rng);
+            }
+        }
+
+        return sample_matrix;
+    }
 }
 
 #endif

@@ -280,18 +280,7 @@ void test_eigen_vectors_decomposition()
         }
     }
 
-    double result[4];
-    eigen_solve_eigenvalues(x, 0.0001, 20, result);
-
-    mat eigen_vectors = eigen_solve_eigen_vectors(x, result, 4, 4, 20);
-
-    mat diag = matrix_new(dim, dim);
-    for (int i = 0; i < dim; i++)
-    {
-        diag->v[i][i] = sqrt(result[i]);
-    }
-
-    mat A = matrix_mul(eigen_vectors, diag);
+    mat A = eigen_vector_decomposition(x);
 
     mat A_trans = matrix_copy_mat(A);
     matrix_transpose(A_trans);
@@ -309,7 +298,6 @@ void test_eigen_vectors_decomposition()
     matrix_delete(A);
     matrix_delete(A_trans);
     matrix_delete(x);
-    matrix_delete(diag);
 }
 
 int main()
