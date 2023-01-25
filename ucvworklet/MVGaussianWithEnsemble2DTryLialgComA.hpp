@@ -78,7 +78,7 @@ public:
         }
 
         vtkm::IdComponent numSamples = 100;
-        vtkm::Id numCrossings = 0;
+        vtkm::Id numCrossings = 0.0;
         // this can be adapted to 3d case
 
         UCVMATH::mat ucvcov4by4 = UCVMATH::matrix_new(4, 4);
@@ -112,84 +112,15 @@ public:
         //printf("\nucv computing transform matrix:\n");
         //UCVMATH::matrix_show(A);
         //std::cout << std::endl;
-        
-        
-        UCVMATH::mat sampleU = UCVMATH::norm_sampling(4, numSamples);
-        
         UCVMATH::matrix_delete(ucvcov4by4); 
-        //printf("\nucv computing sampling matrix:\n");
-        //UCVMATH::matrix_show(sampleU);
-
-        //printf("\nucv ucvmeanv:\n");
-        //UCVMATH::vec_show(&ucvmeanv);
-
-        // computing the AU+M for each column
-        UCVMATH::mat AUM = UCVMATH::matrix_mul_add_vector(A, sampleU, ucvmeanv);
-        //printf("\nucv computing AUM:\n");
-        //UCVMATH::matrix_show(AUM);
-        UCVMATH::vec_delete(ucvmeanv);
         UCVMATH::matrix_delete(A);
-        UCVMATH::matrix_delete(sampleU);
+        UCVMATH::vec_delete(ucvmeanv);
 
-        for (vtkm::Id n = 0; n < numSamples; ++n)
-        {
-            if ((m_isovalue <= AUM->v[0][n]) && (m_isovalue <= AUM->v[1][n]) && (m_isovalue <= AUM->v[2][n]) && (m_isovalue <= AUM->v[3][n]))
-            {
-                numCrossings = numCrossings + 0;
-            }
-            else if ((m_isovalue >= AUM->v[0][n]) && (m_isovalue >= AUM->v[1][n]) && (m_isovalue >= AUM->v[2][n]) && (m_isovalue >= AUM->v[3][n]))
-            {
-                numCrossings = numCrossings + 0;
-            }
-            else
-            {
-                numCrossings = numCrossings + 1;
-            }
-        }
+        //TODO send A and mean array back to cpu
+        //then using another kernel to the sampling
 
-        // cross probability
-        //std::cout << "ucv numCrossings " << numCrossings << std::endl;
         outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
 
-        UCVMATH::matrix_delete(AUM);
-
-       /*
-        for debuging, comparing with eigen reuslts
-       
-        Eigen::Vector4d meanVector(4);
-        meanVector << meanArray[0], meanArray[1], meanArray[2], meanArray[3];
-
-        Eigen::Matrix4d cov4by4(4, 4);
-        cov4by4 << cov_matrix[0], cov_matrix[1], cov_matrix[2], cov_matrix[3],
-             cov_matrix[1], cov_matrix[4], cov_matrix[5], cov_matrix[6],
-             cov_matrix[2], cov_matrix[5], cov_matrix[7], cov_matrix[8],
-             cov_matrix[3], cov_matrix[6], cov_matrix[8], cov_matrix[9];
-
-        numSamples = 100;
-        //compute the eigen version for checking
-        Eigen::EigenMultivariateNormal<vtkm::Float64> normX_solver(meanVector, cov4by4);
-        auto R = normX_solver.samples(numSamples).transpose();
-        int eigenNCrossing=0;
-        for (vtkm::Id n = 0; n < numSamples; ++n)
-        {
-            // std::cout << R.coeff(n, 0) << " " << R.coeff(n, 1) << " " << R.coeff(n, 2) << " " << R.coeff(n, 3) << std::endl;
-            // TODO, how to make it dynamic for 2d and 3d case
-            if ((m_isovalue <= R.coeff(n, 0)) && (m_isovalue <= R.coeff(n, 1)) && (m_isovalue <= R.coeff(n, 2)) && (m_isovalue <= R.coeff(n, 3)))
-            {
-                eigenNCrossing = eigenNCrossing + 0;
-            }
-            else if ((m_isovalue >= R.coeff(n, 0)) && (m_isovalue >= R.coeff(n, 1)) && (m_isovalue >= R.coeff(n, 2)) && (m_isovalue >= R.coeff(n, 3)))
-            {
-                eigenNCrossing = eigenNCrossing + 0;
-            }
-            else
-            {
-                eigenNCrossing = eigenNCrossing + 1;
-            }
-        }
-
-        std::cout << "eigenNCrossing " << eigenNCrossing << std::endl;
-        */
     }
 
     // how to get this vtkm::Vec<double, 15> in an more efficient way
