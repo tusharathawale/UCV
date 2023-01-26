@@ -1,5 +1,5 @@
 import numpy as np
-
+from numpy import linalg as LA
 # this code is from https://www.andreinc.net/2021/01/25/computing-eigenvalues-and-eigenvectors-using-qr-decomposition
 # we use this for testing the correctness of c code
 
@@ -29,18 +29,34 @@ C = np.array([[1,-1,4,1],
                 [1,4,2,1],
                 [1,-1,0,1]])
 
+D = np.array([  [1, 1, 0, 1, 0, 1, 0, 1],
+                [1, 2, 1, 0, 1, 0, 1, 0],
+                [0, 1, 3, 1, 0, 1, 0, 1],
+                [1, 0, 1, 4, 1, 0, 1, 0],
+                [0, 1, 0, 1, 5, 1, 0, 1],
+                [1, 0, 1, 0, 1, 6, 1, 0],
+                [0, 1, 0, 1, 0, 1, 7, 1],
+                [1, 0, 1, 0, 1, 0, 1, 8]] )
+
 
 np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 
-print("B=")
-print((C))
+print("D=")
+print((D))
 
-Q, R = np.linalg.qr(C)
+Q, R = np.linalg.qr(D)
 print("eigen q")
 print(Q)
 print("eigen r")
 print(R)
+
+# check eigen values
+w, v = LA.eig(D)
+print("eigen values")
+print(w)
+print("eigen vectors")
+print(v)
 
 '''
 print("A=")

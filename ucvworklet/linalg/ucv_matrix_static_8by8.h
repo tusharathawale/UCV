@@ -18,9 +18,10 @@
 #include <random>
 #endif // VTKM_CUDA
 
+#define DIM 8
 namespace UCVMATH
 {
-    // typical 4*4 matrix
+    // typical 8*8 matrix
     // this should be updated as needed to support matrix
     // with different size, maybe use the macro defination similar to this
     // https://stackoverflow.com/questions/34820324/macro-for-dynamic-types-in-c
@@ -28,19 +29,19 @@ namespace UCVMATH
 
     typedef struct
     {
-        int m = 4, n = 4; // m is row, n is column
-        double v[4][4] = {0};
+        int m = DIM, n = DIM; // m is row, n is column
+        double v[DIM][DIM] = {0};
     } mat_t, *mat;
 
     typedef struct
     {
-        int len = 4;
-        double v[4] = {0};
+        int len = DIM;
+        double v[DIM] = {0};
     } vec_t, *vec;
 
     VTKM_EXEC inline vec_t vec_new(int len)
     {
-        assert(len == 4);
+        assert(len == DIM);
         vec_t v;
         for (int i = 0; i < len; i++)
         {
@@ -62,8 +63,8 @@ namespace UCVMATH
     VTKM_EXEC inline mat_t matrix_new_eye(int m, int n)
     {
         mat_t x;
-        assert(m == 4);
-        assert(n == 4);
+        assert(m == DIM);
+        assert(n == DIM);
         x.m = m;
         x.n = n;
         for (int i = 0; i < m; i++)
@@ -310,9 +311,9 @@ namespace UCVMATH
         // create a list, the 0 position is A the 1 position is H1...
         // the 3th position is H3
         assert(m->m == m->n);
-        assert(m->m == 4);
+        assert(m->m == DIM);
 
-        mat_t mat_list[4];
+        mat_t mat_list[DIM];
         mat_list[0] = *m;
         *R = *m;
         for (int k = 1; k < m->m; k++)
@@ -460,153 +461,75 @@ namespace UCVMATH
             }
         }
     }
+    // refer to
+    // https://www.cs.upc.edu/~jordicf/Teaching/programming/pdf4/MATH03_Gaussian-4slides.pdf
+    VTKM_EXEC inline vec_t back_substition(mat r, vec b)
+    {
+        vec_t x;
+        // r should be a up trangular matrix
+        bool ifupt = matrix_is_upper_triangular(r, 0.00001);
+        assert(ifupt == true);
 
-    // inverse 4*4 matrix
+        for (int i = DIM - 1; i >= 0; --i)
+        {
+            // The values x[i+1..n-1] have already been calculated
+            double s = 0;
+            for (int j = i + 1; j < DIM; ++j)
+            {
+                s = s + r->v[i][j] * x.v[j];
+            }
+            x.v[i] = (b->v[i] - s) / r->v[i][i];
+        }
+        return x;
+    }
+
+    // inverse 8*8 matrix
     // for small matrix, we use the direact inverse to solve the linear equation
     // for large matrix, we need to use other method such as qr things to solve
     // the linear system
     // there is a mesa version online
 
     // TODO, checking singularity for inverting the matrix
-
-    VTKM_EXEC inline bool invert4by4matrix(mat m, mat inv_m)
+    // refer to https://inst.eecs.berkeley.edu/~ee127/sp21/livebook/l_lineqs_solving.html
+    VTKM_EXEC inline void invert8by8matrix(mat m, mat inv_m)
     {
 
-        inv_m->v[0][0] = m->v[1][1] * m->v[2][2] * m->v[3][3] -
-                         m->v[1][1] * m->v[2][3] * m->v[3][2] -
-                         m->v[2][1] * m->v[1][2] * m->v[3][3] +
-                         m->v[2][1] * m->v[1][3] * m->v[3][2] +
-                         m->v[3][1] * m->v[1][2] * m->v[2][3] -
-                         m->v[3][1] * m->v[1][3] * m->v[2][2];
-
-        inv_m->v[1][0] = -m->v[1][0] * m->v[2][2] * m->v[3][3] +
-                         m->v[1][0] * m->v[2][3] * m->v[3][2] +
-                         m->v[2][0] * m->v[1][2] * m->v[3][3] -
-                         m->v[2][0] * m->v[1][3] * m->v[3][2] -
-                         m->v[3][0] * m->v[1][2] * m->v[2][3] +
-                         m->v[3][0] * m->v[1][3] * m->v[2][2];
-
-        inv_m->v[2][0] = m->v[1][0] * m->v[2][1] * m->v[3][3] -
-                         m->v[1][0] * m->v[2][3] * m->v[3][1] -
-                         m->v[2][0] * m->v[1][1] * m->v[3][3] +
-                         m->v[2][0] * m->v[1][3] * m->v[3][1] +
-                         m->v[3][0] * m->v[1][1] * m->v[2][3] -
-                         m->v[3][0] * m->v[1][3] * m->v[2][1];
-
-        inv_m->v[3][0] = -m->v[1][0] * m->v[2][1] * m->v[3][2] +
-                         m->v[1][0] * m->v[2][2] * m->v[3][1] +
-                         m->v[2][0] * m->v[1][1] * m->v[3][2] -
-                         m->v[2][0] * m->v[1][2] * m->v[3][1] -
-                         m->v[3][0] * m->v[1][1] * m->v[2][2] +
-                         m->v[3][0] * m->v[1][2] * m->v[2][1];
-
-        inv_m->v[0][1] = -m->v[0][1] * m->v[2][2] * m->v[3][3] +
-                         m->v[0][1] * m->v[2][3] * m->v[3][2] +
-                         m->v[2][1] * m->v[0][2] * m->v[3][3] -
-                         m->v[2][1] * m->v[0][3] * m->v[3][2] -
-                         m->v[3][1] * m->v[0][2] * m->v[2][3] +
-                         m->v[3][1] * m->v[0][3] * m->v[2][2];
-
-        inv_m->v[1][1] = m->v[0][0] * m->v[2][2] * m->v[3][3] -
-                         m->v[0][0] * m->v[2][3] * m->v[3][2] -
-                         m->v[2][0] * m->v[0][2] * m->v[3][3] +
-                         m->v[2][0] * m->v[0][3] * m->v[3][2] +
-                         m->v[3][0] * m->v[0][2] * m->v[2][3] -
-                         m->v[3][0] * m->v[0][3] * m->v[2][2];
-
-        inv_m->v[2][1] = -m->v[0][0] * m->v[2][1] * m->v[3][3] +
-                         m->v[0][0] * m->v[2][3] * m->v[3][1] +
-                         m->v[2][0] * m->v[0][1] * m->v[3][3] -
-                         m->v[2][0] * m->v[0][3] * m->v[3][1] -
-                         m->v[3][0] * m->v[0][1] * m->v[2][3] +
-                         m->v[3][0] * m->v[0][3] * m->v[2][1];
-
-        inv_m->v[3][1] = m->v[0][0] * m->v[2][1] * m->v[3][2] -
-                         m->v[0][0] * m->v[2][2] * m->v[3][1] -
-                         m->v[2][0] * m->v[0][1] * m->v[3][2] +
-                         m->v[2][0] * m->v[0][2] * m->v[3][1] +
-                         m->v[3][0] * m->v[0][1] * m->v[2][2] -
-                         m->v[3][0] * m->v[0][2] * m->v[2][1];
-
-        inv_m->v[0][2] = m->v[0][1] * m->v[1][2] * m->v[3][3] -
-                         m->v[0][1] * m->v[1][3] * m->v[3][2] -
-                         m->v[1][1] * m->v[0][2] * m->v[3][3] +
-                         m->v[1][1] * m->v[0][3] * m->v[3][2] +
-                         m->v[3][1] * m->v[0][2] * m->v[1][3] -
-                         m->v[3][1] * m->v[0][3] * m->v[1][2];
-
-        inv_m->v[1][2] = -m->v[0][0] * m->v[1][2] * m->v[3][3] +
-                         m->v[0][0] * m->v[1][3] * m->v[3][2] +
-                         m->v[1][0] * m->v[0][2] * m->v[3][3] -
-                         m->v[1][0] * m->v[0][3] * m->v[3][2] -
-                         m->v[3][0] * m->v[0][2] * m->v[1][3] +
-                         m->v[3][0] * m->v[0][3] * m->v[1][2];
-
-        inv_m->v[2][2] = m->v[0][0] * m->v[1][1] * m->v[3][3] -
-                         m->v[0][0] * m->v[1][3] * m->v[3][1] -
-                         m->v[1][0] * m->v[0][1] * m->v[3][3] +
-                         m->v[1][0] * m->v[0][3] * m->v[3][1] +
-                         m->v[3][0] * m->v[0][1] * m->v[1][3] -
-                         m->v[3][0] * m->v[0][3] * m->v[1][1];
-
-        inv_m->v[3][2] = -m->v[0][0] * m->v[1][1] * m->v[3][2] +
-                         m->v[0][0] * m->v[1][2] * m->v[3][1] +
-                         m->v[1][0] * m->v[0][1] * m->v[3][2] -
-                         m->v[1][0] * m->v[0][2] * m->v[3][1] -
-                         m->v[3][0] * m->v[0][1] * m->v[1][2] +
-                         m->v[3][0] * m->v[0][2] * m->v[1][1];
-
-        inv_m->v[0][3] = -m->v[0][1] * m->v[1][2] * m->v[2][3] +
-                         m->v[0][1] * m->v[1][3] * m->v[2][2] +
-                         m->v[1][1] * m->v[0][2] * m->v[2][3] -
-                         m->v[1][1] * m->v[0][3] * m->v[2][2] -
-                         m->v[2][1] * m->v[0][2] * m->v[1][3] +
-                         m->v[2][1] * m->v[0][3] * m->v[1][2];
-
-        inv_m->v[1][3] = m->v[0][0] * m->v[1][2] * m->v[2][3] -
-                         m->v[0][0] * m->v[1][3] * m->v[2][2] -
-                         m->v[1][0] * m->v[0][2] * m->v[2][3] +
-                         m->v[1][0] * m->v[0][3] * m->v[2][2] +
-                         m->v[2][0] * m->v[0][2] * m->v[1][3] -
-                         m->v[2][0] * m->v[0][3] * m->v[1][2];
-
-        inv_m->v[2][3] = -m->v[0][0] * m->v[1][1] * m->v[2][3] +
-                         m->v[0][0] * m->v[1][3] * m->v[2][1] +
-                         m->v[1][0] * m->v[0][1] * m->v[2][3] -
-                         m->v[1][0] * m->v[0][3] * m->v[2][1] -
-                         m->v[2][0] * m->v[0][1] * m->v[1][3] +
-                         m->v[2][0] * m->v[0][3] * m->v[1][1];
-
-        inv_m->v[3][3] = m->v[0][0] * m->v[1][1] * m->v[2][2] -
-                         m->v[0][0] * m->v[1][2] * m->v[2][1] -
-                         m->v[1][0] * m->v[0][1] * m->v[2][2] +
-                         m->v[1][0] * m->v[0][2] * m->v[2][1] +
-                         m->v[2][0] * m->v[0][1] * m->v[1][2] -
-                         m->v[2][0] * m->v[0][2] * m->v[1][1];
-
-        double det = m->v[0][0] * inv_m->v[0][0] +
-                     m->v[0][1] * inv_m->v[1][0] +
-                     m->v[0][2] * inv_m->v[2][0] +
-                     m->v[0][3] * inv_m->v[3][0];
-
-        if (det == 0)
+        // executing qr decomposition for 8*8 matrix
+        mat_t R, Q;
+        householder(m, &R, &Q);
+        // R*x = Q_t*b
+        // b is each colum of the I matrix
+        for (int j = 0; j < DIM; j++)
         {
-            printf("singular matrix\n");
-            // matrix_show(m);
-            return false;
-        }
+            // go through each column of I
+            vec_t b;
+            b.v[j] = 1.0;
 
-        det = 1.0 / det;
-
-        for (int i = 0; i < 4; i++)
-        {
-            for (int j = 0; j < 4; j++)
+            mat_t Qt = Q;
+            // transpose Qt
+            for (int ii = 0; ii < DIM; ii++)
             {
-                inv_m->v[i][j] = inv_m->v[i][j] * det;
+                for (int jj = ii + 1; jj < DIM; jj++)
+                {
+                    double temp = Qt.v[ii][jj];
+                    Qt.v[ii][jj] = Qt.v[jj][ii];
+                    Qt.v[jj][ii] = temp;
+                }
+            }
+
+            vec_t Qtb;
+            matrix_mul_vec(&Qt, &b, &Qtb);
+
+            // using back substituion for solving Rx = Qtb;
+            vec_t x = back_substition(&R, &Qtb);
+
+            // puting the x into the ith column of the inv_m matrix
+            for (int i = 0; i < DIM; i++)
+            {
+                inv_m->v[i][j] = x.v[i];
             }
         }
-
-        return true;
+        return;
     }
 
     // go through each eigen values
@@ -616,10 +539,10 @@ namespace UCVMATH
     VTKM_EXEC inline mat_t eigen_solve_eigen_vectors(mat m, double *eigen_value_array, int len_eigen_vec, int num_eigen_value, int iter_max)
     {
 
-        // only works for 4*4 now, since the matirc reverse is designed for 4*4
+        // only works for 8*8 now, since the matirc reverse is designed for 8*8
         // add more flexible linear system solver in future
-        assert(m->m == 4);
-        assert(m->n == 4);
+        assert(m->m == DIM);
+        assert(m->n == DIM);
 
         // create the empty eigen vectors matrix
         // raw of matrix represents the size of eigen vec
@@ -642,7 +565,7 @@ namespace UCVMATH
         //  this is the colm of matrix
         for (int j = 0; j < num_eigen_value; j++)
         {
-            if (fabs(eigen_value_array[j] - 0) < 0.0001)
+            if (fabs(eigen_value_array[j] - 0.0) < 0.0001)
             {
                 continue;
             }
@@ -652,6 +575,8 @@ namespace UCVMATH
             // from becoming singular.
             // double lambda = eigen_value_array[j] + ((double)rand() / (double)RAND_MAX) * 0.000001;
             double lambda = eigen_value_array[j] + 0.000001;
+
+            //  printf("debug %f\n", lambda);
             //  reset the m_minus_lambda_i
             for (int ii = 0; ii < m->m; ii++)
             {
@@ -671,10 +596,10 @@ namespace UCVMATH
             // puts("m_minus_lambda_i");
             // matrix_show(m_minus_lambda_i);
             //  solve equation bk+1 = m_minus_lambda_i_rev * bk i
-            bool invertok = invert4by4matrix(&m_minus_lambda_i, &m_minus_lambda_i_inv);
-            assert(invertok == true);
-            // puts("m_minus_lambda_i_inv");
-            // matrix_show(m_minus_lambda_i_inv);
+            invert8by8matrix(&m_minus_lambda_i, &m_minus_lambda_i_inv);
+
+            //puts("m_minus_lambda_i_inv");
+            //matrix_show(&m_minus_lambda_i_inv);
 
             // init as 1
             for (int i = 0; i < len_eigen_vec; i++)
@@ -692,7 +617,7 @@ namespace UCVMATH
 
                 if (vec_equal(&b_curr, &b_prev))
                 {
-                    // reult convert
+                    // results converge
                     break;
                 }
 
@@ -704,6 +629,7 @@ namespace UCVMATH
 
                 iter_num++;
             }
+
             // assign to the matrix
             // printf("iter number %d\n", iter_num);
             for (int i = 0; i < len_eigen_vec; i++)
@@ -724,13 +650,13 @@ namespace UCVMATH
         // assuming m has eigen value and eigen vectors
         // assuming it is not singular matrix
 
-        double result[4];
+        double result[DIM];
         eigen_solve_eigenvalues(x, 0.0001, 20, result);
 
         // update this when we have flexible linear system solver
-        assert(x->m == 4);
-        assert(x->n == 4);
-        mat_t eigen_vectors = eigen_solve_eigen_vectors(x, result, 4, 4, 20);
+        assert(x->m == DIM);
+        assert(x->n == DIM);
+        mat_t eigen_vectors = eigen_solve_eigen_vectors(x, result, DIM, DIM, 20);
 
         // create the diaganal matrix
         mat_t diag;
@@ -747,7 +673,7 @@ namespace UCVMATH
 
     VTKM_EXEC inline vec_t norm_sampling_vec(int row)
     {
-        assert(row == 4);
+        assert(row == DIM);
 #ifdef VTKM_CUDA
         thrust::minstd_rand rng;
         thrust::random::normal_distribution<double> norm;
