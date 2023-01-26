@@ -103,6 +103,8 @@ int main(int argc, char *argv[])
     vtkm::Id gydim = 121;
     
     //there are some memory issue on cuda if larger than 150*120
+    //vtkm::Id xdim = 2;
+    //vtkm::Id ydim = 2;
     vtkm::Id xdim = 240;
     vtkm::Id ydim = 121;
     //vtkm::Id zdim = 1;

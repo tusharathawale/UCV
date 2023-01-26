@@ -7,10 +7,18 @@ https://rosettacode.org/wiki/QR_decomposition#C
 
 https://github.com/madrury/linalg/blob/master/eigen.c
 
-https://rpubs.com/aaronsc32/qr-decomposition-householder
+https://rpubs.com/aaronsc32/qr-decomposition-householder 
+(it seems that the sign can be eigher positive or negative)
+
+https://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
+
 
 TODO, optimize the pipeline to aovid the memory issue
 
+ malloc will assign memory in global space, 
+ maybe update the code and try to do things in the stack space
+
+ 
 1 check the qr code, and decrease the mem allocation
 2 simplify the sampling operation, instead of malloc 1k size matrix at one time
   change it into the serial version

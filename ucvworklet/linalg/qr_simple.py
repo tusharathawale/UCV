@@ -17,10 +17,35 @@ A = np.array([[0,  0,   0,   0],
                 [0,   60.000 , 180.000 , 120.000],
                 [0,   40.000,  120.000,   80.000]])
 
+
+B = np.array([[0.200,    0.600,    0.400,    0.800],
+                [0.600,    1.800,    1.200,    2.400],
+                [0.400,    1.200,    0.800,    1.600],
+                [0.800,    2.400,    1.600,    3.200]])
+
+
+C = np.array([[1,-1,4,1],
+                [1,4,-2,1],
+                [1,4,2,1],
+                [1,-1,0,1]])
+
+
+np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
+
+
+print("B=")
+print((C))
+
+Q, R = np.linalg.qr(C)
+print("eigen q")
+print(Q)
+print("eigen r")
+print(R)
+
+'''
 print("A=")
 print((A))
 
-np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 def eigen_qr_simple(A, iterations=5):
     Ak = np.copy(A)
@@ -51,3 +76,4 @@ eigen_qr_simple(A)
 print(np.linalg.eigvals(A))
 
 # compute the eigen vectors based on eigen value
+'''

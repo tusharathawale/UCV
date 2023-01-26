@@ -4,7 +4,8 @@
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <cmath>
 
-#include "./linalg/ucv_matrix.h"
+// #include "./linalg/ucv_matrix.h"
+#include "./linalg/ucv_matrix_static_4by4.h"
 
 // use this as the results checking on cpu
 // #include "./eigenmvn.h"
@@ -36,17 +37,6 @@ public:
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
 
-        // TODO, extracting data from 4 vertexies and compute the uncertainty things
-        // this is supposed to be 4
-        // std::cout << "size of numVertexies " << numVertexies << std::endl;
-        // this is supposed to be 15
-        // std::cout << "ensemble number " << inPointFieldVecEnsemble[0].GetNumberOfComponents() << std::endl;
-
-        // this InPointFieldVecEnsemble here is supposed to be the Vec15
-        // TODO, compute the mean, cov and cross probability
-
-        // vector is not good in cuda
-        // std::vector<vtkm::Float64> meanArray(4, 0);
         vtkm::Vec<vtkm::FloatDefault, 4> meanArray;
         // derive type
         meanArray[0] = find_mean(inPointFieldVecEnsemble[0]);
@@ -70,18 +60,18 @@ public:
 
         // generate sample
 
-        UCVMATH::vec ucvmeanv = UCVMATH::vec_new(4);
+        UCVMATH::vec_t ucvmeanv;
 
         for (int i = 0; i < 4; i++)
         {
-            ucvmeanv->v[i] = meanArray[i];
+            ucvmeanv.v[i] = meanArray[i];
         }
 
-        vtkm::IdComponent numSamples = 100;
+        vtkm::IdComponent numSamples = 1000;
         vtkm::Id numCrossings = 0;
         // this can be adapted to 3d case
 
-        UCVMATH::mat ucvcov4by4 = UCVMATH::matrix_new(4, 4);
+        UCVMATH::mat_t ucvcov4by4;
         int covindex = 0;
         for (int p = 0; p < 4; ++p)
         {
@@ -89,55 +79,45 @@ public:
             {
                 // use the elements at the top half
                 // printf("%f ", cov_matrix[covindex]);
-                ucvcov4by4->v[p][q] = cov_matrix[covindex];
+                ucvcov4by4.v[p][q] = cov_matrix[covindex];
                 if (p != q)
                 {
                     // assign value to another helf
-                    ucvcov4by4->v[q][p] = ucvcov4by4->v[p][q];
+                    ucvcov4by4.v[q][p] = ucvcov4by4.v[p][q];
                 }
                 covindex++;
             }
         }
-        //printf("\nshow cov matrix for ucv_matrix func\n");
-        //UCVMATH::matrix_show(ucvcov4by4);
 
-        
-        //double result[4]={0};
-        //UCVMATH::eigen_solve_eigenvalues(ucvcov4by4, 0.0001, 20, result);
-        //printf("updated eigen values %f %f %f %f\n",result[0],result[1],result[2],result[3]);
+        UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov4by4);
 
-        // we have set the eigen value as 0 when it is
-        // a really small negative value
-        UCVMATH::mat A = UCVMATH::eigen_vector_decomposition(ucvcov4by4);
-        //printf("\nucv computing transform matrix:\n");
-        //UCVMATH::matrix_show(A);
-        //std::cout << std::endl;
-        
-        
-        UCVMATH::mat sampleU = UCVMATH::norm_sampling(4, numSamples);
-        
-        UCVMATH::matrix_delete(ucvcov4by4); 
-        //printf("\nucv computing sampling matrix:\n");
-        //UCVMATH::matrix_show(sampleU);
+        UCVMATH::vec_t sample_v;
+        UCVMATH::vec_t AUM;
 
-        //printf("\nucv ucvmeanv:\n");
-        //UCVMATH::vec_show(&ucvmeanv);
-
-        // computing the AU+M for each column
-        UCVMATH::mat AUM = UCVMATH::matrix_mul_add_vector(A, sampleU, ucvmeanv);
-        //printf("\nucv computing AUM:\n");
-        //UCVMATH::matrix_show(AUM);
-        UCVMATH::vec_delete(ucvmeanv);
-        UCVMATH::matrix_delete(A);
-        UCVMATH::matrix_delete(sampleU);
+#ifdef VTKM_CUDA
+        thrust::minstd_rand rng;
+        thrust::random::normal_distribution<double> norm;
+#else
+        std::mt19937 rng;
+        rng.seed(std::mt19937::default_seed);
+        std::normal_distribution<double> norm;
+#endif // VTKM_CUDA
 
         for (vtkm::Id n = 0; n < numSamples; ++n)
         {
-            if ((m_isovalue <= AUM->v[0][n]) && (m_isovalue <= AUM->v[1][n]) && (m_isovalue <= AUM->v[2][n]) && (m_isovalue <= AUM->v[3][n]))
+            // get sample vector
+            for (int i = 0; i < 4; i++)
+            {
+                // using other sample mechanism such as thrust as needed
+                sample_v.v[i] = norm(rng);
+            }
+            AUM = UCVMATH::matrix_mul_vec_add_vec(&A, &sample_v, &ucvmeanv);
+            //vec_show(&AUM);
+            if ((m_isovalue <= AUM.v[0]) && (m_isovalue <= AUM.v[1]) && (m_isovalue <= AUM.v[2]) && (m_isovalue <= AUM.v[3]))
             {
                 numCrossings = numCrossings + 0;
             }
-            else if ((m_isovalue >= AUM->v[0][n]) && (m_isovalue >= AUM->v[1][n]) && (m_isovalue >= AUM->v[2][n]) && (m_isovalue >= AUM->v[3][n]))
+            else if ((m_isovalue >= AUM.v[0]) && (m_isovalue >= AUM.v[1]) && (m_isovalue >= AUM.v[2]) && (m_isovalue >= AUM.v[3]))
             {
                 numCrossings = numCrossings + 0;
             }
@@ -148,48 +128,8 @@ public:
         }
 
         // cross probability
-        //std::cout << "ucv numCrossings " << numCrossings << std::endl;
+        // std::cout << "ucv numCrossings " << numCrossings << std::endl;
         outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
-
-        UCVMATH::matrix_delete(AUM);
-
-       /*
-        for debuging, comparing with eigen reuslts
-       
-        Eigen::Vector4d meanVector(4);
-        meanVector << meanArray[0], meanArray[1], meanArray[2], meanArray[3];
-
-        Eigen::Matrix4d cov4by4(4, 4);
-        cov4by4 << cov_matrix[0], cov_matrix[1], cov_matrix[2], cov_matrix[3],
-             cov_matrix[1], cov_matrix[4], cov_matrix[5], cov_matrix[6],
-             cov_matrix[2], cov_matrix[5], cov_matrix[7], cov_matrix[8],
-             cov_matrix[3], cov_matrix[6], cov_matrix[8], cov_matrix[9];
-
-        numSamples = 100;
-        //compute the eigen version for checking
-        Eigen::EigenMultivariateNormal<vtkm::Float64> normX_solver(meanVector, cov4by4);
-        auto R = normX_solver.samples(numSamples).transpose();
-        int eigenNCrossing=0;
-        for (vtkm::Id n = 0; n < numSamples; ++n)
-        {
-            // std::cout << R.coeff(n, 0) << " " << R.coeff(n, 1) << " " << R.coeff(n, 2) << " " << R.coeff(n, 3) << std::endl;
-            // TODO, how to make it dynamic for 2d and 3d case
-            if ((m_isovalue <= R.coeff(n, 0)) && (m_isovalue <= R.coeff(n, 1)) && (m_isovalue <= R.coeff(n, 2)) && (m_isovalue <= R.coeff(n, 3)))
-            {
-                eigenNCrossing = eigenNCrossing + 0;
-            }
-            else if ((m_isovalue >= R.coeff(n, 0)) && (m_isovalue >= R.coeff(n, 1)) && (m_isovalue >= R.coeff(n, 2)) && (m_isovalue >= R.coeff(n, 3)))
-            {
-                eigenNCrossing = eigenNCrossing + 0;
-            }
-            else
-            {
-                eigenNCrossing = eigenNCrossing + 1;
-            }
-        }
-
-        std::cout << "eigenNCrossing " << eigenNCrossing << std::endl;
-        */
     }
 
     // how to get this vtkm::Vec<double, 15> in an more efficient way
