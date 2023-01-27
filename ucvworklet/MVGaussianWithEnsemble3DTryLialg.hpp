@@ -4,14 +4,12 @@
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <cmath>
 #include <Eigen/Dense>
+#include "./linalg/ucv_matrix_static_8by8.h"
 
-#include "./eigenmvn.h"
-
-
-class MVGaussianWithEnsemble3D : public vtkm::worklet::WorkletVisitCellsWithPoints
+class MVGaussianWithEnsemble3DTryLialg : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    MVGaussianWithEnsemble3D(double isovalue, int numSamples)
+    MVGaussianWithEnsemble3DTryLialg(double isovalue, int numSamples)
         : m_isovalue(isovalue),m_numSamples(numSamples){};
 
     using ControlSignature = void(CellSetIn,
@@ -33,22 +31,22 @@ public:
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
-
-        if (numVertexies != 8)
+        const uint8_t numVertex3d = 8;
+        if (numVertexies != numVertex3d)
         {
-            //throw std::runtime_error("MVGaussianWithEnsemble3D expects 8 vertecies");
-            printf("MVGaussianWithEnsemble3D expects 8 vertecies\n");
+            //throw std::runtime_error("MVGaussianWithEnsemble3DTryLialg expects 8 vertecies");
+            printf("MVGaussianWithEnsemble3DTryLialg expects 8 vertecies\n");
             return;
         }
 
-        if (inMeanArray.GetNumberOfComponents() != 8)
+        if (inMeanArray.GetNumberOfComponents() != numVertex3d)
         {
-            //throw std::runtime_error("inMeanArray in MVGaussianWithEnsemble3D expects 8 vertecies");
-            printf("inMeanArray in MVGaussianWithEnsemble3D expects 8 vertecies\n");
+            //throw std::runtime_error("inMeanArray in MVGaussianWithEnsemble3DTryLialg expects 8 vertecies");
+            printf("inMeanArray in MVGaussianWithEnsemble3DTryLialg expects 8 vertecies\n");
             return;
         }
 
-        if (inPointFieldVecEnsemble[0].GetNumberOfComponents() != 64)
+        if (inPointFieldVecEnsemble[0].GetNumberOfComponents() != numVertex3d*numVertex3d)
         {
             //throw std::runtime_error("only support ensemble size 64 for blockSize equals to 4");
             printf("only support ensemble size 64 for blockSize equals to 4\n");
@@ -70,52 +68,69 @@ public:
         }
 
         // generate sample
+        UCVMATH::vec_t ucvmeanv;
 
-        Eigen::VectorXd meanVector(numVertexies);
-        for (int i = 0; i < numVertexies; i++)
+        for (int i = 0; i < numVertex3d; i++)
         {
-            meanVector(i) = inMeanArray[i];
+            ucvmeanv.v[i] = inMeanArray[i];
         }
+        
 
         // generate mean and cov matrix
-        Eigen::MatrixXd covMatrix(numVertexies, numVertexies);
-        
+        UCVMATH::mat_t ucvcov8by8;
         int covindex = 0;
-        for (int p = 0; p < numVertexies; ++p)
+        for (int p = 0; p < numVertex3d; ++p)
         {
-            for (int q = p; q < numVertexies; ++q)
+            for (int q = p; q < numVertex3d; ++q)
             {
                 // use the elements at the top half
-                covMatrix(p, q) = cov_matrix[covindex];
+                // printf("%f ", cov_matrix[covindex]);
+                ucvcov8by8.v[p][q] = cov_matrix[covindex];
                 if (p != q)
                 {
                     // assign value to another helf
-                    covMatrix(q, p) = covMatrix(p, q);
+                    ucvcov8by8.v[q][p] = ucvcov8by8.v[p][q];
                 }
                 covindex++;
             }
         }
-        // sample the results from the distribution function and compute the cross probability
         
         vtkm::IdComponent numSamples = this->m_numSamples;
-        
-        // TODO There are still some issues to make it work properly on for cuda version
-        // Maybe look at the possible alternative functions in future
-        Eigen::EigenMultivariateNormal<vtkm::FloatDefault> normX_solver(meanVector, covMatrix);
-        
-        auto R = normX_solver.samples(numSamples).transpose();
+
+        UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov8by8);
+
+        UCVMATH::vec_t sample_v;
+        UCVMATH::vec_t AUM;
+
+#ifdef VTKM_CUDA
+        thrust::minstd_rand rng;
+        thrust::random::normal_distribution<double> norm;
+#else
+        std::mt19937 rng;
+        rng.seed(std::mt19937::default_seed);
+        std::normal_distribution<double> norm;
+#endif // VTKM_CUDA
+
 
         vtkm::Id numCrossings = 0;
 
-        for (int n = 0; n < numSamples; ++n)
+        for (vtkm::Id n = 0; n < numSamples; ++n)
         {
             // std::cout << R.coeff(n, 0) << " " << R.coeff(n, 1) << " " << R.coeff(n, 2) << " " << R.coeff(n, 3) << std::endl;
+            // get sample vector
+            for (int i = 0; i < numVertex3d; i++)
+            {
+                // using other sample mechanism such as thrust as needed
+                sample_v.v[i] = norm(rng);
+            }
 
-            if ((m_isovalue <= R.coeff(n, 0)) && (m_isovalue <= R.coeff(n, 1)) && (m_isovalue <= R.coeff(n, 2)) && (m_isovalue <= R.coeff(n, 3)) && (m_isovalue <= R.coeff(n, 4)) && (m_isovalue <= R.coeff(n, 5)) && (m_isovalue <= R.coeff(n, 6)) && (m_isovalue <= R.coeff(n, 7)))
+            AUM = UCVMATH::matrix_mul_vec_add_vec(&A, &sample_v, &ucvmeanv);
+
+            if ((m_isovalue <= AUM.v[0]) && (m_isovalue <= AUM.v[1]) && (m_isovalue <= AUM.v[2]) && (m_isovalue <= AUM.v[3]) && (m_isovalue <= AUM.v[4]) && (m_isovalue <= AUM.v[5]) && (m_isovalue <= AUM.v[6]) && (m_isovalue <= AUM.v[7]))
             {
                 numCrossings = numCrossings + 0;
             }
-            else if ((m_isovalue >= R.coeff(n, 0)) && (m_isovalue >= R.coeff(n, 1)) && (m_isovalue >= R.coeff(n, 2)) && (m_isovalue >= R.coeff(n, 3)) && (m_isovalue >= R.coeff(n, 4)) && (m_isovalue >= R.coeff(n, 5)) && (m_isovalue >= R.coeff(n, 6)) && (m_isovalue >= R.coeff(n, 7)))
+            else if ((m_isovalue >= AUM.v[0]) && (m_isovalue >= AUM.v[1]) && (m_isovalue >= AUM.v[2]) && (m_isovalue >= AUM.v[3]) && (m_isovalue >= AUM.v[4]) && (m_isovalue >= AUM.v[5]) && (m_isovalue >= AUM.v[6]) && (m_isovalue >= AUM.v[7]))
             {
                 numCrossings = numCrossings + 0;
             }
@@ -125,7 +140,6 @@ public:
             }
         }
         // cross probability
-        
         outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
         
     }

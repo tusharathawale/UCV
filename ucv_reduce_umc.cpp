@@ -19,12 +19,14 @@
 
 #include <chrono>
 
-#ifdef VTKM_CUDA
-#else
+//#ifdef VTKM_CUDA
+//#else
 // the case three does not works well for cuda at this step
 #include "ucvworklet/ExtractingMeanRaw.hpp"
-#include "ucvworklet/MVGaussianWithEnsemble3D.hpp"
-#endif // VTKM_CUDA
+//#include "ucvworklet/MVGaussianWithEnsemble3D.hpp"
+#include "ucvworklet/MVGaussianWithEnsemble3DTryLialg.hpp"
+
+//#endif // VTKM_CUDA
 
 using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::Float64,
@@ -241,10 +243,10 @@ int main(int argc, char *argv[])
     }
     else if (distribution == "mg")
     {
-#ifdef VTKM_CUDA
-        std::cout << "multivariant gaussian does not work well for cuda now" << std::endl;
-        exit(0);
-#else
+//#ifdef VTKM_CUDA
+//        std::cout << "multivariant gaussian does not work well for cuda now" << std::endl;
+//        exit(0);
+//#else
         // multivariant gaussian
         // extracting the mean and rawdata for each hixel block
         // the raw data is used to compute the covariance matrix
@@ -282,10 +284,11 @@ int main(int argc, char *argv[])
         std::cout << "ExtractingMeanRawTime time: " << ExtractingMeanRawTime << std::endl;
 
         // step3 computing the cross probability
-        using WorkletTypeMVG = MVGaussianWithEnsemble3D;
+        //using WorkletTypeMVG = MVGaussianWithEnsemble3D;
+        using WorkletTypeMVG = MVGaussianWithEnsemble3DTryLialg;
         using DispatcherTypeMVG = vtkm::worklet::DispatcherMapTopology<WorkletTypeMVG>;
 
-        DispatcherTypeMVG dispatcherMVG(MVGaussianWithEnsemble3D{isovalue, 100});
+        DispatcherTypeMVG dispatcherMVG(WorkletTypeMVG{isovalue, 100});
         dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb);
 
         auto timer4 = std::chrono::steady_clock::now();
@@ -293,7 +296,7 @@ int main(int argc, char *argv[])
             std::chrono::duration<float, std::milli>(timer4 - timer3).count();
         std::cout << "MVGTime time: " << MVGTime << std::endl;
 
-#endif // VTKM_CUDA
+//#endif // VTKM_CUDA
     }
     else
     {

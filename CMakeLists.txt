@@ -61,8 +61,11 @@ target_link_libraries(compute_cases)
 add_executable(test_ucv_matrix ./ucvworklet/linalg/test_ucv_matrix.cpp)
 target_link_libraries(test_ucv_matrix ${VTKm_LIBRARIES})
 
-add_executable(test_ucv_matrix_static ./ucvworklet/linalg/test_ucv_matrix_static.cpp)
-target_link_libraries(test_ucv_matrix_static ${VTKm_LIBRARIES})
+add_executable(test_ucv_matrix_static_4by4 ./ucvworklet/linalg/test_ucv_matrix_static_4by4.cpp)
+target_link_libraries(test_ucv_matrix_static_4by4 ${VTKm_LIBRARIES})
+
+add_executable(test_ucv_matrix_static_8by8 ./ucvworklet/linalg/test_ucv_matrix_static_8by8.cpp)
+target_link_libraries(test_ucv_matrix_static_8by8 ${VTKm_LIBRARIES})
 
 endif()
 

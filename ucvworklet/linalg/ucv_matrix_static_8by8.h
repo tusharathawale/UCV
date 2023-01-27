@@ -73,7 +73,7 @@ namespace UCVMATH
             {
                 if (i == j)
                 {
-                    x.v[i][j] == 1;
+                    x.v[i][j] = 1;
                 }
                 else
                 {
@@ -467,7 +467,11 @@ namespace UCVMATH
     {
         vec_t x;
         // r should be a up trangular matrix
-        bool ifupt = matrix_is_upper_triangular(r, 0.00001);
+        bool ifupt = matrix_is_upper_triangular(r, 0.0001);
+        if (ifupt == false)
+        {
+            matrix_show(r);
+        }
         assert(ifupt == true);
 
         for (int i = DIM - 1; i >= 0; --i)
@@ -598,8 +602,8 @@ namespace UCVMATH
             //  solve equation bk+1 = m_minus_lambda_i_rev * bk i
             invert8by8matrix(&m_minus_lambda_i, &m_minus_lambda_i_inv);
 
-            //puts("m_minus_lambda_i_inv");
-            //matrix_show(&m_minus_lambda_i_inv);
+            // puts("m_minus_lambda_i_inv");
+            // matrix_show(&m_minus_lambda_i_inv);
 
             // init as 1
             for (int i = 0; i < len_eigen_vec; i++)
@@ -663,6 +667,29 @@ namespace UCVMATH
 
         for (int i = 0; i < x->m; i++)
         {
+            // switch eigen value to zero if it is a small value
+            // such as -0.0001
+            if (result[i] < 0)
+            {
+                if (fabs(result[i]) < 0.0002)
+                {
+                    //make sure all value is >0 and we can compute sqrt for it
+                    //there are some numerical errors for computing the eigen values
+                    result[i] = -result[i];
+                }
+                else
+                {
+                    // debug use
+                    matrix_show(x);
+                    printf("eigen values are\n");
+                    for (int j = 0; j < DIM; j++)
+                    {
+                        printf(" %f ", result[j]);
+                    }
+                    printf("the eigen value is supposed to be >=0\n");
+                    assert(false);
+                }
+            }
             diag.v[i][i] = sqrt(result[i]);
         }
 

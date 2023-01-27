@@ -207,16 +207,51 @@ void test_eigen_vectors_8by8()
 
     mat_t eigen_vectors = eigen_solve_eigen_vectors(&x, result, dim, dim, 20);
     matrix_show(&eigen_vectors);
-   
-    //do the checking to see if
-    //A*vx=lambda*vx
-}
 
+    // do the checking to see if
+    // A*vx=lambda*vx
+
+    for (int j = 0; j < DIM; j++)
+    {
+        vec_t avx;
+        vec_t eigenvct;
+        double eigenvalue = result[j];
+
+        // extract ith column eigen vector list
+        for (int i = 0; i < DIM; i++)
+        {
+            eigenvct.v[i] = eigen_vectors.v[i][j];
+        }
+
+        // vec_show(&eigenvct);
+
+        matrix_mul_vec(&x, &eigenvct, &avx);
+
+        // compare vector avx and lambda*eigenv
+        for (int i = 0; i < DIM; i++)
+        {
+            eigenvct.v[i] = eigenvalue * eigenvct.v[i];
+        }
+
+        // vec_show(&avx);
+        // vec_show(&eigenvct);
+
+        for (int i = 0; i < DIM; i++)
+        {
+            // there are some accumulated errors
+            // we have three digit precisions
+            if (fabs(avx.v[i] - eigenvct.v[i]) > 0.001){
+                printf("eigen value %f two number %f %f\n", eigenvalue, avx.v[i], eigenvct.v[i]);
+                assert(false);
+            }
+        }
+    }
+}
 void test_eigen_vectors_decomposition()
 {
     printf("---test_eigen_vectors_decomposition\n");
 
-    int dim = 4;
+    int dim = 8;
     mat_t x;
     for (int i = 0; i < dim; i++)
     {
@@ -276,6 +311,7 @@ int main()
     test_invert_8by8matrix();
     test_eigen_values_8by8();
     test_eigen_vectors_8by8();
-    // test_eigen_vectors_decomposition();
+    //this can only work for the case where eigen value is >=0
+    //test_eigen_vectors_decomposition();
     return 0;
 }

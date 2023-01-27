@@ -7,6 +7,8 @@
 
 #include "ucvworklet/CreateNewKey.hpp"
 #include "ucvworklet/MVGaussianWithEnsemble3D.hpp"
+//#include "ucvworklet/MVGaussianWithEnsemble3DTryLialg.hpp"
+
 #include "ucvworklet/ExtractingMeanRaw.hpp"
 
 #include <iostream>
@@ -106,12 +108,13 @@ void testMVGaussian3d()
 
 
     using WorkletTypeMVG = MVGaussianWithEnsemble3D;
+    //using WorkletTypeMVG =MVGaussianWithEnsemble3DTryLialg;
     using DispatcherTypeMVG = vtkm::worklet::DispatcherMapTopology<WorkletTypeMVG>;
 
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> crossProbability;
     double isovalue = 100;
 
-    DispatcherTypeMVG dispatcherMVG(MVGaussianWithEnsemble3D{isovalue, 1000});
+    DispatcherTypeMVG dispatcherMVG(WorkletTypeMVG{isovalue, 1000});
     dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProbability);
 
     std::cout << "crossProbability summary:" << std::endl;

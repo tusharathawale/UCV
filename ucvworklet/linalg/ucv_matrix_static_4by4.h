@@ -72,7 +72,7 @@ namespace UCVMATH
             {
                 if (i == j)
                 {
-                    x.v[i][j] == 1;
+                    x.v[i][j] = 1;
                 }
                 else
                 {
