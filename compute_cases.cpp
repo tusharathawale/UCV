@@ -80,10 +80,43 @@ void intToBisStr2()
     }
 }
 
+void BitToInt()
+{
+    // construct the case table
+    // test all 0
+    // output case is 0
+    // default is all zero
+    uint caseVal = 0;
+
+    // test all 1
+    // output case is 1111111 in binary
+    // which is 255 in int
+    for (uint i = 0; i < 8; i++)
+    {
+        // set ith digit as 1
+        caseVal = (1 << i) | caseVal;
+    }
+
+    std::cout << "caseVal all 1 " << caseVal << std::endl;
+
+    // half 1
+    caseVal = 0;
+    for (uint i = 0; i < 8; i++)
+    {
+        if (i <= 3)
+        {
+            // set ith digit as 1
+            caseVal = (1 << i) | caseVal;
+        }
+    }
+    std::cout << "caseVal half 1 " << caseVal << std::endl;
+}
+
 int main()
 {
     // std::vector<int> path;
     // traverse3d(0, 0, 8, path);
-    //intToBisStr();
+    // intToBisStr();
     intToBisStr2();
+    BitToInt();
 }

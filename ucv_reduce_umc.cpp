@@ -19,14 +19,14 @@
 
 #include <chrono>
 
-//#ifdef VTKM_CUDA
-//#else
-// the case three does not works well for cuda at this step
+// #ifdef VTKM_CUDA
+// #else
+//  the case three does not works well for cuda at this step
 #include "ucvworklet/ExtractingMeanRaw.hpp"
-//#include "ucvworklet/MVGaussianWithEnsemble3D.hpp"
+// #include "ucvworklet/MVGaussianWithEnsemble3D.hpp"
 #include "ucvworklet/MVGaussianWithEnsemble3DTryLialg.hpp"
 
-//#endif // VTKM_CUDA
+// #endif // VTKM_CUDA
 
 using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::Float64,
@@ -243,13 +243,13 @@ int main(int argc, char *argv[])
     }
     else if (distribution == "mg")
     {
-//#ifdef VTKM_CUDA
-//        std::cout << "multivariant gaussian does not work well for cuda now" << std::endl;
-//        exit(0);
-//#else
-        // multivariant gaussian
-        // extracting the mean and rawdata for each hixel block
-        // the raw data is used to compute the covariance matrix
+        // #ifdef VTKM_CUDA
+        //         std::cout << "multivariant gaussian does not work well for cuda now" << std::endl;
+        //         exit(0);
+        // #else
+        //  multivariant gaussian
+        //  extracting the mean and rawdata for each hixel block
+        //  the raw data is used to compute the covariance matrix
         if (xdim % 4 != 0 || ydim % 4 != 0 || zdim % 4 != 0)
         {
             // if the data size is not divided by blocksize
@@ -284,19 +284,19 @@ int main(int argc, char *argv[])
         std::cout << "ExtractingMeanRawTime time: " << ExtractingMeanRawTime << std::endl;
 
         // step3 computing the cross probability
-        //using WorkletTypeMVG = MVGaussianWithEnsemble3D;
+        // using WorkletTypeMVG = MVGaussianWithEnsemble3D;
         using WorkletTypeMVG = MVGaussianWithEnsemble3DTryLialg;
         using DispatcherTypeMVG = vtkm::worklet::DispatcherMapTopology<WorkletTypeMVG>;
 
-        DispatcherTypeMVG dispatcherMVG(WorkletTypeMVG{isovalue, 100});
-        dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb);
+        DispatcherTypeMVG dispatcherMVG(WorkletTypeMVG{isovalue, 1000});
+        dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb, numNonZeroProb, entropyResult);
 
         auto timer4 = std::chrono::steady_clock::now();
         float MVGTime =
             std::chrono::duration<float, std::milli>(timer4 - timer3).count();
         std::cout << "MVGTime time: " << MVGTime << std::endl;
 
-//#endif // VTKM_CUDA
+        // #endif // VTKM_CUDA
     }
     else
     {
@@ -304,18 +304,13 @@ int main(int argc, char *argv[])
     }
 
     // using the same type as the assumption for the output type
-    //std::cout << "===data summary for reduced data with uncertainty:" << std::endl;
+    // std::cout << "===data summary for reduced data with uncertainty:" << std::endl;
 
-    if (distribution != "mg")
-    {
-
-        reducedDataSet.AddCellField("entropy", entropyResult);
-        reducedDataSet.AddCellField("num_nonzero_prob", numNonZeroProb);
-    }
-
+    reducedDataSet.AddCellField("entropy", entropyResult);
+    reducedDataSet.AddCellField("num_nonzero_prob", numNonZeroProb);
     reducedDataSet.AddCellField("cross_prob", crossProb);
 
-    //reducedDataSet.PrintSummary(std::cout);
+    // reducedDataSet.PrintSummary(std::cout);
 
     // output the dataset into the vtk file for results checking
     std::string fileSuffix = fileName.substr(0, fileName.size() - 4);

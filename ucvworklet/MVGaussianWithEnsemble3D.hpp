@@ -110,7 +110,6 @@ public:
         for (int n = 0; n < numSamples; ++n)
         {
             // std::cout << R.coeff(n, 0) << " " << R.coeff(n, 1) << " " << R.coeff(n, 2) << " " << R.coeff(n, 3) << std::endl;
-
             if ((m_isovalue <= R.coeff(n, 0)) && (m_isovalue <= R.coeff(n, 1)) && (m_isovalue <= R.coeff(n, 2)) && (m_isovalue <= R.coeff(n, 3)) && (m_isovalue <= R.coeff(n, 4)) && (m_isovalue <= R.coeff(n, 5)) && (m_isovalue <= R.coeff(n, 6)) && (m_isovalue <= R.coeff(n, 7)))
             {
                 numCrossings = numCrossings + 0;

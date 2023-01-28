@@ -146,6 +146,7 @@ public:
 
         // go through each option in the case table
         // 1 is positive 0 is negative
+        // from case to the cross probability
         for (vtkm::UInt16 i = 0; i < 256; i++)
         {
             vtkm::FloatDefault currProb = 1.0;
