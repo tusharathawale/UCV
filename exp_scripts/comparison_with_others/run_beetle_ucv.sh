@@ -24,7 +24,7 @@ ln -s $CURRDIR/../../install_scripts/summit_cpu/install/UCV/ucv_reduce_umc ucv_u
 
 ln -s $CURRDIR/../../install_scripts/summit_gpu/install/UCV/ucv_reduce_umc ucv_umc_gpu
 
-DATANAME=beetle_494_832_832.vtk
+DATANAME=beetle_496_832_832.vtk
 DATASETPATH=/gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/$DATANAME
 
 # set openmp thread
@@ -35,11 +35,17 @@ jsrun -n1 -a1 -c1 -g0 -bpacked:1 ./ucv_umc_cpu $DATASETPATH ground_truth uni 4 9
 
 jsrun -n1 -a1 -c1 -g0 -bpacked:1 ./ucv_umc_cpu $DATASETPATH ground_truth ig 4 900 &> ucv_umc_cpu_serial_ig.log
 
+jsrun -n1 -a1 -c1 -g0 -bpacked:1 ./ucv_umc_cpu $DATASETPATH ground_truth mg 4 900 &> ucv_umc_cpu_serial_mg.log
+
+
 export OMP_NUM_THREADS=42
 
 jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_umc_cpu $DATASETPATH ground_truth uni 4 900 &> ucv_umc_cpu_uni.log
 
 jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_umc_cpu $DATASETPATH ground_truth ig 4 900 &> ucv_umc_cpu_ig.log
+
+jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_umc_cpu $DATASETPATH ground_truth mg 4 900 &> ucv_umc_cpu_mg.log
+
 
 export OMP_NUM_THREADS=1
 
@@ -51,10 +57,18 @@ export OMP_NUM_THREADS=1
 jsrun -n1 -a1 -c1 -g1 ./ucv_umc_gpu $DATASETPATH ground_truth uni 4 900 &> ucv_umc_gpu_uni_1.log
 
 # executing it another time, it seems there are some extra work or cache for the first tun
+# the uniform distribution
 jsrun -n1 -a1 -c1 -g1 ./ucv_umc_gpu $DATASETPATH ground_truth uni 4 900 &> ucv_umc_gpu_uni_2.log
 
 
+# the indepedent gaussin distribution
 jsrun -n1 -a1 -c1 -g1 ./ucv_umc_gpu $DATASETPATH ground_truth ig 4 900 &> ucv_umc_gpu_ig.log
+
+
+# the multivariant gaussin distribution
+jsrun -n1 -a1 -c1 -g1 ./ucv_umc_gpu $DATASETPATH ground_truth mg 4 900 &> ucv_umc_gpu_mg.log
+
+# add the results for the mg 
 
 # copy things back
 
