@@ -40,6 +40,8 @@ jsrun -n1 -a1 -c1 -g0 -bpacked:1 ./ucv_umc_cpu $DATASETPATH ground_truth mg 4 90
 
 export OMP_NUM_THREADS=42
 
+export UCV_VTKM_BACKEND=openmp
+
 jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_umc_cpu $DATASETPATH ground_truth uni 4 900 &> ucv_umc_cpu_uni.log
 
 jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_umc_cpu $DATASETPATH ground_truth ig 4 900 &> ucv_umc_cpu_ig.log
@@ -53,6 +55,7 @@ export OMP_NUM_THREADS=1
 # the time of extracting key will be influenced by the cache time of cpu
 # how to reset the gpu memory to avoid it?
 
+export UCV_VTKM_BACKEND=cuda
 
 jsrun -n1 -a1 -c1 -g1 ./ucv_umc_gpu $DATASETPATH ground_truth uni 4 900 &> ucv_umc_gpu_uni_1.log
 
