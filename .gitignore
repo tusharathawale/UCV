@@ -6,3 +6,5 @@ src/
 *.vti
 *.log
 *.dat
+*.png
+*.pdf

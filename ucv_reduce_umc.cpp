@@ -28,6 +28,54 @@
 
 // #endif // VTKM_CUDA
 
+void initBackend()
+{
+  // init the vtkh device
+  char const *tmp = getenv("UCV_VTKM_BACKEND");
+  std::string backend;
+  if (tmp == nullptr)
+  {
+    std::cout << "no UCV_VTKM_BACKEND env, use openmp" << std::endl;
+    backend = "openmp";
+  }
+  else
+  {
+    backend = std::string(tmp);
+  }
+
+  //if (rank == 0)
+  //{
+    std::cout << "vtkm backend is:" << backend << std::endl;
+  //}
+
+  if (backend == "serial")
+  {
+      vtkm::cont::RuntimeDeviceTracker &device_tracker
+    = vtkm::cont::GetRuntimeDeviceTracker();
+  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagSerial());
+    
+  }
+  else if (backend == "openmp")
+  {
+      vtkm::cont::RuntimeDeviceTracker &device_tracker
+    = vtkm::cont::GetRuntimeDeviceTracker();
+  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagOpenMP());
+    
+  }
+  else if (backend == "cuda")
+  {
+      vtkm::cont::RuntimeDeviceTracker &device_tracker
+    = vtkm::cont::GetRuntimeDeviceTracker();
+  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
+    
+  }
+  else
+  {
+    std::cerr << " unrecognized backend " << backend << std::endl;
+  }
+  return;
+}
+
 using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::Float64,
                                   vtkm::Int8,
@@ -40,6 +88,7 @@ using SupportedTypes = vtkm::List<vtkm::Float32,
 
 int main(int argc, char *argv[])
 {
+    initBackend();
     // init the vtkm (set the backend and log level here)
     vtkm::cont::Initialize(argc, argv);
 
