@@ -18,7 +18,7 @@
 #include "ucvworklet/EntropyUniform.hpp"
 #include "ucvworklet/EntropyIndependentGaussian.hpp"
 
-#include <chrono>
+//#include <chrono>
 
 // #ifdef VTKM_CUDA
 // #else
@@ -29,31 +29,32 @@
 
 // #endif // VTKM_CUDA
 
-int oneDBlocks = 128;
-int threadsPerBlock = 128;
+int oneDBlocks = 16;
+int threadsPerBlock = 16;
 #ifdef VTKM_CUDA
 vtkm::cont::cuda::ScheduleParameters
-mySchedParams(char const* name,
+mySchedParams(char const *name,
               int major,
               int minor,
               int multiProcessorCount,
               int maxThreadsPerMultiProcessor,
               int maxThreadsPerBlock)
 {
-  vtkm::cont::cuda::ScheduleParameters p;
-  p.one_d_blocks = oneDBlocks;
-  p.one_d_threads_per_block = threadsPerBlock;
+    vtkm::cont::cuda::ScheduleParameters p;
+    p.one_d_blocks = oneDBlocks;
+    p.one_d_threads_per_block = threadsPerBlock;
 
-  return p;
+    return p;
 }
 #endif
 
+std::string backend = "openmp";
 
 void initBackend()
 {
     // init the vtkh device
     char const *tmp = getenv("UCV_VTKM_BACKEND");
-    std::string backend;
+
     if (tmp == nullptr)
     {
         std::cout << "no UCV_VTKM_BACKEND env, use openmp" << std::endl;
@@ -121,20 +122,20 @@ int main(int argc, char *argv[])
 
 #ifdef VTKM_CUDA
 
-    char const *nblock = getenv("UCV_GPU_NUMBLOCK");
-    char const *nthread = getenv("UCV_GPU_BLOCKPERTHREAD");
-    if (nblock != NULL)
+    if (backend == "cuda")
     {
-        oneDBlocks = std::stoi(std::string(nblock));
+        char const *nblock = getenv("UCV_GPU_NUMBLOCK");
+        char const *nthread = getenv("UCV_GPU_BLOCKPERTHREAD");
+        if (nblock != NULL && nthread != NULL)
+        {
+            oneDBlocks = std::stoi(std::string(nblock));
+            threadsPerBlock = std::stoi(std::string(nthread));
+            // the input value for the init scheduled parameter is a function
+            vtkm::cont::cuda::InitScheduleParameters(mySchedParams);
+            std::cout << "cuda parameters: " << oneDBlocks << " " << threadsPerBlock << std::endl;
+        }
     }
-    if (nthread != NULL)
-    {
-        threadsPerBlock = std::stoi(std::string(nthread));
-    }
-    //the input value for the init scheduled parameter is a function
-    vtkm::cont::cuda::InitScheduleParameters(mySchedParams);
 
-    std::cout << "cuda parameters: " << oneDBlocks<< " " << threadsPerBlock << std::endl;
 #endif
 
     // load the dataset (beetles data set, structured one)

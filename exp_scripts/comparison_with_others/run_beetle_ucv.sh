@@ -35,7 +35,8 @@ jsrun -n1 -a1 -c1 -g0 -bpacked:1 ./ucv_umc_cpu $DATASETPATH ground_truth uni 4 9
 
 jsrun -n1 -a1 -c1 -g0 -bpacked:1 ./ucv_umc_cpu $DATASETPATH ground_truth ig 4 900 &> ucv_umc_cpu_serial_ig.log
 
-jsrun -n1 -a1 -c1 -g0 -bpacked:1 ./ucv_umc_cpu $DATASETPATH ground_truth mg 4 900 &> ucv_umc_cpu_serial_mg.log
+#this one is time consuming, add it when it is necessary
+#jsrun -n1 -a1 -c1 -g0 -bpacked:1 ./ucv_umc_cpu $DATASETPATH ground_truth mg 4 900 &> ucv_umc_cpu_serial_mg.log
 
 
 export OMP_NUM_THREADS=42
@@ -57,8 +58,11 @@ export OMP_NUM_THREADS=1
 
 export UCV_VTKM_BACKEND=cuda
 
-export UCV_GPU_NUMBLOCK=256
-export UCV_GPU_BLOCKPERTHREAD=128
+#double checking what are good proper parameters here
+#export UCV_GPU_NUMBLOCK=256
+#export UCV_GPU_BLOCKPERTHREAD=128
+unset UCV_GPU_NUMBLOCK
+unset UCV_GPU_BLOCKPERTHREAD
 
 jsrun -n1 -a1 -c1 -g1 ./ucv_umc_gpu $DATASETPATH ground_truth uni 4 900 &> ucv_umc_gpu_uni_1.log
 
