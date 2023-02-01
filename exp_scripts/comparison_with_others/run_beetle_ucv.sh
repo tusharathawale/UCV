@@ -57,6 +57,9 @@ export OMP_NUM_THREADS=1
 
 export UCV_VTKM_BACKEND=cuda
 
+export UCV_GPU_NUMBLOCK=256
+export UCV_GPU_BLOCKPERTHREAD=128
+
 jsrun -n1 -a1 -c1 -g1 ./ucv_umc_gpu $DATASETPATH ground_truth uni 4 900 &> ucv_umc_gpu_uni_1.log
 
 # executing it another time, it seems there are some extra work or cache for the first tun

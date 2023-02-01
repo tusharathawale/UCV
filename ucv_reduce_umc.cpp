@@ -29,24 +29,25 @@
 
 // #endif // VTKM_CUDA
 
-int oneDBlocks = 256;
+int oneDBlocks = 128;
 int threadsPerBlock = 128;
 #ifdef VTKM_CUDA
 vtkm::cont::cuda::ScheduleParameters
-mySchedParams(char const *name,
+mySchedParams(char const* name,
               int major,
               int minor,
               int multiProcessorCount,
               int maxThreadsPerMultiProcessor,
               int maxThreadsPerBlock)
 {
-    vtkm::cont::cuda::ScheduleParameters p;
-    p.one_d_blocks = oneDBlocks;
-    p.one_d_threads_per_block = threadsPerBlock;
+  vtkm::cont::cuda::ScheduleParameters p;
+  p.one_d_blocks = oneDBlocks;
+  p.one_d_threads_per_block = threadsPerBlock;
 
-    return p;
+  return p;
 }
 #endif
+
 
 void initBackend()
 {
@@ -119,6 +120,7 @@ int main(int argc, char *argv[])
     double isovalue = std::atof(argv[5]);
 
 #ifdef VTKM_CUDA
+
     char const *nblock = getenv("UCV_GPU_NUMBLOCK");
     char const *nthread = getenv("UCV_GPU_BLOCKPERTHREAD");
     if (nblock != NULL)
@@ -127,12 +129,12 @@ int main(int argc, char *argv[])
     }
     if (nthread != NULL)
     {
-        oneDBlocks = std::stoi(std::string(threadsPerBlock));
+        threadsPerBlock = std::stoi(std::string(nthread));
     }
-
+    //the input value for the init scheduled parameter is a function
     vtkm::cont::cuda::InitScheduleParameters(mySchedParams);
 
-    std::cout << "cuda parameters: " << mySchedParams.one_d_blocks << " " << mySchedParams.one_d_threads_per_block << std::endl;
+    std::cout << "cuda parameters: " << oneDBlocks<< " " << threadsPerBlock << std::endl;
 #endif
 
     // load the dataset (beetles data set, structured one)
