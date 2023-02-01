@@ -13,7 +13,7 @@ def beetle_results():
 
     # uni distribution
     fig, ax = plt.subplots(figsize=(7,4.6))
-    ax.set_xlabel('Stages of computing uncertainty metrics', fontsize='large')
+    ax.set_xlabel('Different stages of computing uncertainty metrics', fontsize='large')
     ax.set_ylabel('Time(ms)', fontsize='large')
 
     N = 3
@@ -41,7 +41,7 @@ def beetle_results():
 
     # ig distribution
     fig, ax = plt.subplots(figsize=(7,4.6))
-    ax.set_xlabel('Stages of computing uncertainty metrics', fontsize='large')
+    ax.set_xlabel('Different stages of computing uncertainty metrics', fontsize='large')
     ax.set_ylabel('Time(ms)', fontsize='large')
 
     N = 3
@@ -68,7 +68,7 @@ def beetle_results():
 
     # mg distribution
     fig, ax = plt.subplots(figsize=(7,4.6))
-    ax.set_xlabel('Stages of computing uncertainty metrics', fontsize='large')
+    ax.set_xlabel('Different stages of computing uncertainty metrics', fontsize='large')
     ax.set_ylabel('Time(ms)', fontsize='large')
 
     N = 3
@@ -98,7 +98,7 @@ def beetle_results():
 
     # uni distribution
     fig, ax = plt.subplots(figsize=(7,4.6))
-    ax.set_xlabel('Stages of computing uncertainty metrics', fontsize='large')
+    ax.set_xlabel('Different stages of computing uncertainty metrics', fontsize='large')
     ax.set_ylabel('Time(ms)', fontsize='large')
 
     N = 3
@@ -126,7 +126,7 @@ def beetle_results():
 
     # ig distribution
     fig, ax = plt.subplots(figsize=(7,4.6))
-    ax.set_xlabel('Stages of computing uncertainty metrics', fontsize='large')
+    ax.set_xlabel('Different stages of computing uncertainty metrics', fontsize='large')
     ax.set_ylabel('Time(ms)', fontsize='large')
 
     N = 3
@@ -153,7 +153,7 @@ def beetle_results():
 
     # mg distribution
     fig, ax = plt.subplots(figsize=(7,4.6))
-    ax.set_xlabel('Stages of computing uncertainty metrics', fontsize='large')
+    ax.set_xlabel('Different stages of computing uncertainty metrics', fontsize='large')
     ax.set_ylabel('Time(ms)', fontsize='large')
 
     N = 3
@@ -184,15 +184,16 @@ def beetle_results():
 def beetle_results_omp_gpu():
 
     # uni distribution
-    fig, ax = plt.subplots(figsize=(7,4.6))
-    ax.set_xlabel('Stages of computing uncertainty metrics', fontsize='large')
-    ax.set_ylabel('Time(ms)', fontsize='large')
+    fig, ax = plt.subplots(figsize=(6,3.5))
+    ax.set_xlabel('Different stages of computing uncertainty metrics', fontsize=13.5)
+    ax.set_ylabel('Time(ms)', fontsize=13.5)
+    ax.set_ylim([0,750])
 
     N = 3
     ind = np.arange(N)  # the x locations for the groups
     width = 0.3      # the width of the bars
     ax.set_xticks(ind + 1.5*width)
-    ax.set_xticklabels(('Labeling','Down-sampled data','Uncertainty metrics'), fontsize='large')
+    ax.set_xticklabels(('Labeling','Downsampling','Uncertainty metrics'), fontsize=13.5)
 
     openmp_mean = (250.8206667,577.1533333,264.392)
     openmp_std = (0.347324536,13.03131188,0.3538488378)
@@ -202,21 +203,25 @@ def beetle_results_omp_gpu():
     cuda_mean = (166.4493333,630.3436667,21.16773333)
     cuda_std = (5.972815863,5.292360658,0.1159116186)
     p3 = ax.bar(ind+ 2*width, cuda_mean,  width, color=[gblue]*3, capsize=3, yerr=cuda_std, ecolor='grey')
+    
+    ax.legend(('OpenMP', 'Cuda'), loc='upper left', ncol=1, fontsize='large')
+
 
     plt.savefig("beetle_results_uni_omp_gpu.png",bbox_inches='tight')
+    plt.savefig("beetle_results_uni_omp_gpu.pdf",bbox_inches='tight')
 
 
     # ig distribution
-    fig, ax = plt.subplots(figsize=(7,4.6))
-    ax.set_xlabel('Stages of computing uncertainty metrics', fontsize='large')
-    ax.set_ylabel('Time(ms)', fontsize='large')
-
+    fig, ax = plt.subplots(figsize=(6,3.5))
+    ax.set_xlabel('Different stages of computing uncertainty metrics', fontsize=13.5)
+    ax.set_ylabel('Time(ms)', fontsize=13.5)
+    ax.set_ylim([0,750])
+    
     N = 3
     ind = np.arange(N)  # the x locations for the groups
     width = 0.3      # the width of the bars
     ax.set_xticks(ind + 1.5*width)
-    ax.set_xticklabels(('Labeling','Down-sampled data','Uncertainty metrics'), fontsize='large')
-
+    ax.set_xticklabels(('Labeling','Downsampling','Uncertainty metrics'), fontsize=13.5)
 
 
     openmp_mean = (251.4673333,587.5676667,258.049)
@@ -228,17 +233,20 @@ def beetle_results_omp_gpu():
     cuda_std = (2.194154963,33.53476901,0.2380756812)
     p3 = ax.bar(ind+ 2*width, cuda_mean,  width, color=[gblue]*3, capsize=3, yerr=cuda_std, ecolor='grey')
 
+    ax.legend(('OpenMP', 'Cuda'), loc='upper left', ncol=1, fontsize='large')
+
     plt.savefig("beetle_results_ig_omp_gpu.png",bbox_inches='tight')
+    plt.savefig("beetle_results_ig_omp_gpu.pdf",bbox_inches='tight')
 
     # mg distribution
     # beetle_results_mg_omp_gpu split
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True,figsize=(7,4.6))
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True,figsize=(6,3.5))
     # set titles
-    fig.text(0.01, 0.5, 'Time(s)', va='center', rotation='vertical', fontsize='large')
+    fig.text(0.006, 0.5, 'Time(ms)', va='center', rotation='vertical', fontsize=13.5)
     ax1.set_ylim([80000, 95000])
     ax2.set_ylim([0, 1000])
-    ax2.set_xlabel('Stages of computing uncertainty metrics', fontsize='large')
+    ax2.set_xlabel('Different stages of computing uncertainty metrics', fontsize=13.5)
     # delet the line at the bottom and the top of the two figures
     ax1.spines['bottom'].set_visible(False)
     ax2.spines['top'].set_visible(False)
@@ -264,27 +272,31 @@ def beetle_results_omp_gpu():
     N = 3
     ind = np.arange(N)  # the x locations for the groups
     width = 0.3      # the width of the bars
-    ax1.set_xticks(ind + 0.5*width)
-    ax1.set_xticklabels(('Labeling','Down-sampled data','Uncertainty metrics'),fontsize='large')
+    ax2.set_xticks(ind + 0.5*width)
+    ax2.set_xticklabels(('Labeling','Downsampling','Uncertainty metrics'),fontsize=13.5)
 
-    openmp_mean = (252.802,625.815,90322.3)
-    openmp_std = (0,0,0)
-    p1 = ax1.bar(ind, openmp_mean,  width, color=[gred]*3, capsize=3, yerr=openmp_std, ecolor='grey')
+    openmp_mean = (252.6813333,620.669,90323.6)
+    openmp_std = (0.1171722379,16.06645832,7.336893075)
+    p1 = ax1.bar(ind, openmp_mean,  width, color=[gred]*3, yerr=openmp_std, capsize=3, ecolor='grey')
 
-    cuda_mean = (165.696,637.963,234.827)
-    cuda_std = (0,0,0)
-    p2 = ax1.bar(ind+ width, cuda_mean,  width, color=[gblue]*3, capsize=3, yerr=cuda_std, ecolor='grey')
+    cuda_mean = (164.8293333,628.9126667,236.3006667)
+    cuda_std = (1.374931756,12.49611765,1.705597354)
+    p2 = ax1.bar(ind+ width, cuda_mean,  width, color=[gblue]*3, yerr=cuda_std, capsize=3, ecolor='grey')
 
-    p1 = ax2.bar(ind, openmp_mean,  width, color=[gred]*6,yerr=openmp_std, ecolor='grey')
-    p2 = ax2.bar(ind + width, cuda_mean,  width, color=[gblue]*6, yerr=cuda_std, ecolor='grey')
+    p1 = ax2.bar(ind, openmp_mean,  width, color=[gred]*6, yerr=openmp_std, capsize=3, ecolor='grey')
+    p2 = ax2.bar(ind + width, cuda_mean,  width, color=[gblue]*6, yerr=cuda_std, capsize=3, ecolor='grey')
 
     # add the lengend for the data by defualt
     # this can be at the centric legend
     # ax1.legend((p1[0], p2[0], p3[0], p4[0]), ('producer-responsible', 'consumer-responsible','metadata-responsible','notification-responsible'),bbox_to_anchor=(0.83, 1.0), ncol=2, fontsize='medium')
 
+    ax1.legend((p1[0],p2[0]), ('OpenMP', 'Cuda'), loc='upper left', ncol=1, fontsize='large')
+
     plt.savefig("beetle_results_mg_omp_gpu_split.png",bbox_inches='tight')
+    plt.savefig("beetle_results_mg_omp_gpu_split.pdf",bbox_inches='tight')
+
                                                                                                                                                                            
 if __name__ == "__main__":
     #beetle_results()
     beetle_results_omp_gpu()
-    beetle_results_speedup()
+    #beetle_results_speedup()

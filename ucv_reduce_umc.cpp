@@ -7,6 +7,7 @@
 
 #include <vtkm/cont/ArrayHandle.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
+#include <vtkm/cont/Timer.h>
 
 #include <vtkm/worklet/DispatcherMapTopology.h>
 
@@ -28,52 +29,65 @@
 
 // #endif // VTKM_CUDA
 
+int oneDBlocks = 256;
+int threadsPerBlock = 128;
+#ifdef VTKM_CUDA
+vtkm::cont::cuda::ScheduleParameters
+mySchedParams(char const *name,
+              int major,
+              int minor,
+              int multiProcessorCount,
+              int maxThreadsPerMultiProcessor,
+              int maxThreadsPerBlock)
+{
+    vtkm::cont::cuda::ScheduleParameters p;
+    p.one_d_blocks = oneDBlocks;
+    p.one_d_threads_per_block = threadsPerBlock;
+
+    return p;
+}
+#endif
+
 void initBackend()
 {
-  // init the vtkh device
-  char const *tmp = getenv("UCV_VTKM_BACKEND");
-  std::string backend;
-  if (tmp == nullptr)
-  {
-    std::cout << "no UCV_VTKM_BACKEND env, use openmp" << std::endl;
-    backend = "openmp";
-  }
-  else
-  {
-    backend = std::string(tmp);
-  }
+    // init the vtkh device
+    char const *tmp = getenv("UCV_VTKM_BACKEND");
+    std::string backend;
+    if (tmp == nullptr)
+    {
+        std::cout << "no UCV_VTKM_BACKEND env, use openmp" << std::endl;
+        backend = "openmp";
+    }
+    else
+    {
+        backend = std::string(tmp);
+    }
 
-  //if (rank == 0)
-  //{
+    // if (rank == 0)
+    //{
     std::cout << "vtkm backend is:" << backend << std::endl;
-  //}
+    //}
 
-  if (backend == "serial")
-  {
-      vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
-  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagSerial());
-    
-  }
-  else if (backend == "openmp")
-  {
-      vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
-  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagOpenMP());
-    
-  }
-  else if (backend == "cuda")
-  {
-      vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
-  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
-    
-  }
-  else
-  {
-    std::cerr << " unrecognized backend " << backend << std::endl;
-  }
-  return;
+    if (backend == "serial")
+    {
+        vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
+        device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagSerial());
+    }
+    else if (backend == "openmp")
+    {
+        vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
+        device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagOpenMP());
+    }
+    else if (backend == "cuda")
+    {
+        vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
+        device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
+    }
+    else
+    {
+        std::cerr << " unrecognized backend " << backend << std::endl;
+    }
+    return;
 }
 
 using SupportedTypes = vtkm::List<vtkm::Float32,
@@ -104,6 +118,23 @@ int main(int argc, char *argv[])
     int blocksize = std::stoi(argv[4]);
     double isovalue = std::atof(argv[5]);
 
+#ifdef VTKM_CUDA
+    char const *nblock = getenv("UCV_GPU_NUMBLOCK");
+    char const *nthread = getenv("UCV_GPU_BLOCKPERTHREAD");
+    if (nblock != NULL)
+    {
+        oneDBlocks = std::stoi(std::string(nblock));
+    }
+    if (nthread != NULL)
+    {
+        oneDBlocks = std::stoi(std::string(threadsPerBlock));
+    }
+
+    vtkm::cont::cuda::InitScheduleParameters(mySchedParams);
+
+    std::cout << "cuda parameters: " << mySchedParams.one_d_blocks << " " << mySchedParams.one_d_threads_per_block << std::endl;
+#endif
+
     // load the dataset (beetles data set, structured one)
     // TODO, the data set can be distributed between different ranks
 
@@ -115,7 +146,9 @@ int main(int argc, char *argv[])
     inData.PrintSummary(std::cout);
 
     // TODO timer start to extract key
-    auto timer1 = std::chrono::steady_clock::now();
+    // auto timer1 = std::chrono::steady_clock::now();
+    vtkm::cont::Timer timer;
+    timer.Start();
 
     auto field = inData.GetField(fieldName);
 
@@ -199,10 +232,13 @@ int main(int argc, char *argv[])
 
     dispatcher.Invoke(keyArray, keyArrayNew);
 
-    auto timer2 = std::chrono::steady_clock::now();
-    float extractKey =
-        std::chrono::duration<float, std::milli>(timer2 - timer1).count();
-    std::cout << "extractKey time: " << extractKey << std::endl;
+    // auto timer2 = std::chrono::steady_clock::now();
+    // float extractKey =
+    //     std::chrono::duration<float, std::milli>(timer2 - timer1).count();
+    timer.Stop();
+    std::cout << "extractKey time: " << timer.GetElapsedTime() << std::endl;
+
+    timer.Start();
 
     if (distribution == "uni")
     {
@@ -223,11 +259,13 @@ int main(int argc, char *argv[])
             resolveType);
 
         // TODO timer ok to extract property
-        auto timer3 = std::chrono::steady_clock::now();
-        float extractMinMax =
-            std::chrono::duration<float, std::milli>(timer3 - timer2).count();
-        std::cout << "extractMinMax time: " << extractMinMax << std::endl;
+        // auto timer3 = std::chrono::steady_clock::now();
+        // float extractMinMax =
+        //    std::chrono::duration<float, std::milli>(timer3 - timer2).count();
+        timer.Stop();
+        std::cout << "extractMinMax time: " << timer.GetElapsedTime() << std::endl;
 
+        timer.Start();
         // generate the new data sets with min and max
         // reducedDataSet.AddPointField("ensemble_min", minArray);
         // reducedDataSet.AddPointField("ensemble_max", maxArray);
@@ -246,11 +284,13 @@ int main(int argc, char *argv[])
         DispatcherEntropyUniform dispatcherEntropyUniform(EntropyUniform{isovalue});
         dispatcherEntropyUniform.Invoke(reducedDataSet.GetCellSet(), minArray, maxArray, crossProb, numNonZeroProb, entropyResult);
 
+        // TODO make sure the worklet finish
         // TODO timer ok to compute uncertainty
-        auto timer4 = std::chrono::steady_clock::now();
-        float EntropyUniformTime =
-            std::chrono::duration<float, std::milli>(timer4 - timer3).count();
-        std::cout << "EntropyUniformTime time: " << EntropyUniformTime << std::endl;
+        // auto timer4 = std::chrono::steady_clock::now();
+        // float EntropyUniformTime =
+        //    std::chrono::duration<float, std::milli>(timer4 - timer3).count();
+        timer.Stop();
+        std::cout << "EntropyUniformTime time: " << timer.GetElapsedTime() << std::endl;
     }
     else if (distribution == "ig")
     {
@@ -273,11 +313,13 @@ int main(int argc, char *argv[])
             resolveType);
 
         // TODO timer ok to extract properties
-        auto timer3 = std::chrono::steady_clock::now();
-        float ExtractingMeanStdevTime =
-            std::chrono::duration<float, std::milli>(timer3 - timer2).count();
-        std::cout << "ExtractingMeanStdev time: " << ExtractingMeanStdevTime << std::endl;
+        // auto timer3 = std::chrono::steady_clock::now();
+        // float ExtractingMeanStdevTime =
+        //    std::chrono::duration<float, std::milli>(timer3 - timer2).count();
+        timer.Stop();
+        std::cout << "ExtractingMeanStdev time: " << timer.GetElapsedTime() << std::endl;
 
+        timer.Start();
         using WorkletType = EntropyIndependentGaussian;
         using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
@@ -285,10 +327,11 @@ int main(int argc, char *argv[])
         dispatcherEntropyIG.Invoke(reducedDataSet.GetCellSet(), meanArray, stdevArray, crossProb, numNonZeroProb, entropyResult);
 
         // TODO timer ok to compute uncertianty
-        auto timer4 = std::chrono::steady_clock::now();
-        float EIGaussianTime =
-            std::chrono::duration<float, std::milli>(timer4 - timer3).count();
-        std::cout << "EIGaussianTime time: " << EIGaussianTime << std::endl;
+        // auto timer4 = std::chrono::steady_clock::now();
+        // float EIGaussianTime =
+        //    std::chrono::duration<float, std::milli>(timer4 - timer3).count();
+        timer.Stop();
+        std::cout << "EIGaussianTime time: " << timer.GetElapsedTime() << std::endl;
     }
     else if (distribution == "mg")
     {
@@ -327,10 +370,13 @@ int main(int argc, char *argv[])
         field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
             resolveType);
 
-        auto timer3 = std::chrono::steady_clock::now();
-        float ExtractingMeanRawTime =
-            std::chrono::duration<float, std::milli>(timer3 - timer2).count();
-        std::cout << "ExtractingMeanRawTime time: " << ExtractingMeanRawTime << std::endl;
+        // auto timer3 = std::chrono::steady_clock::now();
+        // float ExtractingMeanRawTime =
+        //     std::chrono::duration<float, std::milli>(timer3 - timer2).count();
+        timer.Stop();
+        std::cout << "ExtractingMeanRawTime time: " << timer.GetElapsedTime() << std::endl;
+
+        timer.Start();
 
         // step3 computing the cross probability
         // using WorkletTypeMVG = MVGaussianWithEnsemble3D;
@@ -340,10 +386,13 @@ int main(int argc, char *argv[])
         DispatcherTypeMVG dispatcherMVG(WorkletTypeMVG{isovalue, 1000});
         dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb, numNonZeroProb, entropyResult);
 
-        auto timer4 = std::chrono::steady_clock::now();
-        float MVGTime =
-            std::chrono::duration<float, std::milli>(timer4 - timer3).count();
-        std::cout << "MVGTime time: " << MVGTime << std::endl;
+        // TODO make sure it actually finish
+        // auto timer4 = std::chrono::steady_clock::now();
+        // float MVGTime =
+        //    std::chrono::duration<float, std::milli>(timer4 - timer3).count();
+
+        timer.Stop();
+        std::cout << "MVGTime time: " << timer.GetElapsedTime() << std::endl;
 
         // #endif // VTKM_CUDA
     }
