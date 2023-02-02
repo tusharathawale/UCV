@@ -18,7 +18,7 @@
 #include "ucvworklet/EntropyUniform.hpp"
 #include "ucvworklet/EntropyIndependentGaussian.hpp"
 
-//#include <chrono>
+// #include <chrono>
 
 // #ifdef VTKM_CUDA
 // #else
@@ -50,7 +50,7 @@ mySchedParams(char const *name,
 
 std::string backend = "openmp";
 
-void initBackend()
+void initBackend(vtkm::cont::Timer &timer)
 {
     // init the vtkh device
     char const *tmp = getenv("UCV_VTKM_BACKEND");
@@ -74,16 +74,19 @@ void initBackend()
     {
         vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
         device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagSerial());
+        timer.Reset(vtkm::cont::DeviceAdapterTagSerial());
     }
     else if (backend == "openmp")
     {
         vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
         device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagOpenMP());
+        timer.Reset(vtkm::cont::DeviceAdapterTagOpenMP());
     }
     else if (backend == "cuda")
     {
         vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
         device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
+        timer.Reset(vtkm::cont::DeviceAdapterTagCuda());
     }
     else
     {
@@ -104,9 +107,13 @@ using SupportedTypes = vtkm::List<vtkm::Float32,
 
 int main(int argc, char *argv[])
 {
-    initBackend();
+
     // init the vtkm (set the backend and log level here)
     vtkm::cont::Initialize(argc, argv);
+    vtkm::cont::Timer timer;
+    initBackend(timer);
+    
+    std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
 
     if (argc != 6)
     {
@@ -150,7 +157,7 @@ int main(int argc, char *argv[])
 
     // TODO timer start to extract key
     // auto timer1 = std::chrono::steady_clock::now();
-    vtkm::cont::Timer timer;
+
     timer.Start();
 
     auto field = inData.GetField(fieldName);

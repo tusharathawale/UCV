@@ -183,11 +183,11 @@ int main(int argc, char *argv[])
     std::cout << "checking input dataset" << std::endl;
     vtkmDataSet.PrintSummary(std::cout);
 
-    // check results
-
     // std::string outputFileNameOriginal = "./wind_pressure_200_original.vtk";
     // vtkm::io::VTKDataSetWriter write(outputFileNameOriginal);
     // write.WriteDataSet(vtkmDataSet);
+
+    // start the timer
 
     // let the data set go through the multivariant gaussian filter
     // using WorkletType = MVGaussianWithEnsemble2D;
@@ -207,6 +207,9 @@ int main(int argc, char *argv[])
 
     vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
 
+    
+    //stop timer
+    
     // check results
     vtkmDataSet.AddCellField("cross_prob", crossProbability);
     std::string outputFileName = "./wind_pressure_200.vtk";
