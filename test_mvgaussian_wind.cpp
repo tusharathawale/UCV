@@ -10,6 +10,8 @@
 // #include "ucvworklet/MVGaussianWithEnsemble2D.hpp"
 #include "ucvworklet/MVGaussianWithEnsemble2DTryLialg.hpp"
 
+#include <vtkm/cont/Timer.h>
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -20,24 +22,26 @@ using SupportedTypesVec = vtkm::List<vtkm::Vec<double, 15>>;
 void exampleDataSet(int pointNum, std::vector<std::vector<double>> &data)
 {
 
-    int version = 15;
+  int version = 15;
 
-    for (int i = 0; i < version; i++)
+  for (int i = 0; i < version; i++)
+  {
+    std::vector<double> d;
+    for (int j = 0; j < pointNum * pointNum; j++)
     {
-        std::vector<double> d;
-        for (int j = 0; j < pointNum * pointNum; j++)
-        {
-            d.push_back((j + 0.1) + (i + 1) * j);
-        }
-        data.push_back(d);
+      d.push_back((j + 0.1) + (i + 1) * j);
     }
+    data.push_back(d);
+  }
 }
 
-void initBackend()
+std::string backend = "openmp";
+
+void initBackend(vtkm::cont::Timer &timer)
 {
   // init the vtkh device
   char const *tmp = getenv("UCV_VTKM_BACKEND");
-  std::string backend;
+
   if (tmp == nullptr)
   {
     std::cout << "no UCV_VTKM_BACKEND env, use openmp" << std::endl;
@@ -48,31 +52,28 @@ void initBackend()
     backend = std::string(tmp);
   }
 
-  //if (rank == 0)
+  // if (rank == 0)
   //{
-    std::cout << "vtkm backend is:" << backend << std::endl;
+  std::cout << "vtkm backend is:" << backend << std::endl;
   //}
 
   if (backend == "serial")
   {
-      vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
-  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagSerial());
-    
+    vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
+    device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagSerial());
+    timer.Reset(vtkm::cont::DeviceAdapterTagSerial());
   }
   else if (backend == "openmp")
   {
-      vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
-  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagOpenMP());
-    
+    vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
+    device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagOpenMP());
+    timer.Reset(vtkm::cont::DeviceAdapterTagOpenMP());
   }
   else if (backend == "cuda")
   {
-      vtkm::cont::RuntimeDeviceTracker &device_tracker
-    = vtkm::cont::GetRuntimeDeviceTracker();
-  device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
-    
+    vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
+    device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
+    timer.Reset(vtkm::cont::DeviceAdapterTagCuda());
   }
   else
   {
@@ -80,139 +81,138 @@ void initBackend()
   }
   return;
 }
-
 int main(int argc, char *argv[])
 {
-    vtkm::cont::Initialize(argc, argv);
+  vtkm::cont::Initialize(argc, argv);
+  vtkm::cont::Timer timer;
+  initBackend(timer);
 
-    // set backend
-    initBackend();
+  // assuming the ensemble data set is already been extracted out
+  // we test results by this dataset
+  // https://github.com/MengjiaoH/Probabilistic-Marching-Cubes-C-/tree/main/datasets/txt_files/wind_pressure_200
+  // to make sure the reuslts are correct
 
-    // assuming the ensemble data set is already been extracted out
-    // we test results by this dataset
-    // https://github.com/MengjiaoH/Probabilistic-Marching-Cubes-C-/tree/main/datasets/txt_files/wind_pressure_200
-    // to make sure the reuslts are correct
+  // load data set, the dim is m*n and for each point there are k ensemble values
+  // the data set comes from here https://github.com/MengjiaoH/Probabilistic-Marching-Cubes-C-/tree/main/datasets/txt_files/wind_pressure_200
 
-    // load data set, the dim is m*n and for each point there are k ensemble values
-    // the data set comes from here https://github.com/MengjiaoH/Probabilistic-Marching-Cubes-C-/tree/main/datasets/txt_files/wind_pressure_200
+  // vtkm::Id xdim = 240;
+  // vtkm::Id ydim = 121;
 
-    // vtkm::Id xdim = 240;
-    // vtkm::Id ydim = 121;
+  vtkm::Id gxdim = 240;
+  vtkm::Id gydim = 121;
 
-    vtkm::Id gxdim = 240;
-    vtkm::Id gydim = 121;
-    
-    //there are some memory issue on cuda if larger than 150*120
-    //vtkm::Id xdim = 2;
-    //vtkm::Id ydim = 2;
-    vtkm::Id xdim = 240;
-    vtkm::Id ydim = 121;
-    //vtkm::Id zdim = 1;
-     
-     //there are cuda errors start with the xdim=40 ydim =40
-     //vtkm::Id xdim = 40;
-     //vtkm::Id ydim = 40;
-     vtkm::Id zdim = 1;
+  // there are some memory issue on cuda if larger than 150*120
+  // vtkm::Id xdim = 2;
+  // vtkm::Id ydim = 2;
+  vtkm::Id xdim = 240;
+  vtkm::Id ydim = 121;
+  // vtkm::Id zdim = 1;
 
-    const vtkm::Id3 dims(xdim, ydim, zdim);
-    vtkm::cont::DataSetBuilderUniform dataSetBuilder;
+  // there are cuda errors start with the xdim=40 ydim =40
+  // vtkm::Id xdim = 40;
+  // vtkm::Id ydim = 40;
+  vtkm::Id zdim = 1;
 
-    vtkm::cont::DataSet vtkmDataSet = dataSetBuilder.Create(dims);
+  const vtkm::Id3 dims(xdim, ydim, zdim);
+  vtkm::cont::DataSetBuilderUniform dataSetBuilder;
 
-    std::string windDataDir = "./wind_pressure_200/";
-     double isovalue = 0.2;
-    //double isovalue = 1.5;
-    // 15 files each contains all data in one file
-    // std::vector<vtkm::cont::ArrayHandle<vtkm::Float64>> componentArrays;
-    std::vector<std::vector<vtkm::Float64>> dataArray;
+  vtkm::cont::DataSet vtkmDataSet = dataSetBuilder.Create(dims);
 
-    using Vec15 = vtkm::Vec<double, 15>;
+  std::string windDataDir = "./wind_pressure_200/";
+  double isovalue = 0.2;
+  // double isovalue = 1.5;
+  //  15 files each contains all data in one file
+  //  std::vector<vtkm::cont::ArrayHandle<vtkm::Float64>> componentArrays;
+  std::vector<std::vector<vtkm::Float64>> dataArray;
 
-    vtkm::cont::ArrayHandle<Vec15> dataArraySOA;
+  using Vec15 = vtkm::Vec<double, 15>;
 
-    dataArraySOA.Allocate(xdim * ydim);
+  vtkm::cont::ArrayHandle<Vec15> dataArraySOA;
 
-    for (vtkm::IdComponent i = 0; i < 15; i++)
+  dataArraySOA.Allocate(xdim * ydim);
+
+  for (vtkm::IdComponent i = 0; i < 15; i++)
+  {
+    std::string filename = windDataDir + "Lead_33_" + std::to_string(i) + ".txt";
+
+    // load the data
+    std::ifstream fin(filename.c_str());
+
+    std::vector<double> d;
+    float element;
+    // put data into one vector
+    while (fin >> element)
     {
-        std::string filename = windDataDir + "Lead_33_" + std::to_string(i) + ".txt";
-
-        // load the data
-        std::ifstream fin(filename.c_str());
-
-        std::vector<double> d;
-        float element;
-        // put data into one vector
-        while (fin >> element)
-        {
-            // put whole picture into the vector
-            d.push_back(element);
-        }
-
-        // ArrayHandleSOA will group the components in each array and
-        // store them into Vec15 automatically.
-        // transfer vector into the array handle
-        // componentArrays.push_back(vtkm::cont::make_ArrayHandleMove(std::move(d)));
-        dataArray.push_back(d);
+      // put whole picture into the vector
+      d.push_back(element);
     }
 
-    // for synthetic dataset
-    // exampleDataSet(xdim,dataArray);
+    // ArrayHandleSOA will group the components in each array and
+    // store them into Vec15 automatically.
+    // transfer vector into the array handle
+    // componentArrays.push_back(vtkm::cont::make_ArrayHandleMove(std::move(d)));
+    dataArray.push_back(d);
+  }
 
-    // change aos array to soa array
-    // for each points, there are 15 version
-    int index = 0;
-    
-    //for (vtkm::IdComponent i = 0; i < gxdim * gydim; i++)
-    for (vtkm::IdComponent i = 0; i < xdim * ydim; i++)
+  // for synthetic dataset
+  // exampleDataSet(xdim,dataArray);
+
+  // change aos array to soa array
+  // for each points, there are 15 version
+  int index = 0;
+
+  // for (vtkm::IdComponent i = 0; i < gxdim * gydim; i++)
+  for (vtkm::IdComponent i = 0; i < xdim * ydim; i++)
+  {
+    Vec15 ensemble;
+    // if (i == 0 || i == 1 || i == 240 || i == 241)
     {
-        Vec15 ensemble;
-        //if (i == 0 || i == 1 || i == 240 || i == 241)
-        {
-            // only insert for specific one for testing
-            for (vtkm::IdComponent j = 0; j < 15; j++)
-            {
-                ensemble[j] = dataArray[j][i];
-            }
-            dataArraySOA.WritePortal().Set(index, ensemble);
-            index++;
-        }
+      // only insert for specific one for testing
+      for (vtkm::IdComponent j = 0; j < 15; j++)
+      {
+        ensemble[j] = dataArray[j][i];
+      }
+      dataArraySOA.WritePortal().Set(index, ensemble);
+      index++;
     }
+  }
 
-    vtkmDataSet.AddPointField("ensembles", dataArraySOA);
+  vtkmDataSet.AddPointField("ensembles", dataArraySOA);
 
-    std::cout << "checking input dataset" << std::endl;
-    vtkmDataSet.PrintSummary(std::cout);
+  //std::cout << "checking input dataset" << std::endl;
+  //vtkmDataSet.PrintSummary(std::cout);
 
-    // std::string outputFileNameOriginal = "./wind_pressure_200_original.vtk";
-    // vtkm::io::VTKDataSetWriter write(outputFileNameOriginal);
-    // write.WriteDataSet(vtkmDataSet);
+  // std::string outputFileNameOriginal = "./wind_pressure_200_original.vtk";
+  // vtkm::io::VTKDataSetWriter write(outputFileNameOriginal);
+  // write.WriteDataSet(vtkmDataSet);
 
-    // start the timer
+  // start the timer
+  timer.Start();
+  // let the data set go through the multivariant gaussian filter
+  // using WorkletType = MVGaussianWithEnsemble2D;
+  using WorkletType = MVGaussianWithEnsemble2DTryLialg;
+  using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
-    // let the data set go through the multivariant gaussian filter
-    // using WorkletType = MVGaussianWithEnsemble2D;
-    using WorkletType = MVGaussianWithEnsemble2DTryLialg;
-    using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
+  vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
 
-    vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
+  auto resolveType = [&](const auto &concrete)
+  {
+    // DispatcherType dispatcher(MVGaussianWithEnsemble2D{isovalue});
+    DispatcherType dispatcher(MVGaussianWithEnsemble2DTryLialg{isovalue});
+    dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability);
+  };
 
-    auto resolveType = [&](const auto &concrete)
-    {
-        // DispatcherType dispatcher(MVGaussianWithEnsemble2D{isovalue});
+  vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
 
-        DispatcherType dispatcher(MVGaussianWithEnsemble2DTryLialg{isovalue});
+  // stop timer
+  timer.Stop();
+  
+  // output is ms
+  std::cout << "execution time: " << timer.GetElapsedTime()*1000 << std::endl;
 
-        dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability);
-    };
-
-    vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
-
-    
-    //stop timer
-    
-    // check results
-    vtkmDataSet.AddCellField("cross_prob", crossProbability);
-    std::string outputFileName = "./wind_pressure_200.vtk";
-    vtkm::io::VTKDataSetWriter writeCross(outputFileName);
-    writeCross.WriteDataSet(vtkmDataSet);
+  // check results
+  vtkmDataSet.AddCellField("cross_prob", crossProbability);
+  std::string outputFileName = "./wind_pressure_200.vtk";
+  vtkm::io::VTKDataSetWriter writeCross(outputFileName);
+  writeCross.WriteDataSet(vtkmDataSet);
 }
