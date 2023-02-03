@@ -7,7 +7,7 @@
 #include <vtkm/cont/Initialize.h>
 
 #include "ucvworklet/CreateNewKey.hpp"
-// #include "ucvworklet/MVGaussianWithEnsemble2D.hpp"
+//#include "ucvworklet/MVGaussianWithEnsemble2D.hpp"
 #include "ucvworklet/MVGaussianWithEnsemble2DTryLialg.hpp"
 
 #include <vtkm/cont/Timer.h>
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
   vtkm::cont::DataSet vtkmDataSet = dataSetBuilder.Create(dims);
 
   std::string windDataDir = "./wind_pressure_200/";
-  double isovalue = 0.2;
+  double isovalue = 0.3;
   // double isovalue = 1.5;
   //  15 files each contains all data in one file
   //  std::vector<vtkm::cont::ArrayHandle<vtkm::Float64>> componentArrays;
@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
   // start the timer
   timer.Start();
   // let the data set go through the multivariant gaussian filter
-  // using WorkletType = MVGaussianWithEnsemble2D;
+  //using WorkletType = MVGaussianWithEnsemble2D;
   using WorkletType = MVGaussianWithEnsemble2DTryLialg;
   using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 

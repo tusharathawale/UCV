@@ -57,7 +57,7 @@ public:
 
 
         //std::vector<double> cov_matrix;
-        vtkm::Vec<vtkm::FloatDefault,36> cov_matrix;
+        vtkm::Vec<vtkm::FloatDefault,16> cov_matrix;
         vtkm::IdComponent index = 0;
         for (int p = 0; p < numVertexies; ++p)
         {

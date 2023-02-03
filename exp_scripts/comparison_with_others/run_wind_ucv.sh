@@ -24,14 +24,15 @@ ln -s $CURRDIR/../../install_scripts/summit_cpu/install/UCV/test_mvgaussian_wind
 
 ln -s $CURRDIR/../../install_scripts/summit_gpu/install/UCV/test_mvgaussian_wind ucv_wind_gpu
 
-DATASETPATH=/gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/
+DATASETPATH=/gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/wind_pressure_200 
 
+cp -r $DATASETPATH .
 
 # openmp case
 export OMP_NUM_THREADS=42
 export UCV_VTKM_BACKEND=openmp
 
-jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_wind_cpu $DATASETPATH &> ucv_wind_cpu.log
+jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_wind_cpu &> ucv_wind_cpu.log
 
 # cuda case
 # run two times
@@ -49,9 +50,9 @@ export UCV_VTKM_BACKEND=cuda
 unset UCV_GPU_NUMBLOCK
 unset UCV_GPU_BLOCKPERTHREAD
 
-jsrun -n1 -a1 -c1 -g1 ./ucv_wind_gpu $DATASETPATH  &> ucv_wind_gpu_1.log
+jsrun -n1 -a1 -c1 -g1 ./ucv_wind_gpu &> ucv_wind_gpu_1.log
 
-jsrun -n1 -a1 -c1 -g1 ./ucv_wind_gpu $DATASETPATH  &> ucv_wind_gpu_2.log
+jsrun -n1 -a1 -c1 -g1 ./ucv_wind_gpu &> ucv_wind_gpu_2.log
 
 
 cp *.log $CURRDIR/$LOGDIRNAME

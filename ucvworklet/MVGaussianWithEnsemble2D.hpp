@@ -19,16 +19,16 @@ public:
                                   FieldInPoint,
                                   FieldOutCell);
 
-    using ExecutionSignature = void(_2, _3);
+    using ExecutionSignature = void(_2, _3, WorkIndex);
 
     // the first parameter is binded with the worklet
     using InputDomain = _1;
     // InPointFieldType should be a vector
     template <typename InPointFieldVecEnsemble, typename OutCellFieldType>
-
     VTKM_EXEC void operator()(
         const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
-        OutCellFieldType &outCellFieldCProb) const
+        OutCellFieldType &outCellFieldCProb,
+        vtkm::Id workIndex) const
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
@@ -45,18 +45,29 @@ public:
         std::vector<vtkm::Float64> meanArray(4, 0);
 
         // derive type
-        meanArray[0] = find_mean(inPointFieldVecEnsemble[0]);
-        meanArray[1] = find_mean(inPointFieldVecEnsemble[1]);
-        meanArray[2] = find_mean(inPointFieldVecEnsemble[2]);
-        meanArray[3] = find_mean(inPointFieldVecEnsemble[3]);
+        meanArray[0] = find_mean(inPointFieldVecEnsemble[updateIndex4(0)]);
+        meanArray[1] = find_mean(inPointFieldVecEnsemble[updateIndex4(1)]);
+        meanArray[2] = find_mean(inPointFieldVecEnsemble[updateIndex4(2)]);
+        meanArray[3] = find_mean(inPointFieldVecEnsemble[updateIndex4(3)]);
 
-        std::vector<double> cov_matrix;
+        //if (workIndex == 0)
+        //{
+        //    std::cout << "mean " << meanArray[0] << " " << meanArray[1] << " " << meanArray[2] << " " << meanArray[3] << std::endl;
+        //}
+
+        std::vector<float> cov_matrix;
         for (int p = 0; p < 4; ++p)
         {
             for (int q = p; q < 4; ++q)
             {
-                float cov = find_covariance(inPointFieldVecEnsemble[p], inPointFieldVecEnsemble[q], meanArray[p], meanArray[q]);
+                int updatep = updateIndex4(p);
+                int updateq = updateIndex4(q);
+                float cov = find_covariance(inPointFieldVecEnsemble[updatep], inPointFieldVecEnsemble[updateq], meanArray[p], meanArray[q]);
                 cov_matrix.push_back(cov);
+                if (workIndex == 0)
+                {
+                    std::cout << cov << " " << std::endl;
+                }
             }
         }
 
@@ -65,22 +76,22 @@ public:
         Eigen::Vector4d meanVector(4);
         meanVector << meanArray[0], meanArray[1], meanArray[2], meanArray[3];
 
-        //for (int i = 0; i < 4; i++)
+        // for (int i = 0; i < 4; i++)
         //{
-        //    meanVector(i) = meanArray[i];
-        //}
+        //     meanVector(i) = meanArray[i];
+        // }
 
         // std::cout << "cov_matrix size " << cov_matrix.size() << std::endl;
 
         // generate mean and cov matrix
         Eigen::Matrix4d cov4by4(4, 4);
         cov4by4 << cov_matrix[0], cov_matrix[1], cov_matrix[2], cov_matrix[3],
-             cov_matrix[1], cov_matrix[4], cov_matrix[5], cov_matrix[6],
-             cov_matrix[2], cov_matrix[5], cov_matrix[7], cov_matrix[8],
-             cov_matrix[3], cov_matrix[6], cov_matrix[8], cov_matrix[9];
+            cov_matrix[1], cov_matrix[4], cov_matrix[5], cov_matrix[6],
+            cov_matrix[2], cov_matrix[5], cov_matrix[7], cov_matrix[8],
+            cov_matrix[3], cov_matrix[6], cov_matrix[8], cov_matrix[9];
         // this can be adapted to 3d case
         /*
-        
+
         int covindex = 0;
         for (int p = 0; p < 4; ++p)
         {
@@ -108,7 +119,12 @@ public:
 
         for (vtkm::Id n = 0; n < numSamples; ++n)
         {
-            // std::cout << R.coeff(n, 0) << " " << R.coeff(n, 1) << " " << R.coeff(n, 2) << " " << R.coeff(n, 3) << std::endl;
+            //if (workIndex == 0 && n==0)
+            //{
+            //    std::cout << "check r" << std::endl;
+            //    std::cout << R.coeff(0, 0) << " " << R.coeff(0, 1) << " " << R.coeff(0, 2) << " " << R.coeff(0, 3) << std::endl;
+            //}
+            //
             // TODO, how to make it dynamic for 2d and 3d case
             if ((m_isovalue <= R.coeff(n, 0)) && (m_isovalue <= R.coeff(n, 1)) && (m_isovalue <= R.coeff(n, 2)) && (m_isovalue <= R.coeff(n, 3)))
             {
@@ -125,19 +141,44 @@ public:
         }
 
         // cross probability
-        outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
+        outCellFieldCProb = (double)numCrossings / numSamples;
+    }
+
+    int updateIndex4(int index) const
+    {
+        if (index == 0)
+        {
+            return 0;
+        }
+        else if (index == 1)
+        {
+            return 3;
+        }
+        else if (index == 2)
+        {
+            return 1;
+        }
+        else if (index == 3)
+        {
+            return 2;
+        }
+
+        printf("error, failed to compute updateIndex4\n");
+
+        return 0;
     }
 
     // how to get this vtkm::Vec<double, 15> in an more efficient way
     vtkm::Float64 find_mean(const vtkm::Vec<double, 15> &arr) const
     {
         vtkm::Float64 sum = 0;
-        vtkm::Id num = arr.GetNumberOfComponents();
-        for (vtkm::Id i = 0; i < arr.GetNumberOfComponents(); i++)
+        int num = 15;
+
+        for (vtkm::Id i = 0; i < 15; i++)
         {
             sum = sum + arr[i];
         }
-        vtkm::Float64 mean = (1.0*sum) / (1.0*num);
+        vtkm::Float64 mean = (double)sum / (double)num;
         return mean;
     }
 
@@ -146,15 +187,15 @@ public:
     {
         if (arr1.GetNumberOfComponents() != arr2.GetNumberOfComponents())
         {
-            //cuda does not support exception
+            // cuda does not support exception
             printf("error, failed to compute find_covariance, the array size should be equal with each other\n");
             return 0;
         }
         vtkm::Id arraySize = arr1.GetNumberOfComponents();
-        double sum = 0;
+        double sum = 0.0;
         for (int i = 0; i < arraySize; i++)
             sum = sum + (arr1[i] - mean1) * (arr2[i] - mean2);
-        return sum / (1.0*(arraySize - 1));
+        return sum / (double)(arraySize - 1);
     }
 
 private:
