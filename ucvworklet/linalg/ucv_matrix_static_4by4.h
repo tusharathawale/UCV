@@ -54,7 +54,7 @@ namespace UCVMATH
 
         for (int i = 0; i < v->len; i++)
         {
-            printf("%f ", v->v[i]);
+            printf("%lf ", v->v[i]);
         }
         printf("\n");
     }
@@ -294,7 +294,7 @@ namespace UCVMATH
         {
             for (int j = 0; j < m->n; j++)
             {
-                printf(" %8.3f", m->v[i][j]);
+                printf(" %8.7f", m->v[i][j]);
             }
             printf("\n");
         }
@@ -450,7 +450,7 @@ namespace UCVMATH
         // TODO, only consider n*n matrix now
         for (int i = 0; i < ak.m; i++)
         {
-            if (fabs(ak.v[i][i] - 0) < 0.00001)
+            if (fabs(ak.v[i][i] - 0) < tol)
             {
                 eigen_array[i] = 0.0;
             }
@@ -642,7 +642,7 @@ namespace UCVMATH
         //  this is the colm of matrix
         for (int j = 0; j < num_eigen_value; j++)
         {
-            if (fabs(eigen_value_array[j] - 0) < 0.0001)
+            if (fabs(eigen_value_array[j] - 0) < 0.000001)
             {
                 continue;
             }
@@ -651,7 +651,7 @@ namespace UCVMATH
             // Preturb the eigenvalue a litle to prevent our right hand side matrix
             // from becoming singular.
             // double lambda = eigen_value_array[j] + ((double)rand() / (double)RAND_MAX) * 0.000001;
-            double lambda = eigen_value_array[j] + 0.000001;
+            double lambda = eigen_value_array[j] + 0.00001;
             //  reset the m_minus_lambda_i
             for (int ii = 0; ii < m->m; ii++)
             {
@@ -725,12 +725,12 @@ namespace UCVMATH
         // assuming it is not singular matrix
 
         double result[4];
-        eigen_solve_eigenvalues(x, 0.0001, 20, result);
+        eigen_solve_eigenvalues(x, 0.000001, 40, result);
 
         // update this when we have flexible linear system solver
         assert(x->m == 4);
         assert(x->n == 4);
-        mat_t eigen_vectors = eigen_solve_eigen_vectors(x, result, 4, 4, 20);
+        mat_t eigen_vectors = eigen_solve_eigen_vectors(x, result, 4, 4, 30);
 
         // create the diaganal matrix
         mat_t diag;

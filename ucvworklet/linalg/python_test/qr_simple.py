@@ -39,20 +39,32 @@ D = np.array([  [1, 1, 0, 1, 0, 1, 0, 1],
                 [1, 0, 1, 0, 1, 0, 1, 8]] )
 
 
-np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
+# Adding this one into the qr tests
+# for the linear algorithm blog
+E = np.array(
+[[0.0012813, 0.0007226, 0.0012581, 0.0007015],
+ [0.0007226, 0.0006682, 0.0006721, 0.0006144],
+ [0.0012581, 0.0006721, 0.0012851, 0.0006792],
+ [0.0007015, 0.0006144, 0.0006792, 0.0006132]]
+)
 
 
-print("D=")
-print((D))
+np.set_printoptions(formatter={'float': lambda x: "{0:0.8f}".format(x)})
 
-Q, R = np.linalg.qr(D)
+
+inputM = E
+
+print("inputM=")
+print((inputM))
+
+Q, R = np.linalg.qr(inputM)
 print("eigen q")
 print(Q)
 print("eigen r")
 print(R)
 
 # check eigen values
-w, v = LA.eig(D)
+w, v = LA.eig(inputM)
 print("eigen values")
 print(w)
 print("eigen vectors")

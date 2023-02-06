@@ -8,6 +8,8 @@
 #BSUB -o run_beetle_ucv.%J.out
 #BSUB -e run_beetle_ucv.%J.err 
 
+# This scrip need to be updated 
+
 CURRDIR=$(pwd)
 LOGDIRNAME=run_ucv_wind_log
 
@@ -27,6 +29,10 @@ ln -s $CURRDIR/../../install_scripts/summit_gpu/install/UCV/test_mvgaussian_wind
 DATASETPATH=/gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/wind_pressure_200 
 
 cp -r $DATASETPATH .
+
+
+# running example on original run in debug node
+# jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./run ../datasets/txt_files/
 
 # openmp case
 export OMP_NUM_THREADS=42

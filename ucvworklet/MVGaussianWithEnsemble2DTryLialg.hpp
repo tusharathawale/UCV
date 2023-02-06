@@ -8,7 +8,7 @@
 #include "./linalg/ucv_matrix_static_4by4.h"
 
 // use this as the results checking on cpu
-// #include "./eigenmvn.h"
+#include "./eigenmvn.h"
 // this worklet is for the input data that put the different data in a separate array
 // for the wind data here https://github.com/MengjiaoH/Probabilistic-Marching-Cubes-C-/tree/main/datasets/txt_files/wind_pressure_200
 // there are 15 numbers (ensemble extraction) each data is put in a different file
@@ -16,14 +16,14 @@
 class MVGaussianWithEnsemble2DTryLialg : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    MVGaussianWithEnsemble2DTryLialg(double isovalue)
-        : m_isovalue(isovalue){};
+    MVGaussianWithEnsemble2DTryLialg(double isovalue, int num_sample)
+        : m_isovalue(isovalue), m_num_sample(num_sample){};
 
     using ControlSignature = void(CellSetIn,
                                   FieldInPoint,
                                   FieldOutCell);
 
-    using ExecutionSignature = void(_2, _3);
+    using ExecutionSignature = void(_2, _3, WorkIndex);
 
     // the first parameter is binded with the worklet
     using InputDomain = _1;
@@ -32,17 +32,22 @@ public:
 
     VTKM_EXEC void operator()(
         const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
-        OutCellFieldType &outCellFieldCProb) const
+        OutCellFieldType &outCellFieldCProb, vtkm::Id workIndex) const
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
 
         vtkm::Vec<vtkm::FloatDefault, 4> meanArray;
         // derive type
-        meanArray[0] = find_mean(inPointFieldVecEnsemble[0]);
-        meanArray[1] = find_mean(inPointFieldVecEnsemble[1]);
-        meanArray[2] = find_mean(inPointFieldVecEnsemble[2]);
-        meanArray[3] = find_mean(inPointFieldVecEnsemble[3]);
+        meanArray[0] = find_mean(inPointFieldVecEnsemble[updateIndex4(0)]);
+        meanArray[1] = find_mean(inPointFieldVecEnsemble[updateIndex4(1)]);
+        meanArray[2] = find_mean(inPointFieldVecEnsemble[updateIndex4(2)]);
+        meanArray[3] = find_mean(inPointFieldVecEnsemble[updateIndex4(3)]);
+
+        //if (workIndex == 0)
+        //{
+        //    std::cout << meanArray[0] << " " << meanArray[1] << " " << meanArray[2] << " " << meanArray[3] << std::endl;
+        //}
 
         // std::vector<double> cov_matrix;
         // for 4*4 matrix, there are 10 numbers at upper conner
@@ -52,7 +57,9 @@ public:
         {
             for (int q = p; q < 4; ++q)
             {
-                float cov = find_covariance(inPointFieldVecEnsemble[p], inPointFieldVecEnsemble[q], meanArray[p], meanArray[q]);
+                int updatep = updateIndex4(p);
+                int updateq = updateIndex4(q);
+                float cov = find_covariance(inPointFieldVecEnsemble[updatep], inPointFieldVecEnsemble[updateq], meanArray[p], meanArray[q]);
                 cov_matrix[index] = cov;
                 index++;
             }
@@ -67,7 +74,7 @@ public:
             ucvmeanv.v[i] = meanArray[i];
         }
 
-        vtkm::IdComponent numSamples = 1000;
+        vtkm::IdComponent numSamples = m_num_sample;
         vtkm::Id numCrossings = 0;
         // this can be adapted to 3d case
 
@@ -89,7 +96,49 @@ public:
             }
         }
 
+        //if (workIndex ==15822)
+        //{
+        //    matrix_show(&ucvcov4by4);
+        //}
+
+        double result[4];
+        eigen_solve_eigenvalues(&ucvcov4by4, 0.000001, 50, result);
+
         UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov4by4);
+
+        //if (workIndex ==15822)
+        //{
+        //    printf("eigen values\n");
+        //    printf("%8.7f %8.7f %8.7f %8.7f\n",result[0],result[1],result[2],result[3]);
+        //    printf("eigen dec ucv\n");
+        //    matrix_show(&A);
+        //}
+
+        /*
+        using the eigen to do the same operation to check the results
+        
+        Eigen::Vector4d meanVector(4);
+        meanVector << meanArray[0], meanArray[1], meanArray[2], meanArray[3];
+        Eigen::Matrix4d cov4by4(4, 4);
+        cov4by4 << cov_matrix[0], cov_matrix[1], cov_matrix[2], cov_matrix[3],
+            cov_matrix[1], cov_matrix[4], cov_matrix[5], cov_matrix[6],
+            cov_matrix[2], cov_matrix[5], cov_matrix[7], cov_matrix[8],
+            cov_matrix[3], cov_matrix[6], cov_matrix[8], cov_matrix[9];
+        Eigen::EigenMultivariateNormal<vtkm::Float64> normX_solver(meanVector, cov4by4);
+        if (workIndex ==15822)
+        {
+            std::cout << normX_solver._eigenSolver.eigenvalues() << std::endl;
+            printf("eigen dec, eigen lib\n");
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    printf(" %f", normX_solver._transform(i, j));
+                }
+                printf("\n");
+            }
+        }
+        */
 
         UCVMATH::vec_t sample_v;
         UCVMATH::vec_t AUM;
@@ -111,8 +160,15 @@ public:
                 // using other sample mechanism such as thrust as needed
                 sample_v.v[i] = norm(rng);
             }
+
             AUM = UCVMATH::matrix_mul_vec_add_vec(&A, &sample_v, &ucvmeanv);
-            //vec_show(&AUM);
+
+            //if (n==0 && workIndex == 15822)
+            //{
+            //    printf("ucv AUM\n");
+            //    vec_show(&AUM);
+            //}
+
             if ((m_isovalue <= AUM.v[0]) && (m_isovalue <= AUM.v[1]) && (m_isovalue <= AUM.v[2]) && (m_isovalue <= AUM.v[3]))
             {
                 numCrossings = numCrossings + 0;
@@ -130,6 +186,30 @@ public:
         // cross probability
         // std::cout << "ucv numCrossings " << numCrossings << std::endl;
         outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
+    }
+
+    VTKM_EXEC int updateIndex4(int index) const
+    {
+        if (index == 0)
+        {
+            return 0;
+        }
+        else if (index == 1)
+        {
+            return 3;
+        }
+        else if (index == 2)
+        {
+            return 1;
+        }
+        else if (index == 3)
+        {
+            return 2;
+        }
+
+        printf("error, failed to compute updateIndex4\n");
+
+        return 0;
     }
 
     // how to get this vtkm::Vec<double, 15> in an more efficient way
@@ -158,11 +238,12 @@ public:
         double sum = 0;
         for (int i = 0; i < arraySize; i++)
             sum = sum + (arr1[i] - mean1) * (arr2[i] - mean2);
-        return sum / (1.0 * (arraySize - 1));
+        return (double)sum / (double)(arraySize - 1);
     }
 
 private:
     double m_isovalue;
+    int m_num_sample=1000;
 };
 
 #endif // UCV_MULTIVARIANT_GAUSSIAN2D_h

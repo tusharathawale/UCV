@@ -83,9 +83,17 @@ void initBackend(vtkm::cont::Timer &timer)
 }
 int main(int argc, char *argv[])
 {
+
+  if(argc!=3){
+    std::cout << "<executable> <iso> <num of sample>" << std::endl;
+    exit(0);
+  } 
+
   vtkm::cont::Initialize(argc, argv);
   vtkm::cont::Timer timer;
   initBackend(timer);
+  std::cout << "timer device: "<< timer.GetDevice().GetName()<< std::endl;
+
 
   // assuming the ensemble data set is already been extracted out
   // we test results by this dataset
@@ -119,7 +127,10 @@ int main(int argc, char *argv[])
   vtkm::cont::DataSet vtkmDataSet = dataSetBuilder.Create(dims);
 
   std::string windDataDir = "./wind_pressure_200/";
-  double isovalue = 0.3;
+  double isovalue = std::stod(argv[1]);
+  int num_samples = std::stoi(argv[2]);
+  std::cout << "iso is: " << isovalue << " num_samples is: " << num_samples << std::endl;
+  
   // double isovalue = 1.5;
   //  15 files each contains all data in one file
   //  std::vector<vtkm::cont::ArrayHandle<vtkm::Float64>> componentArrays;
@@ -198,7 +209,7 @@ int main(int argc, char *argv[])
   auto resolveType = [&](const auto &concrete)
   {
     // DispatcherType dispatcher(MVGaussianWithEnsemble2D{isovalue});
-    DispatcherType dispatcher(MVGaussianWithEnsemble2DTryLialg{isovalue});
+    DispatcherType dispatcher(MVGaussianWithEnsemble2DTryLialg{isovalue, num_samples});
     dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability);
   };
 
@@ -212,7 +223,7 @@ int main(int argc, char *argv[])
 
   // check results
   vtkmDataSet.AddCellField("cross_prob", crossProbability);
-  std::string outputFileName = "./wind_pressure_200.vtk";
+  std::string outputFileName = "./wind_pressure_200_ucv.vtk";
   vtkm::io::VTKDataSetWriter writeCross(outputFileName);
   writeCross.WriteDataSet(vtkmDataSet);
 }
