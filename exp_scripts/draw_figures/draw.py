@@ -123,6 +123,35 @@ def beetle_results_omp_gpu():
     plt.savefig("beetle_results_mg_omp_gpu_split.png",bbox_inches='tight')
     plt.savefig("beetle_results_mg_omp_gpu_split.pdf",bbox_inches='tight')
 
-                                                                                                                                                                           
+
+def wind_reuslts_omp_gpu():
+
+    fig, ax = plt.subplots(figsize=(6,3.5))
+    ax.set_xlabel('Number of Monte-Carlo samples', fontsize=13.5)
+    ax.set_ylabel('Time(ms)', fontsize=13.5)
+    ax.set_ylim([0,3000])
+
+    N = 4
+    ind = np.arange(N)  # the x locations for the groups
+    width = 0.3      # the width of the bars
+    ax.set_xticks(ind + 1.5*width)
+    ax.set_xticklabels(('1000','2000','4000','8000'), fontsize=13.5)
+
+    openmp_mean = (342.7656667, 727.5533333,1385.643333,2700.696667)
+    openmp_std = (0.0112398102,4.148983289,5.792066413,5.944714739)
+    p2 = ax.bar(ind+ width, openmp_mean,  width, color=[gred]*3, capsize=3, yerr=openmp_std, ecolor='grey')
+
+
+    cuda_mean = (45.57553333,106.6176667,149.0303333,254.9003333)
+    cuda_std = (0.07820206732,2.948390126,2.655132075,17.84778937)
+    p3 = ax.bar(ind+ 2*width, cuda_mean,  width, color=[gblue]*3, capsize=3, yerr=cuda_std, ecolor='grey')
+    
+    ax.legend(('OpenMP', 'Cuda'), loc='upper left', ncol=1, fontsize='large')
+
+
+    plt.savefig("wind_results_omp_gpu.png",bbox_inches='tight')
+    plt.savefig("wind_results_omp_gpu.pdf",bbox_inches='tight')    
+
 if __name__ == "__main__":
     beetle_results_omp_gpu()
+    wind_reuslts_omp_gpu()

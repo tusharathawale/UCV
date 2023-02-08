@@ -37,12 +37,19 @@ public:
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
 
+        // TODO, using numVertexies to decide the length of mean and cov
+        // and decide them at the runtime
+  
         vtkm::Vec<vtkm::FloatDefault, 4> meanArray;
-        // derive type
-        meanArray[0] = find_mean(inPointFieldVecEnsemble[updateIndex4(0)]);
-        meanArray[1] = find_mean(inPointFieldVecEnsemble[updateIndex4(1)]);
-        meanArray[2] = find_mean(inPointFieldVecEnsemble[updateIndex4(2)]);
-        meanArray[3] = find_mean(inPointFieldVecEnsemble[updateIndex4(3)]);
+
+        // get the type in the fieldVec
+        // the VecType specifies the number of ensembles
+        using VecType = decltype(inPointFieldVecEnsemble[0]);
+
+        meanArray[0] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(0)]);
+        meanArray[1] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(1)]);
+        meanArray[2] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(2)]);
+        meanArray[3] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(3)]);
 
         //if (workIndex == 0)
         //{
@@ -59,7 +66,7 @@ public:
             {
                 int updatep = updateIndex4(p);
                 int updateq = updateIndex4(q);
-                float cov = find_covariance(inPointFieldVecEnsemble[updatep], inPointFieldVecEnsemble[updateq], meanArray[p], meanArray[q]);
+                float cov = find_covariance<VecType>(inPointFieldVecEnsemble[updatep], inPointFieldVecEnsemble[updateq], meanArray[p], meanArray[q]);
                 cov_matrix[index] = cov;
                 index++;
             }
@@ -213,7 +220,8 @@ public:
     }
 
     // how to get this vtkm::Vec<double, 15> in an more efficient way
-    VTKM_EXEC vtkm::Float64 find_mean(const vtkm::Vec<double, 15> &arr) const
+    template <typename VecType>
+    VTKM_EXEC vtkm::Float64 find_mean(const VecType &arr) const
     {
         vtkm::Float64 sum = 0;
         vtkm::Id num = arr.GetNumberOfComponents();
@@ -224,8 +232,8 @@ public:
         vtkm::Float64 mean = (1.0 * sum) / (1.0 * num);
         return mean;
     }
-
-    VTKM_EXEC double find_covariance(const vtkm::Vec<double, 15> &arr1, const vtkm::Vec<double, 15> &arr2,
+    template <typename VecType>
+    VTKM_EXEC double find_covariance(const VecType &arr1, const VecType &arr2,
                                      double &mean1, double &mean2) const
     {
         if (arr1.GetNumberOfComponents() != arr2.GetNumberOfComponents())

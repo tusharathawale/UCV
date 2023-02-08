@@ -52,6 +52,9 @@ target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eige
 add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
 target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
 
+add_executable(test_mvgaussian_redsea test_mvgaussian_redsea.cpp)
+target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
+
 add_executable(test_mvgaussian_3d test_mvgaussian_3d.cpp)
 target_link_libraries(test_mvgaussian_3d ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
 

@@ -1,5 +1,7 @@
 This repo contains some code that use the vtk-m to implement the uncertainty algorithm.
 
+The original name is the UCV, the updated name might be UVM (uncertianty visualizatio based on vkt-m), which might be more make sense.
+
 ### Build
 
 install example on ubuntu machine:
