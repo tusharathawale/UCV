@@ -48,11 +48,22 @@ E = np.array(
  [0.0007015, 0.0006144, 0.0006792, 0.0006132]]
 )
 
+F = np.array([
+[0.20, 0.60, 0.40],
+[0.60, 1.80, 1.20],
+[0.40, 1.20, 0.80]
+])
+
+G = np.array([
+[0.0, 0.0, 0.0],
+[0.0, 20.0, 60.0],
+[0.0, 60.0, 180.0]
+])
 
 np.set_printoptions(formatter={'float': lambda x: "{0:0.8f}".format(x)})
 
 
-inputM = E
+inputM = G
 
 print("inputM=")
 print((inputM))

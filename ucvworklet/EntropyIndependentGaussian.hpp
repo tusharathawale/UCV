@@ -59,6 +59,7 @@ public:
             vtkm::FloatDefault stdev = inPointFieldVecStdev[pointIndex];
 
             // assuming we use the indepedent gaussian distribution
+            // this is the error function to compute Pr[X<=L(m_iso)] for gaussian distribution
             negativeProb = 0.5 * (1 + std::erf((m_isovalue - mean) / (std::sqrt(2) * stdev)));
             positiveProb = 1.0 - negativeProb;
 

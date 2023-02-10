@@ -1,5 +1,5 @@
-#ifndef UCV_MATRIX_H_STATIC_FOUR
-#define UCV_MATRIX_H_STATIC_FOUR
+#ifndef UCV_MATRIX_H_STATIC_THREE
+#define UCV_MATRIX_H_STATIC_THREE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,29 +18,33 @@
 #include <random>
 #endif // VTKM_CUDA
 
-namespace UCVMATH
+//Currently, we just use the simple idea
+//namely the namespace to distinguish different matrix declaration
+namespace UCVMATH_THREE
 {
-    // typical 4*4 matrix
+    // typical 3*3 matrix
     // this should be updated as needed to support matrix
     // with different size, maybe use the macro defination similar to this
     // https://stackoverflow.com/questions/34820324/macro-for-dynamic-types-in-c
     // or maybe use the code generation tool in future
+     
+    #define MSIZE 3
 
     typedef struct
     {
-        int m = 4, n = 4; // m is row, n is column
-        double v[4][4] = {0};
+        int m = MSIZE, n = MSIZE; // m is row, n is column
+        double v[MSIZE][MSIZE] = {0};
     } mat_t, *mat;
 
     typedef struct
     {
-        int len = 4;
-        double v[4] = {0};
+        int len = MSIZE;
+        double v[MSIZE] = {0};
     } vec_t, *vec;
 
     VTKM_EXEC inline vec_t vec_new(int len)
     {
-        assert(len == 4);
+        assert(len == MSIZE);
         vec_t v;
         for (int i = 0; i < len; i++)
         {
@@ -62,8 +66,8 @@ namespace UCVMATH
     VTKM_EXEC inline mat_t matrix_new_eye(int m, int n)
     {
         mat_t x;
-        assert(m == 4);
-        assert(n == 4);
+        assert(m == MSIZE);
+        assert(n == MSIZE);
         x.m = m;
         x.n = n;
         for (int i = 0; i < m; i++)
@@ -310,9 +314,9 @@ namespace UCVMATH
         // create a list, the 0 position is A the 1 position is H1...
         // the 3th position is H3
         assert(m->m == m->n);
-        assert(m->m == 4);
+        assert(m->m == MSIZE);
 
-        mat_t mat_list[4];
+        mat_t mat_list[MSIZE];
         mat_list[0] = *m;
         *R = *m;
         for (int k = 1; k < m->m; k++)
@@ -461,133 +465,40 @@ namespace UCVMATH
         }
     }
 
-    // inverse 4*4 matrix
+    // inverse 3*3 matrix
     // for small matrix, we use the direact inverse to solve the linear equation
     // for large matrix, we need to use other method such as qr things to solve
     // the linear system
     // there is a mesa version online
 
     // TODO, checking singularity for inverting the matrix
+    // refer to https://ardoris.wordpress.com/2008/07/18/general-formula-for-the-inverse-of-a-3x3-matrix/
 
-    VTKM_EXEC inline bool invert4by4matrix(mat m, mat inv_m)
+    VTKM_EXEC inline bool invert3by3matrix(mat m, mat inv_m)
     {
 
-        inv_m->v[0][0] = m->v[1][1] * m->v[2][2] * m->v[3][3] -
-                         m->v[1][1] * m->v[2][3] * m->v[3][2] -
-                         m->v[2][1] * m->v[1][2] * m->v[3][3] +
-                         m->v[2][1] * m->v[1][3] * m->v[3][2] +
-                         m->v[3][1] * m->v[1][2] * m->v[2][3] -
-                         m->v[3][1] * m->v[1][3] * m->v[2][2];
+        inv_m->v[0][0] = m->v[1][1]*m->v[2][2]-m->v[1][2]*m->v[2][1];
 
-        inv_m->v[1][0] = -m->v[1][0] * m->v[2][2] * m->v[3][3] +
-                         m->v[1][0] * m->v[2][3] * m->v[3][2] +
-                         m->v[2][0] * m->v[1][2] * m->v[3][3] -
-                         m->v[2][0] * m->v[1][3] * m->v[3][2] -
-                         m->v[3][0] * m->v[1][2] * m->v[2][3] +
-                         m->v[3][0] * m->v[1][3] * m->v[2][2];
+        inv_m->v[1][0] = m->v[1][2]*m->v[2][0]-m->v[1][0]*m->v[2][2];
 
-        inv_m->v[2][0] = m->v[1][0] * m->v[2][1] * m->v[3][3] -
-                         m->v[1][0] * m->v[2][3] * m->v[3][1] -
-                         m->v[2][0] * m->v[1][1] * m->v[3][3] +
-                         m->v[2][0] * m->v[1][3] * m->v[3][1] +
-                         m->v[3][0] * m->v[1][1] * m->v[2][3] -
-                         m->v[3][0] * m->v[1][3] * m->v[2][1];
+        inv_m->v[2][0] = m->v[1][0]*m->v[2][1]-m->v[1][1]*m->v[2][0];
 
-        inv_m->v[3][0] = -m->v[1][0] * m->v[2][1] * m->v[3][2] +
-                         m->v[1][0] * m->v[2][2] * m->v[3][1] +
-                         m->v[2][0] * m->v[1][1] * m->v[3][2] -
-                         m->v[2][0] * m->v[1][2] * m->v[3][1] -
-                         m->v[3][0] * m->v[1][1] * m->v[2][2] +
-                         m->v[3][0] * m->v[1][2] * m->v[2][1];
+        inv_m->v[0][1] = m->v[0][2]*m->v[2][1]-m->v[0][1]*m->v[2][2];
 
-        inv_m->v[0][1] = -m->v[0][1] * m->v[2][2] * m->v[3][3] +
-                         m->v[0][1] * m->v[2][3] * m->v[3][2] +
-                         m->v[2][1] * m->v[0][2] * m->v[3][3] -
-                         m->v[2][1] * m->v[0][3] * m->v[3][2] -
-                         m->v[3][1] * m->v[0][2] * m->v[2][3] +
-                         m->v[3][1] * m->v[0][3] * m->v[2][2];
+        inv_m->v[1][1] = m->v[0][0]*m->v[2][2]-m->v[0][2]*m->v[2][0];
 
-        inv_m->v[1][1] = m->v[0][0] * m->v[2][2] * m->v[3][3] -
-                         m->v[0][0] * m->v[2][3] * m->v[3][2] -
-                         m->v[2][0] * m->v[0][2] * m->v[3][3] +
-                         m->v[2][0] * m->v[0][3] * m->v[3][2] +
-                         m->v[3][0] * m->v[0][2] * m->v[2][3] -
-                         m->v[3][0] * m->v[0][3] * m->v[2][2];
+        inv_m->v[2][1] = m->v[0][1]*m->v[2][0]-m->v[0][0]*m->v[2][1];
 
-        inv_m->v[2][1] = -m->v[0][0] * m->v[2][1] * m->v[3][3] +
-                         m->v[0][0] * m->v[2][3] * m->v[3][1] +
-                         m->v[2][0] * m->v[0][1] * m->v[3][3] -
-                         m->v[2][0] * m->v[0][3] * m->v[3][1] -
-                         m->v[3][0] * m->v[0][1] * m->v[2][3] +
-                         m->v[3][0] * m->v[0][3] * m->v[2][1];
+        inv_m->v[0][2] = m->v[0][1]*m->v[1][2]-m->v[0][2]*m->v[1][1];
 
-        inv_m->v[3][1] = m->v[0][0] * m->v[2][1] * m->v[3][2] -
-                         m->v[0][0] * m->v[2][2] * m->v[3][1] -
-                         m->v[2][0] * m->v[0][1] * m->v[3][2] +
-                         m->v[2][0] * m->v[0][2] * m->v[3][1] +
-                         m->v[3][0] * m->v[0][1] * m->v[2][2] -
-                         m->v[3][0] * m->v[0][2] * m->v[2][1];
+        inv_m->v[1][2] = m->v[0][2]*m->v[1][0]-m->v[0][0]*m->v[1][2];
 
-        inv_m->v[0][2] = m->v[0][1] * m->v[1][2] * m->v[3][3] -
-                         m->v[0][1] * m->v[1][3] * m->v[3][2] -
-                         m->v[1][1] * m->v[0][2] * m->v[3][3] +
-                         m->v[1][1] * m->v[0][3] * m->v[3][2] +
-                         m->v[3][1] * m->v[0][2] * m->v[1][3] -
-                         m->v[3][1] * m->v[0][3] * m->v[1][2];
+        inv_m->v[2][2] = m->v[0][0]*m->v[1][1]-m->v[0][1]*m->v[1][0];
 
-        inv_m->v[1][2] = -m->v[0][0] * m->v[1][2] * m->v[3][3] +
-                         m->v[0][0] * m->v[1][3] * m->v[3][2] +
-                         m->v[1][0] * m->v[0][2] * m->v[3][3] -
-                         m->v[1][0] * m->v[0][3] * m->v[3][2] -
-                         m->v[3][0] * m->v[0][2] * m->v[1][3] +
-                         m->v[3][0] * m->v[0][3] * m->v[1][2];
 
-        inv_m->v[2][2] = m->v[0][0] * m->v[1][1] * m->v[3][3] -
-                         m->v[0][0] * m->v[1][3] * m->v[3][1] -
-                         m->v[1][0] * m->v[0][1] * m->v[3][3] +
-                         m->v[1][0] * m->v[0][3] * m->v[3][1] +
-                         m->v[3][0] * m->v[0][1] * m->v[1][3] -
-                         m->v[3][0] * m->v[0][3] * m->v[1][1];
-
-        inv_m->v[3][2] = -m->v[0][0] * m->v[1][1] * m->v[3][2] +
-                         m->v[0][0] * m->v[1][2] * m->v[3][1] +
-                         m->v[1][0] * m->v[0][1] * m->v[3][2] -
-                         m->v[1][0] * m->v[0][2] * m->v[3][1] -
-                         m->v[3][0] * m->v[0][1] * m->v[1][2] +
-                         m->v[3][0] * m->v[0][2] * m->v[1][1];
-
-        inv_m->v[0][3] = -m->v[0][1] * m->v[1][2] * m->v[2][3] +
-                         m->v[0][1] * m->v[1][3] * m->v[2][2] +
-                         m->v[1][1] * m->v[0][2] * m->v[2][3] -
-                         m->v[1][1] * m->v[0][3] * m->v[2][2] -
-                         m->v[2][1] * m->v[0][2] * m->v[1][3] +
-                         m->v[2][1] * m->v[0][3] * m->v[1][2];
-
-        inv_m->v[1][3] = m->v[0][0] * m->v[1][2] * m->v[2][3] -
-                         m->v[0][0] * m->v[1][3] * m->v[2][2] -
-                         m->v[1][0] * m->v[0][2] * m->v[2][3] +
-                         m->v[1][0] * m->v[0][3] * m->v[2][2] +
-                         m->v[2][0] * m->v[0][2] * m->v[1][3] -
-                         m->v[2][0] * m->v[0][3] * m->v[1][2];
-
-        inv_m->v[2][3] = -m->v[0][0] * m->v[1][1] * m->v[2][3] +
-                         m->v[0][0] * m->v[1][3] * m->v[2][1] +
-                         m->v[1][0] * m->v[0][1] * m->v[2][3] -
-                         m->v[1][0] * m->v[0][3] * m->v[2][1] -
-                         m->v[2][0] * m->v[0][1] * m->v[1][3] +
-                         m->v[2][0] * m->v[0][3] * m->v[1][1];
-
-        inv_m->v[3][3] = m->v[0][0] * m->v[1][1] * m->v[2][2] -
-                         m->v[0][0] * m->v[1][2] * m->v[2][1] -
-                         m->v[1][0] * m->v[0][1] * m->v[2][2] +
-                         m->v[1][0] * m->v[0][2] * m->v[2][1] +
-                         m->v[2][0] * m->v[0][1] * m->v[1][2] -
-                         m->v[2][0] * m->v[0][2] * m->v[1][1];
-
-        double det = m->v[0][0] * inv_m->v[0][0] +
-                     m->v[0][1] * inv_m->v[1][0] +
-                     m->v[0][2] * inv_m->v[2][0] +
-                     m->v[0][3] * inv_m->v[3][0];
+        double det = m->v[0][0]*(m->v[1][1]*m->v[2][2]-m->v[1][2]*m->v[2][1])
+         - m->v[0][1]*(m->v[1][0]*m->v[2][2]-m->v[1][2]*m->v[2][0])
+         + m->v[0][2]*(m->v[1][0]*m->v[2][1]-m->v[1][1]*m->v[2][0]); 
 
         if (det == 0)
         {
@@ -598,9 +509,9 @@ namespace UCVMATH
 
         det = 1.0 / det;
 
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < MSIZE; i++)
         {
-            for (int j = 0; j < 4; j++)
+            for (int j = 0; j < MSIZE; j++)
             {
                 inv_m->v[i][j] = inv_m->v[i][j] * det;
             }
@@ -616,10 +527,10 @@ namespace UCVMATH
     VTKM_EXEC inline mat_t eigen_solve_eigen_vectors(mat m, double *eigen_value_array, int len_eigen_vec, int num_eigen_value, int iter_max)
     {
 
-        // only works for 4*4 now, since the matirc reverse is designed for 4*4
+        // only works for 3*3 now, since the matirc reverse is designed for 3*3
         // add more flexible linear system solver in future
-        assert(m->m == 4);
-        assert(m->n == 4);
+        assert(m->m == MSIZE);
+        assert(m->n == MSIZE);
 
         // create the empty eigen vectors matrix
         // raw of matrix represents the size of eigen vec
@@ -671,7 +582,7 @@ namespace UCVMATH
             // puts("m_minus_lambda_i");
             // matrix_show(m_minus_lambda_i);
             //  solve equation bk+1 = m_minus_lambda_i_rev * bk i
-            bool invertok = invert4by4matrix(&m_minus_lambda_i, &m_minus_lambda_i_inv);
+            bool invertok = invert3by3matrix(&m_minus_lambda_i, &m_minus_lambda_i_inv);
             assert(invertok == true);
             // puts("m_minus_lambda_i_inv");
             // matrix_show(m_minus_lambda_i_inv);
@@ -724,13 +635,13 @@ namespace UCVMATH
         // assuming m has eigen value and eigen vectors
         // assuming it is not singular matrix
 
-        double result[4];
+        double result[MSIZE];
         eigen_solve_eigenvalues(x, 0.000001, 30, result);
 
         // update this when we have flexible linear system solver
-        assert(x->m == 4);
-        assert(x->n == 4);
-        mat_t eigen_vectors = eigen_solve_eigen_vectors(x, result, 4, 4, 30);
+        assert(x->m == MSIZE);
+        assert(x->n == MSIZE);
+        mat_t eigen_vectors = eigen_solve_eigen_vectors(x, result, MSIZE, MSIZE, 30);
 
         // create the diaganal matrix
         mat_t diag;
@@ -747,7 +658,7 @@ namespace UCVMATH
 
     VTKM_EXEC inline vec_t norm_sampling_vec(int row)
     {
-        assert(row == 4);
+        assert(row == MSIZE);
 #ifdef VTKM_CUDA
         thrust::minstd_rand rng;
         thrust::random::normal_distribution<double> norm;

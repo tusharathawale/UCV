@@ -16,6 +16,8 @@
 
 #include <vtkm/cont/Timer.h>
 
+#include <mpi.h>
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -72,28 +74,17 @@ void initBackend(vtkm::cont::Timer &timer)
   return;
 }
 
-void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, double iso, int numSamples, std::string datatype)
+void callWorklet(vtkm::cont::DataSet vtkmDataSet, double iso, int numSamples, std::string datatype)
 {
-  timer.Start();
 
   vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
   vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
   vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
 
-
   if (datatype == "poly")
   {
-    // executing the uncertianty thing
-    using WorkletType = MVGaussianWithEnsemble2DPolyTryLialgEntropy;
-    using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
-    // There are three vertecies
-    auto resolveType = [&](const auto &concrete)
-    {
-      DispatcherType dispatcher(MVGaussianWithEnsemble2DPolyTryLialgEntropy{iso, numSamples});
-      dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability, numNonZeroProb, entropy);
-    };
 
-    vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
+    std::cout << "only support structured case" << std::endl;
   }
   else
   {
@@ -109,8 +100,8 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
     vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
   }
 
-  timer.Stop();
-
+  /*
+  // do not output the data for the parallel case
   // output is ms
   std::cout << "execution time: " << timer.GetElapsedTime() * 1000 << std::endl;
 
@@ -122,54 +113,24 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   // we use a shallow copy as the data set for
   auto outputDataSet = vtkmDataSet;
   outputDataSet.AddCellField("cross_prob_" + isostr, crossProbability);
-  outputDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
-  outputDataSet.AddCellField("entropy" + isostr, entropy);
 
   std::string outputFileName = "./red_sea_ucv_iso_" + datatype + "_" + isostr + ".vtk";
   vtkm::io::VTKDataSetWriter writeCross(outputFileName);
   writeCross.WriteDataSet(outputDataSet);
+  */
 }
 
-int main(int argc, char *argv[])
+vtkm::cont::DataSet loadData(int sliceId)
 {
-
-  if (argc != 3)
-  {
-    std::cout << "<executable> <iso> <num of sample>" << std::endl;
-    exit(0);
-  }
-
-  vtkm::cont::Initialize(argc, argv);
-  vtkm::cont::Timer timer;
-  initBackend(timer);
-  std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
-
+  std::string dataDir = "./red_sea_vtkdata_velocityMagnitude/";
+  const int numEnsembles = 20;
   vtkm::Id xdim = 500;
   vtkm::Id ydim = 500;
   vtkm::Id zdim = 1;
-
-  const vtkm::Id3 dims(xdim, ydim, zdim);
-  vtkm::cont::DataSetBuilderUniform dataSetBuilder;
-
-  vtkm::cont::DataSet vtkmDataSet = dataSetBuilder.Create(dims);
-
-  std::string dataDir = "./red_sea_vtkdata_velocityMagnitude/";
-  double isovalue = std::stod(argv[1]);
-  int num_samples = std::stoi(argv[2]);
-  std::cout << "iso value is: " << isovalue << " num_samples is: " << num_samples << std::endl;
-
-  const int numEnsembles = 20;
-  int sliceId = 0;
-
   using Vec20 = vtkm::Vec<double, numEnsembles>;
   vtkm::cont::ArrayHandle<Vec20> dataArraySOA;
   dataArraySOA.Allocate(xdim * ydim);
-
-  // this is the original data
-  // first dim is the ensemble
-  // second dim is each slice
   std::vector<vtkm::cont::ArrayHandle<vtkm::Float64>> dataArray;
-
   for (int ensId = 1; ensId <= numEnsembles; ensId++)
   {
     // load each ensemble data
@@ -203,30 +164,88 @@ int main(int argc, char *argv[])
     }
   }
 
+  const vtkm::Id3 dims(xdim, ydim, zdim);
+  vtkm::cont::DataSetBuilderUniform dataSetBuilder;
+  vtkm::cont::DataSet vtkmDataSet = dataSetBuilder.Create(dims);
   vtkmDataSet.AddPointField("ensembles", dataArraySOA);
-  std::cout << "checking input dataset" << std::endl;
-  vtkmDataSet.PrintSummary(std::cout);
+  return vtkmDataSet;
+}
 
-  // std::string outputFileName = "./red_sea_ens_slice_" + std::to_string(sliceId) + ".vtk";
-  // vtkm::io::VTKDataSetWriter writeEnsembles(outputFileName);
-  // writeEnsembles.WriteDataSet(vtkmDataSet);
+int main(int argc, char *argv[])
+{
+  // compute the number of slices processed by this rank
+  int rc = MPI_Init(&argc, &argv);
+  int rank;
+  int numProcesses;
+  if (rc != MPI_SUCCESS)
+  {
+    printf("Error starting MPI program. Terminating.\n");
+    MPI_Abort(MPI_COMM_WORLD, rc);
+  }
+  MPI_Comm_size(MPI_COMM_WORLD, &numProcesses);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
-  std::cout << "ok for stru" << std::endl;
-  // test unstructred grid
-  // convert the original data to the unstructured grid
-  vtkm::filter::clean_grid::CleanGrid clean;
-  auto cleanedDataSet = clean.Execute(vtkmDataSet);
-  cleanedDataSet.PrintSummary(std::cout);
+  if (argc != 3)
+  {
+    if (rank == 0)
+    {
+      std::cout << "<executable> <iso> <num of sample>" << std::endl;
+      exit(0);
+    }
+  }
 
-  callWorklet(timer, cleanedDataSet, isovalue, num_samples, "unstru");
-  std::cout << "ok for unstru" << std::endl;
+  double isovalue = std::stod(argv[1]);
+  int num_samples = std::stoi(argv[2]);
+  if (rank == 0)
+  {
+    std::cout << "iso value is: " << isovalue << " num_samples is: " << num_samples << std::endl;
+  }
 
-  vtkm::filter::geometry_refinement::Triangulate triangulate;
-  auto tranDataSet = triangulate.Execute(vtkmDataSet);
-  tranDataSet.PrintSummary(std::cout);
+  vtkm::cont::Initialize(argc, argv);
+  vtkm::cont::Timer timer;
+  initBackend(timer);
+  std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
 
-  callWorklet(timer, tranDataSet, isovalue, num_samples, "poly");
-  std::cout << "ok for poly" << std::endl;
+  int totalSlice = 50;
+  // 50 slices in total
+  if (numProcesses > totalSlice)
+  {
+    std::cout << "only works when the num of proces < 50" << std::endl;
+    exit(0);
+  }
+
+  std::vector<vtkm::cont::DataSet> dsList;
+  for (int sliceId = 0; sliceId < totalSlice; sliceId++)
+  {
+    if (sliceId % numProcesses == rank)
+    {
+
+      // current rank load the ith slice
+      std::cout << "rank " << rank << " load slice " << sliceId << std::endl;
+      vtkm::cont::DataSet ds = loadData(sliceId);
+      dsList.push_back(ds);
+    }
+  }
+
+  // do the processing for each member in the list
+  // time it
+  timer.Start();
+
+  for (int i = 0; i < dsList.size(); i++)
+  {
+    callWorklet(dsList[i], isovalue, num_samples, "stru");
+  }
+
+  timer.Stop();
+
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  if (rank == 0)
+  {
+    std::cout << "execution time for rank 0: " << timer.GetElapsedTime() * 1000 << std::endl;
+  }
+
+  MPI_Finalize();
+
   return 0;
 }

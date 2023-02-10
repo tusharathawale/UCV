@@ -7,32 +7,33 @@
 // #include "./linalg/ucv_matrix.h"
 #include "./linalg/ucv_matrix_static_4by4.h"
 
-// use this as the results checking on cpu
-#include "./eigenmvn.h"
-// this worklet is for the input data that put the different data in a separate array
-// for the wind data here https://github.com/MengjiaoH/Probabilistic-Marching-Cubes-C-/tree/main/datasets/txt_files/wind_pressure_200
-// there are 15 numbers (ensemble extraction) each data is put in a different file
-
-class MVGaussianWithEnsemble2DTryLialg : public vtkm::worklet::WorkletVisitCellsWithPoints
+class MVGaussianWithEnsemble2DTryLialgEntropy : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    MVGaussianWithEnsemble2DTryLialg(double isovalue, int num_sample)
+    MVGaussianWithEnsemble2DTryLialgEntropy(double isovalue, int num_sample)
         : m_isovalue(isovalue), m_num_sample(num_sample){};
 
     using ControlSignature = void(CellSetIn,
                                   FieldInPoint,
+                                  FieldOutCell,
+                                  FieldOutCell,
                                   FieldOutCell);
 
-    using ExecutionSignature = void(_2, _3, WorkIndex);
+    using ExecutionSignature = void(_2, _3, _4, _5);
 
     // the first parameter is binded with the worklet
     using InputDomain = _1;
     // InPointFieldType should be a vector
-    template <typename InPointFieldVecEnsemble, typename OutCellFieldType>
+    template <typename InPointFieldVecEnsemble,
+              typename OutCellFieldType1,
+              typename OutCellFieldType2,
+              typename OutCellFieldType3>
 
     VTKM_EXEC void operator()(
         const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
-        OutCellFieldType &outCellFieldCProb, vtkm::Id workIndex) const
+        OutCellFieldType1 &outCellFieldCProb,
+        OutCellFieldType2 &outCellFieldNumNonzeroProb,
+        OutCellFieldType3 &outCellFieldEntropy) const
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
@@ -94,7 +95,7 @@ public:
         }
 
         vtkm::IdComponent numSamples = m_num_sample;
-        vtkm::Id numCrossings = 0;
+        // vtkm::Id numCrossings = 0;
         // this can be adapted to 3d case
 
         UCVMATH::mat_t ucvcov4by4;
@@ -125,40 +126,6 @@ public:
 
         UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov4by4);
 
-        // if (workIndex ==15822)
-        //{
-        //     printf("eigen values\n");
-        //     printf("%8.7f %8.7f %8.7f %8.7f\n",result[0],result[1],result[2],result[3]);
-        //     printf("eigen dec ucv\n");
-        //     matrix_show(&A);
-        // }
-
-        /*
-        using the eigen to do the same operation to check the results
-
-        Eigen::Vector4d meanVector(4);
-        meanVector << meanArray[0], meanArray[1], meanArray[2], meanArray[3];
-        Eigen::Matrix4d cov4by4(4, 4);
-        cov4by4 << cov_matrix[0], cov_matrix[1], cov_matrix[2], cov_matrix[3],
-            cov_matrix[1], cov_matrix[4], cov_matrix[5], cov_matrix[6],
-            cov_matrix[2], cov_matrix[5], cov_matrix[7], cov_matrix[8],
-            cov_matrix[3], cov_matrix[6], cov_matrix[8], cov_matrix[9];
-        Eigen::EigenMultivariateNormal<vtkm::Float64> normX_solver(meanVector, cov4by4);
-        if (workIndex ==15822)
-        {
-            std::cout << normX_solver._eigenSolver.eigenvalues() << std::endl;
-            printf("eigen dec, eigen lib\n");
-            for (int i = 0; i < 4; i++)
-            {
-                for (int j = 0; j < 4; j++)
-                {
-                    printf(" %f", normX_solver._transform(i, j));
-                }
-                printf("\n");
-            }
-        }
-        */
-
         UCVMATH::vec_t sample_v;
         UCVMATH::vec_t AUM;
 
@@ -171,6 +138,12 @@ public:
         std::normal_distribution<double> norm;
 #endif // VTKM_CUDA
 
+        vtkm::Vec<vtkm::FloatDefault, 16> probHistogram;
+        for (int i = 0; i < 16; i++)
+        {
+            probHistogram[i] = 0.0;
+        }
+
         for (vtkm::Id n = 0; n < numSamples; ++n)
         {
             // get sample vector
@@ -182,29 +155,55 @@ public:
 
             AUM = UCVMATH::matrix_mul_vec_add_vec(&A, &sample_v, &ucvmeanv);
 
-            // if (n==0 && workIndex == 15822)
-            //{
-            //     printf("ucv AUM\n");
-            //     vec_show(&AUM);
-            // }
+            // compute the specific position
+            // map > or < to specific cases
+            uint caseValue = 0;
+            for (uint i = 0; i < 4; i++)
+            {
+                // setting associated position to 1 if iso larger then specific cases
+                if (m_isovalue >= AUM.v[i])
+                {
+                    caseValue = (1 << i) | caseValue;
+                }
+            }
 
-            if ((m_isovalue <= AUM.v[0]) && (m_isovalue <= AUM.v[1]) && (m_isovalue <= AUM.v[2]) && (m_isovalue <= AUM.v[3]))
-            {
-                numCrossings = numCrossings + 0;
-            }
-            else if ((m_isovalue >= AUM.v[0]) && (m_isovalue >= AUM.v[1]) && (m_isovalue >= AUM.v[2]) && (m_isovalue >= AUM.v[3]))
-            {
-                numCrossings = numCrossings + 0;
-            }
-            else
-            {
-                numCrossings = numCrossings + 1;
-            }
+            // the associated pos is 0 otherwise
+            probHistogram[caseValue] = probHistogram[caseValue] + 1.0;
+        }
+
+        // go through probHistogram and compute pro
+        for (int i = 0; i < 16; i++)
+        {
+            probHistogram[i] = (probHistogram[i] / (1.0 * numSamples));
+            // printf("debug caseValue %d probHistogram %f\n", i, probHistogram[i]);
         }
 
         // cross probability
-        // std::cout << "ucv numCrossings " << numCrossings << std::endl;
-        outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
+        // outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
+        outCellFieldCProb = 1.0 - (probHistogram[0] + probHistogram[15]);
+
+        vtkm::Id nonzeroCases = 0;
+        vtkm::FloatDefault entropyValue = 0;
+        vtkm::FloatDefault templog = 0;
+        // compute number of nonzero cases
+        // compute entropy
+        for (int i = 0; i < 16; i++)
+        {
+            if (probHistogram[i] > 0.0001)
+            {
+                nonzeroCases++;
+                templog = vtkm::Log2(probHistogram[i]);
+                // if (i != 0 && i != totalNumCases - 1)
+                //{
+                //     totalnonzeroProb += probHistogram[i];
+                // }
+            }
+            // do not update entropy if the pro is zero
+            entropyValue = entropyValue + (-probHistogram[i]) * templog;
+        }
+
+        outCellFieldNumNonzeroProb = nonzeroCases;
+        outCellFieldEntropy = entropyValue;
     }
 
     VTKM_EXEC int updateIndex4(int index) const

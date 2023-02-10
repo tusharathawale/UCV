@@ -31,9 +31,14 @@ add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
 set_target_properties(test_mvgaussian_wind PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES})
 
+set_source_files_properties(test_mvgaussian_redsea_mpi.cpp PROPERTIES LANGUAGE "CUDA")
+add_executable(test_mvgaussian_redsea_mpi test_mvgaussian_redsea_mpi.cpp)
+set_target_properties(test_mvgaussian_redsea_mpi PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(test_mvgaussian_redsea_mpi ${VTKm_LIBRARIES})
 
 add_executable(test_ucv_matrix ./ucvworklet/linalg/test_ucv_matrix.cpp)
 target_link_libraries(test_ucv_matrix ${VTKm_LIBRARIES})
+
 
 else()
  
@@ -55,6 +60,9 @@ target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3
 add_executable(test_mvgaussian_redsea test_mvgaussian_redsea.cpp)
 target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
 
+add_executable(test_mvgaussian_redsea_mpi test_mvgaussian_redsea_mpi.cpp)
+target_link_libraries(test_mvgaussian_redsea_mpi ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
+
 add_executable(test_mvgaussian_3d test_mvgaussian_3d.cpp)
 target_link_libraries(test_mvgaussian_3d ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
 
@@ -63,6 +71,9 @@ target_link_libraries(compute_cases)
 
 add_executable(test_ucv_matrix ./ucvworklet/linalg/test_ucv_matrix.cpp)
 target_link_libraries(test_ucv_matrix ${VTKm_LIBRARIES})
+
+add_executable(test_ucv_matrix_static_3by3 ./ucvworklet/linalg/test_ucv_matrix_static_3by3.cpp)
+target_link_libraries(test_ucv_matrix_static_3by3 ${VTKm_LIBRARIES})
 
 add_executable(test_ucv_matrix_static_4by4 ./ucvworklet/linalg/test_ucv_matrix_static_4by4.cpp)
 target_link_libraries(test_ucv_matrix_static_4by4 ${VTKm_LIBRARIES})
