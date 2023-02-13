@@ -206,11 +206,15 @@ int main(int argc, char *argv[])
   initBackend(timer);
   std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
 
-  int totalSlice = 50;
-  // 50 slices in total
+  int totalSlice = 64;
+  int actualTotal = 50;
+  // there are 50 slices in total
+  // for the convenience of performance test
+  // use the 64 instead, for the number >=50 slices in total
+  // load the existance data again
   if (numProcesses > totalSlice)
   {
-    std::cout << "only works when the num of proces < 50" << std::endl;
+    std::cout << "only works when the num of proces < 64" << std::endl;
     exit(0);
   }
 
@@ -219,10 +223,14 @@ int main(int argc, char *argv[])
   {
     if (sliceId % numProcesses == rank)
     {
+      int actualSliceId = sliceId;
+      if(actualSliceId>=actualTotal){
+        actualSliceId = actualSliceId - actualTotal;
+      }
 
       // current rank load the ith slice
-      std::cout << "rank " << rank << " load slice " << sliceId << std::endl;
-      vtkm::cont::DataSet ds = loadData(sliceId);
+      std::cout << "rank " << rank << " load slice " << actualSliceId << std::endl;
+      vtkm::cont::DataSet ds = loadData(actualSliceId);
       dsList.push_back(ds);
     }
   }

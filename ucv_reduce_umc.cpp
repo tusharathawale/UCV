@@ -18,6 +18,9 @@
 #include "ucvworklet/EntropyUniform.hpp"
 #include "ucvworklet/EntropyIndependentGaussian.hpp"
 
+#include <sstream>
+#include <iomanip>
+
 // #include <chrono>
 
 // #ifdef VTKM_CUDA
@@ -112,7 +115,7 @@ int main(int argc, char *argv[])
     vtkm::cont::Initialize(argc, argv);
     vtkm::cont::Timer timer;
     initBackend(timer);
-    
+
     std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
 
     if (argc != 6)
@@ -149,6 +152,7 @@ int main(int argc, char *argv[])
     // TODO, the data set can be distributed between different ranks
 
     // create the vtkm data set from the loaded data
+    std::cout << "fileName: " << fileName << std::endl;
     vtkm::io::VTKDataSetReader reader(fileName);
     vtkm::cont::DataSet inData = reader.ReadDataSet();
 
@@ -419,10 +423,13 @@ int main(int argc, char *argv[])
     reducedDataSet.AddCellField("cross_prob", crossProb);
 
     // reducedDataSet.PrintSummary(std::cout);
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(2) << isovalue;
+    std::string isostr = stream.str();
 
     // output the dataset into the vtk file for results checking
     std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
-    std::string outputFileName = fileSuffix + "_" + distribution + std::string("_Prob.vtk");
+    std::string outputFileName = fileSuffix + "_iso" + isostr + "_" + distribution + "_block" + std::to_string(blocksize) + std::string("_Prob.vtk");
     vtkm::io::VTKDataSetWriter write(outputFileName);
     write.SetFileTypeToBinary();
     write.WriteDataSet(reducedDataSet);
