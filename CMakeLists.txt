@@ -10,7 +10,7 @@ set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::rendering vtkm::source vtkm::vt
 find_package(MPI REQUIRED)
 
 #Fine eigen assume this is installed by apt-get install
-find_package (Eigen3 3.3 REQUIRED)
+#find_package (Eigen3 3.3 REQUIRED)
 
 OPTION (USE_GPU OFF)
 message ("USE_GPU is setting as: " ${USE_GPU})
@@ -24,21 +24,20 @@ set_source_files_properties(ucvworklet/ExtractingMinMax.hpp PROPERTIES LANGUAGE 
 
 add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
 set_target_properties(ucv_reduce_umc PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
+target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
-set_source_files_properties(test_mvgaussian_wind.cpp PROPERTIES LANGUAGE "CUDA")
-add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
-set_target_properties(test_mvgaussian_wind PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES})
+#set_source_files_properties(test_mvgaussian_wind.cpp PROPERTIES LANGUAGE "CUDA")
+#add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
+#set_target_properties(test_mvgaussian_wind PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+#target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES})
 
-set_source_files_properties(test_mvgaussian_redsea_mpi.cpp PROPERTIES LANGUAGE "CUDA")
-add_executable(test_mvgaussian_redsea_mpi test_mvgaussian_redsea_mpi.cpp)
-set_target_properties(test_mvgaussian_redsea_mpi PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-target_link_libraries(test_mvgaussian_redsea_mpi ${VTKm_LIBRARIES})
+#set_source_files_properties(test_mvgaussian_redsea_mpi.cpp PROPERTIES LANGUAGE "CUDA")
+#add_executable(test_mvgaussian_redsea_mpi test_mvgaussian_redsea_mpi.cpp)
+#set_target_properties(test_mvgaussian_redsea_mpi PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+#target_link_libraries(test_mvgaussian_redsea_mpi ${VTKm_LIBRARIES})
 
-add_executable(test_ucv_matrix ./ucvworklet/linalg/test_ucv_matrix.cpp)
-target_link_libraries(test_ucv_matrix ${VTKm_LIBRARIES})
-
+#add_executable(test_ucv_matrix ./ucvworklet/linalg/test_ucv_matrix.cpp)
+#target_link_libraries(test_ucv_matrix ${VTKm_LIBRARIES})
 
 else()
  
@@ -52,19 +51,19 @@ add_executable(ucv_umc ucv_umc.cpp)
 target_link_libraries(ucv_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
-target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
+target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
-target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
+target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 add_executable(test_mvgaussian_redsea test_mvgaussian_redsea.cpp)
-target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
+target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 add_executable(test_mvgaussian_redsea_mpi test_mvgaussian_redsea_mpi.cpp)
-target_link_libraries(test_mvgaussian_redsea_mpi ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
+target_link_libraries(test_mvgaussian_redsea_mpi ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 add_executable(test_mvgaussian_3d test_mvgaussian_3d.cpp)
-target_link_libraries(test_mvgaussian_3d ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
+target_link_libraries(test_mvgaussian_3d ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 add_executable(compute_cases compute_cases.cpp)
 target_link_libraries(compute_cases)

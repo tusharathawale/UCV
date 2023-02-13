@@ -3,7 +3,7 @@
 
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <cmath>
-#include <Eigen/Dense>
+//#include <Eigen/Dense>
 #include "./linalg/ucv_matrix_static_8by8.h"
 
 class MVGaussianWithEnsemble3DTryLialg : public vtkm::worklet::WorkletVisitCellsWithPoints
