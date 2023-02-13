@@ -123,7 +123,7 @@ public:
         negativeProbList.resize(numPoints);
 
         // there are 2^n total cases
-        int totalNumCases = static_cast<int>(vtkm::Pow(2.0, static_cast<vtkm::FloatDefault>(numPoints)));
+        int totalNumCases = static_cast<int>(vtkm::Pow(2.0f, static_cast<float>(numPoints)));
         std::vector<vtkm::FloatDefault> probHistogram;
 
         probHistogram.resize(totalNumCases);
