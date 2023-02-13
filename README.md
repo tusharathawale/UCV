@@ -32,7 +32,7 @@ using the indepednet gaussian distribution
 $ ./ucv_reduce_umc ../../../../dataset/beetle_496_832_832.vtk ground_truth ig 4 900
 ```
 
-using the multivariant gaussian distribution (only works for hixlesize=4 currently)
+using the multivariant gaussian distribution (only works for #vertexies=4 currently)
 
 ```
 $ ./ucv_reduce_umc ../../../../dataset/raw_data_128_208_208.vtk instance mg 4 900
