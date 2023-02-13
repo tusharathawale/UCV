@@ -7,6 +7,7 @@
 
 #include <vtkm/cont/ArrayHandle.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
+#include <vtkm/cont/Initialize.h>
 #include <vtkm/cont/Timer.h>
 
 #include <vtkm/worklet/DispatcherMapTopology.h>
@@ -60,12 +61,13 @@ void initBackend(vtkm::cont::Timer &timer)
 
     if (tmp == nullptr)
     {
-        std::cout << "no UCV_VTKM_BACKEND env, use openmp" << std::endl;
-        backend = "openmp";
+        return;
     }
     else
     {
         backend = std::string(tmp);
+        std::cout << "Setting the device with UCV_VTKM_BACKEND=" << backend << "\n";
+        std::cout << "This method is antiquated. Consider using the --vtkm-device command line argument." << std::endl;
     }
 
     // if (rank == 0)
@@ -112,15 +114,18 @@ int main(int argc, char *argv[])
 {
 
     // init the vtkm (set the backend and log level here)
-    vtkm::cont::Initialize(argc, argv);
-    vtkm::cont::Timer timer;
+    vtkm::cont::InitializeResult initResult = vtkm::cont::Initialize(
+        argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
+    vtkm::cont::Timer timer{ initResult.Device };
     initBackend(timer);
 
     std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
 
     if (argc != 6)
     {
-        std::cout << "executable <filename> <fieldname> <distribution> <blocksize> <isovalue>" << std::endl;
+        std::cout << "executable [VTK-m options] <filename> <fieldname> <distribution> <blocksize> <isovalue>" << std::endl;
+        std::cout << "VTK-m options are:\n";
+        std::cout << initResult.Usage << std::endl;
         exit(0);
     }
 
