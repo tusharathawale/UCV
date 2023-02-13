@@ -206,11 +206,11 @@ int main(int argc, char *argv[])
   initBackend(timer);
   std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
 
-  int totalSlice = 64;
+  int totalSlice = 128;
   int actualTotal = 50;
   // there are 50 slices in total
   // for the convenience of performance test
-  // use the 64 instead, for the number >=50 slices in total
+  // use the 128 instead, for the number >=50 slices in total
   // load the existance data again
   if (numProcesses > totalSlice)
   {
@@ -224,12 +224,16 @@ int main(int argc, char *argv[])
     if (sliceId % numProcesses == rank)
     {
       int actualSliceId = sliceId;
+      if(actualSliceId>=2*actualTotal){
+        actualSliceId = actualSliceId - 2*actualTotal;
+      }
+
       if(actualSliceId>=actualTotal){
         actualSliceId = actualSliceId - actualTotal;
       }
 
       // current rank load the ith slice
-      std::cout << "rank " << rank << " load slice " << actualSliceId << std::endl;
+      std::cout << "rank " << rank << " load slice " << actualSliceId << " currid " << sliceId << std::endl;
       vtkm::cont::DataSet ds = loadData(actualSliceId);
       dsList.push_back(ds);
     }
@@ -244,9 +248,13 @@ int main(int argc, char *argv[])
     callWorklet(dsList[i], isovalue, num_samples, "stru");
   }
 
-  timer.Stop();
+  //maybe add more operations here
+  //such as adding the collective operations based on entropy
+  //and compute some results back
+  //do some further snalysis here
 
   MPI_Barrier(MPI_COMM_WORLD);
+  timer.Stop();
 
   if (rank == 0)
   {

@@ -2,7 +2,7 @@
  
 #BSUB -P csc143
 #BSUB -W 01:59
-#BSUB -nnodes 11
+#BSUB -nnodes 22
 
 #BSUB -J run_redsea_log
 #BSUB -o run_redsea_log.%J.out
@@ -34,7 +34,7 @@ export UCV_VTKM_BACKEND=cuda
 unset UCV_GPU_NUMBLOCK
 unset UCV_GPU_BLOCKPERTHREAD
 
-PROC_NUM_LIST="2 4 8 16 32 64"
+PROC_NUM_LIST="2 4 8 16 32 64 128"
 
 for PROC_NUM in ${PROC_NUM_LIST}
 do

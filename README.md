@@ -21,14 +21,15 @@ $ export LD_LIBRARY_PATH=/home/zw/cworkspace/UCV/install_scripts/ubuntu_cpu/inst
 
 
 using the uniform distribution
+
 ```
-$ ./ucv_reduce_umc ../../../../dataset/raw_data_128_208_208.vtk instance uni 4 900
+$ ./ucv_reduce_umc ../../../../dataset/beetle_496_832_832.vtk ground_truth uni 4 900
 ```
 
 using the indepednet gaussian distribution
 
 ```
-$ ./ucv_reduce_umc ../../../../dataset/raw_data_128_208_208.vtk instance ig 4 900
+$ ./ucv_reduce_umc ../../../../dataset/beetle_496_832_832.vtk ground_truth ig 4 900
 ```
 
 using the multivariant gaussian distribution (only works for hixlesize=4 currently)
