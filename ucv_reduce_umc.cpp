@@ -14,11 +14,10 @@
 #include <vtkm/worklet/DispatcherMapTopology.h>
 
 #include "ucvworklet/CreateNewKey.hpp"
-#include "ucvworklet/ExtractingMeanStdev.hpp"
 
-#include "ucvworklet/EntropyIndependentGaussian.hpp"
-
+#include "ContourUncertainIndependentGaussian.h"
 #include "ContourUncertainUniform.h"
+#include "SubsampleUncertaintyIndependentGaussian.h"
 #include "SubsampleUncertaintyUniform.h"
 
 #include <sstream>
@@ -263,6 +262,7 @@ int main(int argc, char *argv[])
 
     if (distribution == "uni")
     {
+      // uniform
       vtkm::filter::uncertainty::SubsampleUncertaintyUniform subsample;
       subsample.SetBlockSize(blocksize);
 
@@ -299,44 +299,40 @@ int main(int argc, char *argv[])
     }
     else if (distribution == "ig")
     {
-        // indepedent gaussian
+      // indepedent gaussian
+      vtkm::filter::uncertainty::SubsampleUncertaintyIndependentGaussian subsample;
+      subsample.SetBlockSize(blocksize);
 
-        // extracting mean and stdev
+      timer.Start();
+      reducedDataSet = subsample.Execute(inData);
+      timer.Stop();
+      std::cout << "ExtractingMeanStdev time: " << timer.GetElapsedTime() << std::endl;
 
-        using DispatcherType = vtkm::worklet::DispatcherReduceByKey<ExtractingMeanStdev>;
-        vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
-        vtkm::cont::ArrayHandle<vtkm::FloatDefault> stdevArray;
-        vtkm::worklet::Keys<vtkm::Id> keys(keyArrayNew);
+      vtkm::filter::uncertainty::ContourUncertainIndependentGaussian contour;
+      contour.SetMeanField(fieldName + subsample.GetMeanSuffix());
+      contour.SetStdevField(fieldName + subsample.GetStdevSuffix());
+      contour.SetIsoValue(isovalue);
 
-        auto resolveType = [&](const auto &concrete)
-        {
-            DispatcherType dispatcher;
-            dispatcher.Invoke(keys, concrete, meanArray, stdevArray);
-        };
+      timer.Start();
+      reducedDataSet = contour.Execute(reducedDataSet);
+      timer.Stop();
+      std::cout << "EIGaussianTime time: " << timer.GetElapsedTime() << std::endl;
 
-        field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
-            resolveType);
+      // TODO: Consolidate
 
-        // TODO timer ok to extract properties
-        // auto timer3 = std::chrono::steady_clock::now();
-        // float ExtractingMeanStdevTime =
-        //    std::chrono::duration<float, std::milli>(timer3 - timer2).count();
-        timer.Stop();
-        std::cout << "ExtractingMeanStdev time: " << timer.GetElapsedTime() << std::endl;
+      // reducedDataSet.PrintSummary(std::cout);
+      std::stringstream stream;
+      stream << std::fixed << std::setprecision(2) << isovalue;
+      std::string isostr = stream.str();
 
-        timer.Start();
-        using WorkletType = EntropyIndependentGaussian;
-        using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
+      // output the dataset into the vtk file for results checking
+      std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
+      std::string outputFileName = fileSuffix + "_iso" + isostr + "_" + distribution + "_block" + std::to_string(blocksize) + std::string("_Prob.vtk");
+      vtkm::io::VTKDataSetWriter write(outputFileName);
+      write.SetFileTypeToBinary();
+      write.WriteDataSet(reducedDataSet);
 
-        DispatcherEntropyIG dispatcherEntropyIG(EntropyIndependentGaussian{isovalue});
-        dispatcherEntropyIG.Invoke(reducedDataSet.GetCellSet(), meanArray, stdevArray, crossProb, numNonZeroProb, entropyResult);
-
-        // TODO timer ok to compute uncertianty
-        // auto timer4 = std::chrono::steady_clock::now();
-        // float EIGaussianTime =
-        //    std::chrono::duration<float, std::milli>(timer4 - timer3).count();
-        timer.Stop();
-        std::cout << "EIGaussianTime time: " << timer.GetElapsedTime() << std::endl;
+      return 0;
     }
     else if (distribution == "mg")
     {

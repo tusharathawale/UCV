@@ -15,7 +15,7 @@ struct ExtractingMinMax : public vtkm::worklet::WorkletReduceByKey
       minValue = originalValues[0];
       maxValue = originalValues[0];
 
-      for (vtkm::IdComponent index = 0;
+      for (vtkm::IdComponent index = 1;
            index < originalValues.GetNumberOfComponents(); index++)
       {
         auto originalValue = originalValues[index];

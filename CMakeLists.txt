@@ -13,7 +13,9 @@ find_package(MPI REQUIRED)
 #find_package (Eigen3 3.3 REQUIRED)
 
 set(filter_sources
+  ContourUncertainIndependentGaussian.cxx
   ContourUncertainUniform.cxx
+  SubsampleUncertaintyIndependentGaussian.cxx
   SubsampleUncertaintyUniform.cxx
   )
 
