@@ -50,7 +50,7 @@ public:
         // TODO, using numVertexies to decide the length of mean and cov
         // and decide them at the runtime
 
-        vtkm::Vec<vtkm::FloatDefault, 3> meanArray;
+        vtkm::Vec3f_64 meanArray;
 
         // get the type in the fieldVec
         // the VecType specifies the number of ensembles

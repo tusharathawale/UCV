@@ -171,7 +171,7 @@ void test_eigen_vectors_8by8()
 {
 
     printf("---test test_eigen_vectors_8by8\n");
-    int dim = 8;
+    constexpr int dim = 8;
     mat_t x;
     for (int i = 0; i < dim; i++)
     {

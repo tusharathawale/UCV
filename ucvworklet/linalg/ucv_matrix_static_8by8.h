@@ -27,17 +27,19 @@ namespace UCVMATH
     // https://stackoverflow.com/questions/34820324/macro-for-dynamic-types-in-c
     // or maybe use the code generation tool in future
 
-    typedef struct
+    struct mat_t
     {
         int m = DIM, n = DIM; // m is row, n is column
-        double v[DIM][DIM] = {0};
-    } mat_t, *mat;
+        double v[DIM][DIM] = {{0}};
+    };
+    using mat = mat_t*;
 
-    typedef struct
+    struct vec_t
     {
         int len = DIM;
         double v[DIM] = {0};
-    } vec_t, *vec;
+    };
+    using vec = vec_t*;
 
     VTKM_EXEC inline vec_t vec_new(int len)
     {
@@ -409,8 +411,7 @@ namespace UCVMATH
 
         mat_t qq = matrix_new_eye(x->m, x->m);
 
-        int i = 0;
-        while (true)
+        for (int i = 0; i < max_iter; ++i)
         {
 
             // it is not ok to init the empty pointer on cuda device by this way
@@ -438,8 +439,7 @@ namespace UCVMATH
             // update the qq to newq
             qq = newq;
 
-            i++;
-            if (matrix_is_upper_triangular(&ak, tol) || i > max_iter)
+            if (matrix_is_upper_triangular(&ak, tol))
             {
                 // matrix_show(m);
                 // printf("iter %d\n", i);

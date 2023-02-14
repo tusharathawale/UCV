@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
   // time it
   timer.Start();
 
-  for (int i = 0; i < dsList.size(); i++)
+  for (std::size_t i = 0; i < dsList.size(); i++)
   {
     callWorklet(dsList[i], isovalue, num_samples, "stru");
   }

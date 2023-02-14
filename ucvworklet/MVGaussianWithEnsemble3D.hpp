@@ -101,7 +101,7 @@ public:
         
         // TODO There are still some issues to make it work properly on for cuda version
         // Maybe look at the possible alternative functions in future
-        Eigen::EigenMultivariateNormal<vtkm::FloatDefault> normX_solver(meanVector, covMatrix);
+        Eigen::EigenMultivariateNormal<double> normX_solver(meanVector, covMatrix);
         
         auto R = normX_solver.samples(numSamples).transpose();
 
