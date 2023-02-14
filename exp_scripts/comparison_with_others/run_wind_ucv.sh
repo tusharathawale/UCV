@@ -56,9 +56,9 @@ export UCV_VTKM_BACKEND=cuda
 unset UCV_GPU_NUMBLOCK
 unset UCV_GPU_BLOCKPERTHREAD
 
-jsrun -n1 -a1 -c1 -g1 ./ucv_wind_gpu &> ucv_wind_gpu_1.log
+jsrun -n1 -a1 -c1 -g1 ./ucv_wind_gpu 0.3 1000 &> ucv_wind_gpu_1.log
 
-jsrun -n1 -a1 -c1 -g1 ./ucv_wind_gpu &> ucv_wind_gpu_2.log
+jsrun -n1 -a1 -c1 -g1 ./ucv_wind_gpu 0.3 1000 &> ucv_wind_gpu_2.log
 
 
 cp *.log $CURRDIR/$LOGDIRNAME

@@ -60,6 +60,7 @@ else
     -DVTKm_ENABLE_OPENMP=ON \
     -DVTKm_ENABLE_LOGGING=ON \
     -DVTKm_ENABLE_TESTING=OFF \
+    -DVTKm_ENABLE_RENDERING=OFF \
 
     cmake --build ${VTKM_BUILD_DIR} -j${build_jobs}
 

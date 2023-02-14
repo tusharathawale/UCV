@@ -212,7 +212,11 @@ int main(int argc, char *argv[])
   // writeEnsembles.WriteDataSet(vtkmDataSet);
 
   callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
-  std::cout << "ok for stru" << std::endl;
+  std::cout << "ok for struc 1" << std::endl;
+  
+  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
+  std::cout << "ok for struc 2" << std::endl;
+  
   // test unstructred grid
   // convert the original data to the unstructured grid
   vtkm::filter::clean_grid::CleanGrid clean;

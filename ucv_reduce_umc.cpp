@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
     vtkm::cont::Timer timer{ initResult.Device };
     initBackend(timer);
 
-    std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
+    std::cout << "initResult.Device: " << initResult.Device.GetName() <<  " timer device: " << timer.GetDevice().GetName() << std::endl;
 
     if (argc != 6)
     {
