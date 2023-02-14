@@ -5,6 +5,7 @@
 
 #include <vtkm/worklet/DispatcherReduceByKey.h>
 
+#include <vtkm/cont/ArrayCopy.h>
 #include <vtkm/cont/ArrayHandle.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
 #include <vtkm/cont/Initialize.h>
@@ -13,11 +14,12 @@
 #include <vtkm/worklet/DispatcherMapTopology.h>
 
 #include "ucvworklet/CreateNewKey.hpp"
-#include "ucvworklet/ExtractingMinMax.hpp"
 #include "ucvworklet/ExtractingMeanStdev.hpp"
 
-#include "ucvworklet/EntropyUniform.hpp"
 #include "ucvworklet/EntropyIndependentGaussian.hpp"
+
+#include "ContourUncertainUniform.h"
+#include "SubsampleUncertaintyUniform.h"
 
 #include <sstream>
 #include <iomanip>
@@ -261,55 +263,39 @@ int main(int argc, char *argv[])
 
     if (distribution == "uni")
     {
+      vtkm::filter::uncertainty::SubsampleUncertaintyUniform subsample;
+      subsample.SetBlockSize(blocksize);
 
-        // Step2 extracting ensemble data based on new key
-        using DispatcherType = vtkm::worklet::DispatcherReduceByKey<ExtractingMinMax>;
-        vtkm::cont::ArrayHandle<vtkm::FloatDefault> minArray;
-        vtkm::cont::ArrayHandle<vtkm::FloatDefault> maxArray;
-        vtkm::worklet::Keys<vtkm::Id> keys(keyArrayNew);
+      timer.Start();
+      reducedDataSet = subsample.Execute(inData);
+      timer.Stop();
+      std::cout << "extractMinMax time: " << timer.GetElapsedTime() << std::endl;
 
-        auto resolveType = [&](const auto &concrete)
-        {
-            DispatcherType dispatcher;
-            dispatcher.Invoke(keys, concrete, minArray, maxArray);
-        };
+      vtkm::filter::uncertainty::ContourUncertainUniform contour;
+      contour.SetMinField(fieldName + subsample.GetMinSuffix());
+      contour.SetMaxField(fieldName + subsample.GetMaxSuffix());
+      contour.SetIsoValue(isovalue);
 
-        field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
-            resolveType);
+      timer.Start();
+      reducedDataSet = contour.Execute(reducedDataSet);
+      timer.Stop();
+      std::cout << "EntropyUniformTime time: " << timer.GetElapsedTime() << std::endl;
 
-        // TODO timer ok to extract property
-        // auto timer3 = std::chrono::steady_clock::now();
-        // float extractMinMax =
-        //    std::chrono::duration<float, std::milli>(timer3 - timer2).count();
-        timer.Stop();
-        std::cout << "extractMinMax time: " << timer.GetElapsedTime() << std::endl;
+      // TODO: Consolidate
 
-        timer.Start();
-        // generate the new data sets with min and max
-        // reducedDataSet.AddPointField("ensemble_min", minArray);
-        // reducedDataSet.AddPointField("ensemble_max", maxArray);
-        // reducedDataSet.PrintSummary(std::cout);
+      // reducedDataSet.PrintSummary(std::cout);
+      std::stringstream stream;
+      stream << std::fixed << std::setprecision(2) << isovalue;
+      std::string isostr = stream.str();
 
-        // output the dataset into the vtk file for results checking
-        // std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
-        // std::string outputFileName = fileSuffix + std::string("_ReduceDerived.vtk");
-        // vtkm::io::VTKDataSetWriter write(outputFileName);
-        // write.WriteDataSet(reducedDataSet);
+      // output the dataset into the vtk file for results checking
+      std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
+      std::string outputFileName = fileSuffix + "_iso" + isostr + "_" + distribution + "_block" + std::to_string(blocksize) + std::string("_Prob.vtk");
+      vtkm::io::VTKDataSetWriter write(outputFileName);
+      write.SetFileTypeToBinary();
+      write.WriteDataSet(reducedDataSet);
 
-        // uniform distribution
-        using WorkletType = EntropyUniform;
-        using DispatcherEntropyUniform = vtkm::worklet::DispatcherMapTopology<WorkletType>;
-
-        DispatcherEntropyUniform dispatcherEntropyUniform(EntropyUniform{isovalue});
-        dispatcherEntropyUniform.Invoke(reducedDataSet.GetCellSet(), minArray, maxArray, crossProb, numNonZeroProb, entropyResult);
-
-        // TODO make sure the worklet finish
-        // TODO timer ok to compute uncertainty
-        // auto timer4 = std::chrono::steady_clock::now();
-        // float EntropyUniformTime =
-        //    std::chrono::duration<float, std::milli>(timer4 - timer3).count();
-        timer.Stop();
-        std::cout << "EntropyUniformTime time: " << timer.GetElapsedTime() << std::endl;
+      return 0;
     }
     else if (distribution == "ig")
     {

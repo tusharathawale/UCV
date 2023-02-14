@@ -12,6 +12,11 @@ find_package(MPI REQUIRED)
 #Fine eigen assume this is installed by apt-get install
 #find_package (Eigen3 3.3 REQUIRED)
 
+set(filter_sources
+  ContourUncertainUniform.cxx
+  SubsampleUncertaintyUniform.cxx
+  )
+
 OPTION (USE_GPU OFF)
 message ("USE_GPU is setting as: " ${USE_GPU})
 if(USE_GPU)
@@ -21,10 +26,14 @@ set_source_files_properties(ucvworklet/EntropyUniform.hpp PROPERTIES LANGUAGE "C
 set_source_files_properties(ucvworklet/ExtractingMeanRaw.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/ExtractingMeanStdev.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/ExtractingMinMax.hpp PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(${filter_sources} PROPERTIES LANGAUGE "CUDA")
+
+add_library(filter_uncertainty ${filter_sources})
+target_link_libraries(filter_uncertainty PUBLIC ${VTKm_LIBRARIES})
 
 add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
 set_target_properties(ucv_reduce_umc PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
+target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX filter_uncertainty)
 
 set_source_files_properties(test_mvgaussian_wind.cpp PROPERTIES LANGUAGE "CUDA")
 add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
@@ -47,7 +56,10 @@ target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES})
 
 
 else()
- 
+
+add_library(filter_uncertainty ${filter_sources})
+target_link_libraries(filter_uncertainty PUBLIC ${VTKm_LIBRARIES})
+
 add_executable(ucv_extract ucv_extract.cpp)
 target_link_libraries(ucv_extract ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
@@ -58,7 +70,7 @@ add_executable(ucv_umc ucv_umc.cpp)
 target_link_libraries(ucv_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
-target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
+target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX filter_uncertainty)
 
 add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
 target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES} MPI::MPI_CXX)
