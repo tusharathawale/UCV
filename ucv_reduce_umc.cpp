@@ -1,9 +1,6 @@
-#include <float.h>
 #include <vtkm/cont/Initialize.h>
 #include <vtkm/io/VTKDataSetReader.h>
 #include <vtkm/io/VTKDataSetWriter.h>
-
-#include <vtkm/worklet/DispatcherReduceByKey.h>
 
 #include <vtkm/cont/ArrayCopy.h>
 #include <vtkm/cont/ArrayHandle.h>
@@ -11,32 +8,23 @@
 #include <vtkm/cont/Initialize.h>
 #include <vtkm/cont/Timer.h>
 
-#include <vtkm/worklet/DispatcherMapTopology.h>
-
-#include "ucvworklet/CreateNewKey.hpp"
-
+#include "ContourUncertainEnsemble.h"
 #include "ContourUncertainIndependentGaussian.h"
 #include "ContourUncertainUniform.h"
+#include "SubsampleUncertaintyEnsemble.h"
 #include "SubsampleUncertaintyIndependentGaussian.h"
 #include "SubsampleUncertaintyUniform.h"
 
 #include <sstream>
 #include <iomanip>
 
-// #include <chrono>
-
-// #ifdef VTKM_CUDA
-// #else
-//  the case three does not works well for cuda at this step
-#include "ucvworklet/ExtractingMeanRaw.hpp"
-// #include "ucvworklet/MVGaussianWithEnsemble3D.hpp"
-#include "ucvworklet/MVGaussianWithEnsemble3DTryLialg.hpp"
-
-// #endif // VTKM_CUDA
-
 int oneDBlocks = 16;
 int threadsPerBlock = 16;
 #ifdef VTKM_CUDA
+// Note: this header will require this file to be compiled with nvcc, but it is required
+// for vtkm::cont::cuda::ScheduleParameters.
+#include <vtkm/cont/cuda/DeviceAdapterCuda.h>
+
 vtkm::cont::cuda::ScheduleParameters
 mySchedParams(char const *name,
               int major,
@@ -160,105 +148,18 @@ int main(int argc, char *argv[])
     // create the vtkm data set from the loaded data
     std::cout << "fileName: " << fileName << std::endl;
     vtkm::io::VTKDataSetReader reader(fileName);
-    vtkm::cont::DataSet inData = reader.ReadDataSet();
+    vtkm::cont::DataSet dataset = reader.ReadDataSet();
 
     // check the property of the data
-    inData.PrintSummary(std::cout);
+    dataset.PrintSummary(std::cout);
 
-    // TODO timer start to extract key
-    // auto timer1 = std::chrono::steady_clock::now();
-
-    timer.Start();
-
-    auto field = inData.GetField(fieldName);
-
-    auto cellSet = inData.GetCellSet();
-
-    // Assuming the imput data is the structured data
-
-    bool isStructured = cellSet.IsType<vtkm::cont::CellSetStructured<3>>();
-    if (!isStructured)
-    {
-        std::cout << "the extraction only works for CellSetStructured<3>" << std::endl;
-        exit(0);
-    }
-
-    vtkm::cont::CellSetStructured<3> structCellSet =
-        cellSet.AsCellSet<vtkm::cont::CellSetStructured<3>>();
-
-    vtkm::Id3 pointDims = structCellSet.GetPointDimensions();
-
-    std::cout << "------" << std::endl;
-    std::cout << "point dim: " << pointDims[0] << " " << pointDims[1] << " " << pointDims[2] << std::endl;
-
-    // go through all points and set the specific key
-    vtkm::Id xdim = pointDims[0];
-    vtkm::Id ydim = pointDims[1];
-    vtkm::Id zdim = pointDims[2];
-
-    auto keyArray =
-        vtkm::cont::ArrayHandleCounting<vtkm::Id>(0, 1, static_cast<vtkm::Id>(xdim * ydim * zdim));
-
-    vtkm::Id numberBlockx = xdim % blocksize == 0 ? xdim / blocksize : xdim / blocksize + 1;
-    vtkm::Id numberBlocky = ydim % blocksize == 0 ? ydim / blocksize : ydim / blocksize + 1;
-    vtkm::Id numberBlockz = zdim % blocksize == 0 ? zdim / blocksize : zdim / blocksize + 1;
-
-    // add key array into the dataset, and check the output
-    // inData.AddPointField("keyArray", keyArrayNew);
-    // std::cout << "------" << std::endl;
-    // inData.PrintSummary(std::cout);
-
-    // std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
-    // std::string outputFileName = fileSuffix + std::string("_Key.vtk");
-    // vtkm::io::VTKDataSetWriter write(outputFileName);
-    // write.WriteDataSet(inData);
-
-    // TODO, the decision of the distribution should start from this position
-    // for uniform case, we extract min and max
-    // for gaussian case, we extract other values
-
-    // create the new data sets for the reduced data
-    // the dims for new data sets are numberBlockx*numberBlocky*numberBlockz
-    const vtkm::Id3 reducedDims(numberBlockx, numberBlocky, numberBlockz);
-
-    auto coords = inData.GetCoordinateSystem();
-    auto bounds = coords.GetBounds();
-
-    auto reducedOrigin = bounds.MinCorner();
-
-    vtkm::FloatDefault spacex = (bounds.X.Max - bounds.X.Min) / (numberBlockx - 1);
-    vtkm::FloatDefault spacey = (bounds.Y.Max - bounds.Y.Min) / (numberBlocky - 1);
-    vtkm::FloatDefault spacez = (bounds.Z.Max - bounds.Z.Min) / (numberBlockz - 1);
-
-    vtkm::Vec3f_64 reducedSpaceing(spacex, spacey, spacez);
-
-    vtkm::cont::DataSetBuilderUniform dataSetBuilder;
-    // origin is {0,0,0} spacing is {blocksize,blocksize,blocksize} make sure the reduced data
-    // are in same shape with original data
-    vtkm::cont::DataSet reducedDataSet = dataSetBuilder.Create(reducedDims, reducedOrigin, reducedSpaceing);
-
-    // declare results array
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> crossProb;
-    vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> entropyResult;
-
-    // Step1 creating new key
-    vtkm::cont::ArrayHandle<vtkm::Id> keyArrayNew;
-
-    using DispatcherCreateKey = vtkm::worklet::DispatcherMapField<CreateNewKeyWorklet>;
-    DispatcherCreateKey dispatcher(CreateNewKeyWorklet{xdim, ydim, zdim,
-                                                       numberBlockx, numberBlocky, numberBlockz,
-                                                       blocksize});
-
-    dispatcher.Invoke(keyArray, keyArrayNew);
-
-    // auto timer2 = std::chrono::steady_clock::now();
-    // float extractKey =
-    //     std::chrono::duration<float, std::milli>(timer2 - timer1).count();
-    timer.Stop();
-    std::cout << "extractKey time: " << timer.GetElapsedTime() << std::endl;
-
-    timer.Start();
+    // Implementation note: it is typical when running a filter to store the results in
+    // a new `DataSet`. However, we are using the same `DataSet` object over and over.
+    // This is OK as C++ will properly manage the object and we won't need the data once
+    // a filter is run on it. A more important consequence is that when we reuse the
+    // `DataSet` object, the old data goes out of scope and any memory it used that is no
+    // longer being used gets deleted. This has the desirable side effect of booting
+    // data off of a device, which might be important if uniform memory is not being used.
 
     if (distribution == "uni")
     {
@@ -267,7 +168,7 @@ int main(int argc, char *argv[])
       subsample.SetBlockSize(blocksize);
 
       timer.Start();
-      reducedDataSet = subsample.Execute(inData);
+      dataset = subsample.Execute(dataset);
       timer.Stop();
       std::cout << "extractMinMax time: " << timer.GetElapsedTime() << std::endl;
 
@@ -277,25 +178,9 @@ int main(int argc, char *argv[])
       contour.SetIsoValue(isovalue);
 
       timer.Start();
-      reducedDataSet = contour.Execute(reducedDataSet);
+      dataset = contour.Execute(dataset);
       timer.Stop();
       std::cout << "EntropyUniformTime time: " << timer.GetElapsedTime() << std::endl;
-
-      // TODO: Consolidate
-
-      // reducedDataSet.PrintSummary(std::cout);
-      std::stringstream stream;
-      stream << std::fixed << std::setprecision(2) << isovalue;
-      std::string isostr = stream.str();
-
-      // output the dataset into the vtk file for results checking
-      std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
-      std::string outputFileName = fileSuffix + "_iso" + isostr + "_" + distribution + "_block" + std::to_string(blocksize) + std::string("_Prob.vtk");
-      vtkm::io::VTKDataSetWriter write(outputFileName);
-      write.SetFileTypeToBinary();
-      write.WriteDataSet(reducedDataSet);
-
-      return 0;
     }
     else if (distribution == "ig")
     {
@@ -304,7 +189,7 @@ int main(int argc, char *argv[])
       subsample.SetBlockSize(blocksize);
 
       timer.Start();
-      reducedDataSet = subsample.Execute(inData);
+      dataset = subsample.Execute(dataset);
       timer.Stop();
       std::cout << "ExtractingMeanStdev time: " << timer.GetElapsedTime() << std::endl;
 
@@ -314,102 +199,37 @@ int main(int argc, char *argv[])
       contour.SetIsoValue(isovalue);
 
       timer.Start();
-      reducedDataSet = contour.Execute(reducedDataSet);
+      dataset = contour.Execute(dataset);
       timer.Stop();
       std::cout << "EIGaussianTime time: " << timer.GetElapsedTime() << std::endl;
-
-      // TODO: Consolidate
-
-      // reducedDataSet.PrintSummary(std::cout);
-      std::stringstream stream;
-      stream << std::fixed << std::setprecision(2) << isovalue;
-      std::string isostr = stream.str();
-
-      // output the dataset into the vtk file for results checking
-      std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
-      std::string outputFileName = fileSuffix + "_iso" + isostr + "_" + distribution + "_block" + std::to_string(blocksize) + std::string("_Prob.vtk");
-      vtkm::io::VTKDataSetWriter write(outputFileName);
-      write.SetFileTypeToBinary();
-      write.WriteDataSet(reducedDataSet);
-
-      return 0;
     }
     else if (distribution == "mg")
     {
-        // #ifdef VTKM_CUDA
-        //         std::cout << "multivariant gaussian does not work well for cuda now" << std::endl;
-        //         exit(0);
-        // #else
-        //  multivariant gaussian
-        //  extracting the mean and rawdata for each hixel block
-        //  the raw data is used to compute the covariance matrix
-        if (xdim % 4 != 0 || ydim % 4 != 0 || zdim % 4 != 0)
-        {
-            // if the data size is not divided by blocksize
-            // we can reample or padding the data set before hand
-            // it will be convenient to compute cov matrix by this way
-            throw std::runtime_error("only support blocksize = 4 and the case where xyz dim is diveide dy blocksize for current mg");
-        }
-        // Step2 extracting the soa raw array
-        // the value here should be same with the elements in each hixel
+      // multivariate gaussian
+      vtkm::filter::uncertainty::SubsampleUncertaintyEnsemble subsample;
+      subsample.SetBlockSize(blocksize);
 
-        using WorkletType = ExtractingMeanRaw;
-        using DispatcherType = vtkm::worklet::DispatcherReduceByKey<WorkletType>;
+      timer.Start();
+      dataset = subsample.Execute(dataset);
+      timer.Stop();
+      std::cout << "ExtractingMeanRawTime time: " << timer.GetElapsedTime() << std::endl;
 
-        using VecType = vtkm::Vec<vtkm::FloatDefault, 4 * 4 * 4>;
-        vtkm::cont::ArrayHandle<VecType> SOARawArray;
-        vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
-        // Pay attention to transfer the arrayHandle into the Keys type
-        vtkm::worklet::Keys<vtkm::Id> keys(keyArrayNew);
+      vtkm::filter::uncertainty::ContourUncertainEnsemble contour;
+      contour.SetMeanField(fieldName);
+      contour.SetEnsembleField(fieldName + subsample.GetEnsembleSuffix());
+      contour.SetIsoValue(isovalue);
 
-        auto resolveType = [&](const auto &concrete)
-        {
-            DispatcherType dispatcher;
-            dispatcher.Invoke(keys, concrete, meanArray, SOARawArray);
-        };
-
-        field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
-            resolveType);
-
-        // auto timer3 = std::chrono::steady_clock::now();
-        // float ExtractingMeanRawTime =
-        //     std::chrono::duration<float, std::milli>(timer3 - timer2).count();
-        timer.Stop();
-        std::cout << "ExtractingMeanRawTime time: " << timer.GetElapsedTime() << std::endl;
-
-        timer.Start();
-
-        // step3 computing the cross probability
-        // using WorkletTypeMVG = MVGaussianWithEnsemble3D;
-        using WorkletTypeMVG = MVGaussianWithEnsemble3DTryLialg;
-        using DispatcherTypeMVG = vtkm::worklet::DispatcherMapTopology<WorkletTypeMVG>;
-
-        DispatcherTypeMVG dispatcherMVG(WorkletTypeMVG{isovalue, 1000});
-        dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb, numNonZeroProb, entropyResult);
-
-        // TODO make sure it actually finish
-        // auto timer4 = std::chrono::steady_clock::now();
-        // float MVGTime =
-        //    std::chrono::duration<float, std::milli>(timer4 - timer3).count();
-
-        timer.Stop();
-        std::cout << "MVGTime time: " << timer.GetElapsedTime() << std::endl;
-
-        // #endif // VTKM_CUDA
+      timer.Start();
+      dataset = contour.Execute(dataset);
+      timer.Stop();
+      std::cout << "MVGTime time: " << timer.GetElapsedTime() << std::endl;
     }
     else
     {
         throw std::runtime_error("unsupported distribution: " + distribution);
     }
 
-    // using the same type as the assumption for the output type
-    // std::cout << "===data summary for reduced data with uncertainty:" << std::endl;
-
-    reducedDataSet.AddCellField("entropy", entropyResult);
-    reducedDataSet.AddCellField("num_nonzero_prob", numNonZeroProb);
-    reducedDataSet.AddCellField("cross_prob", crossProb);
-
-    // reducedDataSet.PrintSummary(std::cout);
+    // dataset.PrintSummary(std::cout);
     std::stringstream stream;
     stream << std::fixed << std::setprecision(2) << isovalue;
     std::string isostr = stream.str();
@@ -419,7 +239,7 @@ int main(int argc, char *argv[])
     std::string outputFileName = fileSuffix + "_iso" + isostr + "_" + distribution + "_block" + std::to_string(blocksize) + std::string("_Prob.vtk");
     vtkm::io::VTKDataSetWriter write(outputFileName);
     write.SetFileTypeToBinary();
-    write.WriteDataSet(reducedDataSet);
+    write.WriteDataSet(dataset);
 
     return 0;
 }

@@ -50,7 +50,7 @@ vtkm::cont::DataSet ContourUncertainIndependentGaussian::DoExecute(const vtkm::c
     vtkm::cont::ArrayCopyShallowIfPossible(stdevField.GetData(), concreteStdevField);
 
     vtkm::cont::ArrayHandle<ValueType> concreteCrossProb;
-    vtkm::cont::ArrayHandle<ValueType> concreteNumNonZeroProb;
+    vtkm::cont::ArrayHandle<vtkm::Id> concreteNumNonZeroProb;
     vtkm::cont::ArrayHandle<ValueType> concreteEntropy;
 
     this->Invoke(EntropyIndependentGaussian{ this->IsoValue },
