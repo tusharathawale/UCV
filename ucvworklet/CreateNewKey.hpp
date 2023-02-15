@@ -14,6 +14,16 @@ struct CreateNewKeyWorklet : public vtkm::worklet::WorkletMapField
                         vtkm::Id blocksize) : m_rawDimx(rawDimx), m_rawDimy(rawDimy), m_rawDimz(rawDimz),
                                               m_numberBlockx(numberBlockx), m_numberBlocky(numberBlocky), m_numberBlockz(numberBlockz),
                                               m_blocksize(blocksize){};
+    VTKM_CONT CreateNewKeyWorklet(vtkm::Id3 rawDim, vtkm::Id3 numBlocks, vtkm::Id blocksize)
+      : m_rawDimx(rawDim[0])
+      , m_rawDimy(rawDim[1])
+      , m_rawDimz(rawDim[2])
+      , m_numberBlockx(numBlocks[0])
+      , m_numberBlocky(numBlocks[1])
+      , m_numberBlockz(numBlocks[2])
+      , m_blocksize(blocksize)
+    {
+    }
 
     vtkm::Id m_rawDimx;
     vtkm::Id m_rawDimy;

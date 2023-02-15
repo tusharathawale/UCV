@@ -216,8 +216,9 @@ public:
         return mean;
     }
 
-    VTKM_EXEC inline vtkm::FloatDefault find_covariance(const vtkm::Vec<vtkm::FloatDefault, 64> &arr1, const vtkm::Vec<vtkm::FloatDefault, 64> &arr2,
-                                                        const vtkm::FloatDefault &mean1, const vtkm::FloatDefault &mean2) const
+    template <typename T>
+    VTKM_EXEC inline vtkm::FloatDefault find_covariance(const vtkm::Vec<T, 64> &arr1, const vtkm::Vec<T, 64> &arr2,
+                                                        const T &mean1, const T &mean2) const
     {
         if (arr1.GetNumberOfComponents() != arr2.GetNumberOfComponents())
         {

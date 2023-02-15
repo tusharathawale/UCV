@@ -12,19 +12,22 @@ struct ExtractingMinMax : public vtkm::worklet::WorkletReduceByKey
     VTKM_EXEC void operator()(
         const OriginalValuesType &originalValues, OutputType &minValue, OutputType &maxValue) const
     {
-        vtkm::FloatDefault boxMin = DBL_MAX;
-        vtkm::FloatDefault boxMax = 0;
+      minValue = originalValues[0];
+      maxValue = originalValues[0];
 
-        for (vtkm::IdComponent index = 0;
-             index < originalValues.GetNumberOfComponents(); index++)
+      for (vtkm::IdComponent index = 1;
+           index < originalValues.GetNumberOfComponents(); index++)
+      {
+        auto originalValue = originalValues[index];
+        // This iteration is to support ArrayHandleRecombineVec from CastAndCallWithExtractedArray
+        for (vtkm::IdComponent cIndex = 0; cIndex < originalValue.GetNumberOfComponents(); ++cIndex)
         {
-            vtkm::FloatDefault originalvalue = originalValues[index];
-            boxMin = vtkm::Min(boxMin, originalvalue);
-            boxMax = vtkm::Max(boxMax, originalvalue);
+          minValue[cIndex] =
+              (originalValues[index][cIndex] < minValue[cIndex]) ? originalValues[index][cIndex] : minValue[cIndex];
+          maxValue[cIndex] =
+              (originalValues[index][cIndex] > maxValue[cIndex]) ? originalValues[index][cIndex] : maxValue[cIndex];
         }
-
-        minValue = boxMin;
-        maxValue = boxMax;
+      }
     }
 };
 

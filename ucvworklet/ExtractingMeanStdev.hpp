@@ -13,29 +13,21 @@ struct ExtractingMeanStdev : public vtkm::worklet::WorkletReduceByKey
     VTKM_EXEC void operator()(
         const OriginalValuesType &originalValues, OutputType &meanValue, OutputType &stdevValue) const
     {
-        vtkm::FloatDefault boxSum = 0;
-
         vtkm::IdComponent NumComponents = originalValues.GetNumberOfComponents();
 
         // refer to https://www.strchr.com/standard_deviation_in_one_pass
-        for (vtkm::IdComponent index = 0;
-             index < NumComponents; index++)
+        meanValue = originalValues[0];
+        stdevValue = originalValues[0] * originalValues[0];
+        for (vtkm::IdComponent index = 1; index < NumComponents; index++)
         {
-            boxSum = boxSum + static_cast<vtkm::FloatDefault>(originalValues[index]);
+            meanValue += originalValues[index];
+            stdevValue += originalValues[index] * originalValues[index];
         }
 
-        meanValue = boxSum / (1.0 * (NumComponents));
-
-        vtkm::FloatDefault diffSum = 0;
-
-        for (vtkm::IdComponent index = 0;
-             index < NumComponents; index++)
-        {
-            vtkm::FloatDefault diff = static_cast<vtkm::FloatDefault>(originalValues[index]) - static_cast<vtkm::FloatDefault>(meanValue);
-            diffSum += diff * diff;
-        }
-
-        stdevValue = std::sqrt(diffSum / (1.0*NumComponents));
+        meanValue *= 1.0 / NumComponents;
+        stdevValue *= 1.0 / NumComponents;
+        stdevValue -= meanValue * meanValue;
+        stdevValue = vtkm::Sqrt(stdevValue);
     }
 };
 
