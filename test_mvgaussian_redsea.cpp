@@ -130,6 +130,8 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   writeCross.WriteDataSet(outputDataSet);
 }
 
+static const vtkm::cont::LogLevel CustomLogLevel = vtkm::cont::LogLevel::Perf;
+
 int main(int argc, char *argv[])
 {
 
@@ -138,6 +140,8 @@ int main(int argc, char *argv[])
     std::cout << "<executable> <iso> <num of sample>" << std::endl;
     exit(0);
   }
+
+  vtkm::cont::SetLogLevelName(CustomLogLevel , "custom");
 
   vtkm::cont::Initialize(argc, argv);
   vtkm::cont::Timer timer;
