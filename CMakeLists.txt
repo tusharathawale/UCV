@@ -44,6 +44,10 @@ target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES})
 #add_executable(test_ucv_matrix ./ucvworklet/linalg/test_ucv_matrix.cpp)
 #target_link_libraries(test_ucv_matrix ${VTKm_LIBRARIES})
 
+set_source_files_properties(test_mvgaussian_redsea_as3d.cpp PROPERTIES LANGUAGE "CUDA")
+add_executable(test_mvgaussian_redsea_as3d test_mvgaussian_redsea_as3d.cpp)
+set_target_properties(test_mvgaussian_redsea_as3d PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(test_mvgaussian_redsea_as3d ${VTKm_LIBRARIES})
 
 
 else()
@@ -68,6 +72,9 @@ target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 add_executable(test_mvgaussian_redsea_mpi test_mvgaussian_redsea_mpi.cpp)
 target_link_libraries(test_mvgaussian_redsea_mpi ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
+add_executable(test_mvgaussian_redsea_as3d test_mvgaussian_redsea_as3d.cpp)
+target_link_libraries(test_mvgaussian_redsea_as3d ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 #add_executable(test_mvgaussian_3d test_mvgaussian_3d.cpp)
 #target_link_libraries(test_mvgaussian_3d ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)

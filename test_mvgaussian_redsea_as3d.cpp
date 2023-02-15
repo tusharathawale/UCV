@@ -11,8 +11,7 @@
 #include <vtkm/filter/geometry_refinement/Triangulate.h>
 
 #include "ucvworklet/CreateNewKey.hpp"
-#include "ucvworklet/MVGaussianWithEnsemble2DTryLialgEntropy.hpp"
-#include "ucvworklet/MVGaussianWithEnsemble2DPolyTryLialgEntropy.hpp"
+#include "ucvworklet/MVGaussianWithEnsemble3DTryLialg2.hpp"
 
 #include <vtkm/cont/Timer.h>
 
@@ -80,10 +79,12 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
   vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
 
-
   if (datatype == "poly")
   {
-    // executing the uncertianty thing
+    std::cout << "unsupported yet" << std::endl;
+    return;
+    /*
+        // executing the uncertianty thing
     using WorkletType = MVGaussianWithEnsemble2DPolyTryLialgEntropy;
     using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
     // There are three vertecies
@@ -94,15 +95,16 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
     };
 
     vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
+    */
   }
   else
   {
     // executing the uncertianty thing
-    using WorkletType = MVGaussianWithEnsemble2DTryLialgEntropy;
+    using WorkletType = MVGaussianWithEnsemble3DTryLialg2;
     using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
     auto resolveType = [&](const auto &concrete)
     {
-      DispatcherType dispatcher(MVGaussianWithEnsemble2DTryLialgEntropy{iso, numSamples});
+      DispatcherType dispatcher(MVGaussianWithEnsemble3DTryLialg2{iso, numSamples});
       dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability, numNonZeroProb, entropy);
     };
 
@@ -132,25 +134,22 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
 
 int main(int argc, char *argv[])
 {
-
-  vtkm::cont::SetLogLevelName(vtkm::cont::LogLevel::Perf , "custom");
-
   vtkm::cont::Initialize(argc, argv);
-  
+
   if (argc != 3)
   {
     std::cout << "<executable> <iso> <num of sample>" << std::endl;
     exit(0);
   }
 
-
   vtkm::cont::Timer timer;
   initBackend(timer);
   std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
 
+  vtkm::Id numSlices = 10;
   vtkm::Id xdim = 500;
   vtkm::Id ydim = 500;
-  vtkm::Id zdim = 1;
+  vtkm::Id zdim = numSlices;
 
   const vtkm::Id3 dims(xdim, ydim, zdim);
   vtkm::cont::DataSetBuilderUniform dataSetBuilder;
@@ -163,47 +162,56 @@ int main(int argc, char *argv[])
   std::cout << "iso value is: " << isovalue << " num_samples is: " << num_samples << std::endl;
 
   const int numEnsembles = 20;
-  int sliceId = 0;
 
   using Vec20 = vtkm::Vec<double, numEnsembles>;
   vtkm::cont::ArrayHandle<Vec20> dataArraySOA;
-  dataArraySOA.Allocate(xdim * ydim);
+  dataArraySOA.Allocate(xdim * ydim * zdim);
 
   // this is the original data
   // first dim is the ensemble
   // second dim is each slice
   std::vector<vtkm::cont::ArrayHandle<vtkm::Float64>> dataArray;
 
-  for (int ensId = 1; ensId <= numEnsembles; ensId++)
+  for (int sliceId = 0; sliceId < numSlices; sliceId++)
   {
-    // load each ensemble data
-    std::string fileName = dataDir + "slice_" + std::to_string(sliceId) + "_member_" + std::to_string(ensId) + ".vtk";
-    vtkm::io::VTKDataSetReader reader(fileName);
-    vtkm::cont::DataSet inData = reader.ReadDataSet();
+    for (int ensId = 1; ensId <= numEnsembles; ensId++)
+    {
+      // load each ensemble data
+      std::string fileName = dataDir + "slice_" + std::to_string(sliceId) + "_member_" + std::to_string(ensId) + ".vtk";
+      vtkm::io::VTKDataSetReader reader(fileName);
+      vtkm::cont::DataSet inData = reader.ReadDataSet();
 
-    // aggregate data into one dataset
-    // store the ensemble slice by slice
-    vtkm::cont::ArrayHandle<vtkm::Float64> sliceDataArray;
-    vtkm::cont::ArrayCopyShallowIfPossible(inData.GetField("velocityMagnitude").GetData(), sliceDataArray);
+      // aggregate data into one dataset
+      // store the ensemble slice by slice
+      vtkm::cont::ArrayHandle<vtkm::Float64> sliceDataArray;
+      vtkm::cont::ArrayCopyShallowIfPossible(inData.GetField("velocityMagnitude").GetData(), sliceDataArray);
 
-    dataArray.push_back(sliceDataArray);
+      dataArray.push_back(sliceDataArray);
+    }
   }
 
   // do through the data array and put them into the dataArraySOA
-  for (int j = 0; j < ydim; j++)
+  for (int k = 0; k < zdim; k++)
   {
-    for (int i = 0; i < xdim; i++)
+    for (int j = 0; j < ydim; j++)
     {
-      int index = j * ydim + i;
-
-      // each entry has 20 ensembles
-      Vec20 ensembles;
-      for (int ensId = 1; ensId <= numEnsembles; ensId++)
+      for (int i = 0; i < xdim; i++)
       {
-        ensembles[ensId - 1] = dataArray[ensId - 1].ReadPortal().Get(index);
-      }
+        int index2d = j * ydim + i;
+        int index3d = k * ydim * xdim + j * ydim + i;
 
-      dataArraySOA.WritePortal().Set(index, ensembles);
+        // each entry has 20 ensembles
+        Vec20 ensembles;
+
+        for (int ensId = 1; ensId <= numEnsembles; ensId++)
+        {
+          // jump to the specific slice position
+          int sliceBase = k * numSlices;
+          ensembles[ensId - 1] = dataArray[sliceBase + ensId - 1].ReadPortal().Get(index2d);
+        }
+
+        dataArraySOA.WritePortal().Set(index3d, ensembles);
+      }
     }
   }
 
@@ -211,16 +219,17 @@ int main(int argc, char *argv[])
   std::cout << "checking input dataset" << std::endl;
   vtkmDataSet.PrintSummary(std::cout);
 
-  // std::string outputFileName = "./red_sea_ens_slice_" + std::to_string(sliceId) + ".vtk";
-  // vtkm::io::VTKDataSetWriter writeEnsembles(outputFileName);
-  // writeEnsembles.WriteDataSet(vtkmDataSet);
+  //std::string outputFileName = "./red_sea_ens_3d.vtk";
+  //vtkm::io::VTKDataSetWriter writeEnsembles(outputFileName);
+  //writeEnsembles.WriteDataSet(vtkmDataSet);
 
+  
   callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
   std::cout << "ok for struc 1" << std::endl;
-  
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
-  std::cout << "ok for struc 2" << std::endl;
-  
+
+  //callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
+  //std::cout << "ok for struc 2" << std::endl;
+
   // test unstructred grid
   // convert the original data to the unstructured grid
   vtkm::filter::clean_grid::CleanGrid clean;
@@ -229,12 +238,15 @@ int main(int argc, char *argv[])
 
   callWorklet(timer, cleanedDataSet, isovalue, num_samples, "unstru");
   std::cout << "ok for unstru" << std::endl;
-
+  
+  /*
   vtkm::filter::geometry_refinement::Triangulate triangulate;
   auto tranDataSet = triangulate.Execute(vtkmDataSet);
   tranDataSet.PrintSummary(std::cout);
 
   callWorklet(timer, tranDataSet, isovalue, num_samples, "poly");
   std::cout << "ok for poly" << std::endl;
+  */
+
   return 0;
 }
