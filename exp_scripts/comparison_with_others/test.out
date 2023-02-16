@@ -1,0 +1,108 @@
+++ pwd
++ CURRDIR=/ccs/home/jieyang/UCV/exp_scripts/comparison_with_others
++ LOGDIRNAME=run_beetle_ucv_log_crusher
++ mkdir -p /ccs/home/jieyang/UCV/exp_scripts/comparison_with_others/run_beetle_ucv_log_crusher
++ cd /gpfs/alpine/scratch/jieyang/csc143
++ rm -rf run_beetle_ucv_log_crusher
++ mkdir run_beetle_ucv_log_crusher
++ cd run_beetle_ucv_log_crusher
++ ln -s /ccs/home/jieyang/UCV/exp_scripts/comparison_with_others/../../install_scripts/crusher_gpu/install/UCV/ucv_reduce_umc ucv_umc_gpu
++ DATANAME=beetle_496_832_832.vtk
++ DATASETPATH=/gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk
++ export OMP_NUM_THREADS=1
++ OMP_NUM_THREADS=1
++ export OMP_NUM_THREADS=42
++ OMP_NUM_THREADS=42
++ export UCV_VTKM_BACKEND=openmp
++ UCV_VTKM_BACKEND=openmp
++ export OMP_NUM_THREADS=1
++ OMP_NUM_THREADS=1
++ export UCV_VTKM_BACKEND=hip
++ UCV_VTKM_BACKEND=hip
++ unset UCV_GPU_NUMBLOCK
++ unset UCV_GPU_BLOCKPERTHREAD
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth uni 4 900
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth uni 4 900
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth ig 4 900
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth mg 4 900
+++ pwd
++ CURRDIR=/ccs/home/jieyang/UCV/exp_scripts/comparison_with_others
++ LOGDIRNAME=run_beetle_ucv_log_crusher_1
++ mkdir -p /ccs/home/jieyang/UCV/exp_scripts/comparison_with_others/run_beetle_ucv_log_crusher_1
++ cd /gpfs/alpine/scratch/jieyang/csc143
++ rm -rf run_beetle_ucv_log_crusher_1
++ mkdir run_beetle_ucv_log_crusher_1
++ cd run_beetle_ucv_log_crusher_1
++ ln -s /ccs/home/jieyang/UCV/exp_scripts/comparison_with_others/../../install_scripts/crusher_gpu/install/UCV/ucv_reduce_umc ucv_umc_gpu
++ DATANAME=beetle_496_832_832.vtk
++ DATASETPATH=/gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk
++ export OMP_NUM_THREADS=1
++ OMP_NUM_THREADS=1
++ export OMP_NUM_THREADS=42
++ OMP_NUM_THREADS=42
++ export UCV_VTKM_BACKEND=openmp
++ UCV_VTKM_BACKEND=openmp
++ export OMP_NUM_THREADS=1
++ OMP_NUM_THREADS=1
++ export UCV_VTKM_BACKEND=hip
++ UCV_VTKM_BACKEND=hip
++ unset UCV_GPU_NUMBLOCK
++ unset UCV_GPU_BLOCKPERTHREAD
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth uni 4 900
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth uni 4 900
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth ig 4 900
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth mg 4 900
+++ pwd
++ CURRDIR=/ccs/home/jieyang/UCV/exp_scripts/comparison_with_others
++ LOGDIRNAME=run_beetle_ucv_log_crusher_2
++ mkdir -p /ccs/home/jieyang/UCV/exp_scripts/comparison_with_others/run_beetle_ucv_log_crusher_2
++ cd /gpfs/alpine/scratch/jieyang/csc143
++ rm -rf run_beetle_ucv_log_crusher_2
++ mkdir run_beetle_ucv_log_crusher_2
++ cd run_beetle_ucv_log_crusher_2
++ ln -s /ccs/home/jieyang/UCV/exp_scripts/comparison_with_others/../../install_scripts/crusher_gpu/install/UCV/ucv_reduce_umc ucv_umc_gpu
++ DATANAME=beetle_496_832_832.vtk
++ DATASETPATH=/gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk
++ export OMP_NUM_THREADS=1
++ OMP_NUM_THREADS=1
++ export OMP_NUM_THREADS=42
++ OMP_NUM_THREADS=42
++ export UCV_VTKM_BACKEND=openmp
++ UCV_VTKM_BACKEND=openmp
++ export OMP_NUM_THREADS=1
++ OMP_NUM_THREADS=1
++ export UCV_VTKM_BACKEND=hip
++ UCV_VTKM_BACKEND=hip
++ unset UCV_GPU_NUMBLOCK
++ unset UCV_GPU_BLOCKPERTHREAD
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth uni 4 900
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth uni 4 900
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth ig 4 900
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth mg 4 900
+++ pwd
++ CURRDIR=/ccs/home/jieyang/UCV/exp_scripts/comparison_with_others
++ LOGDIRNAME=run_beetle_ucv_log_crusher_3
++ mkdir -p /ccs/home/jieyang/UCV/exp_scripts/comparison_with_others/run_beetle_ucv_log_crusher_3
++ cd /gpfs/alpine/scratch/jieyang/csc143
++ rm -rf run_beetle_ucv_log_crusher_3
++ mkdir run_beetle_ucv_log_crusher_3
++ cd run_beetle_ucv_log_crusher_3
++ ln -s /ccs/home/jieyang/UCV/exp_scripts/comparison_with_others/../../install_scripts/crusher_gpu/install/UCV/ucv_reduce_umc ucv_umc_gpu
++ DATANAME=beetle_496_832_832.vtk
++ DATASETPATH=/gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk
++ export OMP_NUM_THREADS=1
++ OMP_NUM_THREADS=1
++ export OMP_NUM_THREADS=42
++ OMP_NUM_THREADS=42
++ export UCV_VTKM_BACKEND=openmp
++ UCV_VTKM_BACKEND=openmp
++ export OMP_NUM_THREADS=1
++ OMP_NUM_THREADS=1
++ export UCV_VTKM_BACKEND=hip
++ UCV_VTKM_BACKEND=hip
++ unset UCV_GPU_NUMBLOCK
++ unset UCV_GPU_BLOCKPERTHREAD
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth uni 4 900
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth uni 4 900
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth ig 4 900
++ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_umc_gpu /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/beetle_496_832_832.vtk ground_truth mg 4 900
