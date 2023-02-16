@@ -35,6 +35,10 @@ public:
         OutCellFieldType2 &outCellFieldNumNonzeroProb,
         OutCellFieldType3 &outCellFieldEntropy) const
     {
+        // TODO try cuda function
+        // get thread block number
+        // grid size etc 
+
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
 
@@ -111,8 +115,8 @@ public:
         //     matrix_show(&ucvcov4by4);
         // }
 
-        double result[8];
-        eigen_solve_eigenvalues(&ucvcov8by8, 0.000001, 50, result);
+        //double result[8];
+        //eigen_solve_eigenvalues(&ucvcov8by8, 0.000001, 50, result);
 
         UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov8by8);
 
