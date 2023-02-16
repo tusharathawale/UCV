@@ -19,7 +19,7 @@ public:
                                   FieldOutCell,
                                   FieldOutCell);
 
-    using ExecutionSignature = void(_2, _3, _4, _5);
+    using ExecutionSignature = void(_2, _3, _4, _5, WorkIndex);
 
     // the first parameter is binded with the worklet
     using InputDomain = _1;
@@ -33,8 +33,20 @@ public:
         const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
         OutCellFieldType1 &outCellFieldCProb,
         OutCellFieldType2 &outCellFieldNumNonzeroProb,
-        OutCellFieldType3 &outCellFieldEntropy) const
+        OutCellFieldType3 &outCellFieldEntropy,
+        vtkm::Id workIndex) const
     {
+        // TODO try cuda function
+        // get thread block number
+        // grid size etc
+        //        if(workIndex==0){
+        // cuda case
+        // #ifdef VTKM_CUDA
+        // printf("blockDim %u %u %u\n",blockDim.x,blockDim.y,blockDim.z);
+        // printf("gridDim %u %u %u\n",gridDim.x,gridDim.y,gridDim.z);
+        // #endif
+        //         }
+
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
 
@@ -57,143 +69,147 @@ public:
         }
 
         // set the trim options to filter the 0 values
-        if (fabs(ucvmeanv.v[0]) < 0.000001 && fabs(ucvmeanv.v[1]) < 0.000001 && fabs(ucvmeanv.v[2]) < 0.000001 && fabs(ucvmeanv.v[3]) < 0.000001 && fabs(ucvmeanv.v[4]) < 0.000001 && fabs(ucvmeanv.v[5]) < 0.000001 && fabs(ucvmeanv.v[6]) < 0.000001 && fabs(ucvmeanv.v[7]) < 0.000001)
+        if (fabs(ucvmeanv.v[0]) < 0.00001 && fabs(ucvmeanv.v[1]) < 0.00001 && fabs(ucvmeanv.v[2]) < 0.00001 && fabs(ucvmeanv.v[3]) < 0.00001 && fabs(ucvmeanv.v[4]) < 0.00001 && fabs(ucvmeanv.v[5]) < 0.00001 && fabs(ucvmeanv.v[6]) < 0.00001 && fabs(ucvmeanv.v[7]) < 0.00001)
         {
-            outCellFieldCProb = 0;
-            return;
+            outCellFieldCProb = 0.00001;
+            outCellFieldNumNonzeroProb = 0.00001;
+            outCellFieldEntropy = 0.00001;
         }
-
-        // if (workIndex == 0)
-        //{
-        //     std::cout << meanArray[0] << " " << meanArray[1] << " " << meanArray[2] << " " << meanArray[3] << std::endl;
-        // }
-
-        // std::vector<double> cov_matrix;
-        // for 8*8 matrix, there are 36 numbers at upper conner
-        vtkm::Vec<vtkm::FloatDefault, 36> cov_matrix;
-        vtkm::IdComponent index = 0;
-        for (int p = 0; p < numVertexies; ++p)
+        else
         {
-            for (int q = p; q < numVertexies; ++q)
+
+            // if (workIndex == 0)
+            //{
+            //     std::cout << meanArray[0] << " " << meanArray[1] << " " << meanArray[2] << " " << meanArray[3] << std::endl;
+            // }
+
+            // std::vector<double> cov_matrix;
+            // for 8*8 matrix, there are 36 numbers at upper conner
+            vtkm::Vec<vtkm::FloatDefault, 36> cov_matrix;
+            vtkm::IdComponent index = 0;
+            for (int p = 0; p < numVertexies; ++p)
             {
-                float cov = find_covariance<VecType>(inPointFieldVecEnsemble[p], inPointFieldVecEnsemble[q], ucvmeanv.v[p], ucvmeanv.v[q]);
-                cov_matrix[index] = cov;
-                index++;
-            }
-        }
-
-        // generate sample
-
-        vtkm::IdComponent numSamples = m_num_sample;
-        // vtkm::Id numCrossings = 0;
-        // this can be adapted to 3d case
-
-        UCVMATH::mat_t ucvcov8by8;
-        int covindex = 0;
-        for (int p = 0; p < numVertexies; ++p)
-        {
-            for (int q = p; q < numVertexies; ++q)
-            {
-                // use the elements at the top half
-                // printf("%f ", cov_matrix[covindex]);
-                ucvcov8by8.v[p][q] = cov_matrix[covindex];
-                if (p != q)
+                for (int q = p; q < numVertexies; ++q)
                 {
-                    // assign value to another helf
-                    ucvcov8by8.v[q][p] = ucvcov8by8.v[p][q];
+                    float cov = find_covariance<VecType>(inPointFieldVecEnsemble[p], inPointFieldVecEnsemble[q], ucvmeanv.v[p], ucvmeanv.v[q]);
+                    cov_matrix[index] = cov;
+                    index++;
                 }
-                covindex++;
             }
-        }
 
-        // if (workIndex ==15822)
-        //{
-        //     matrix_show(&ucvcov4by4);
-        // }
+            // generate sample
 
-        double result[8];
-        eigen_solve_eigenvalues(&ucvcov8by8, 0.000001, 50, result);
+            vtkm::IdComponent numSamples = m_num_sample;
+            // vtkm::Id numCrossings = 0;
+            // this can be adapted to 3d case
 
-        UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov8by8);
+            UCVMATH::mat_t ucvcov8by8;
+            int covindex = 0;
+            for (int p = 0; p < numVertexies; ++p)
+            {
+                for (int q = p; q < numVertexies; ++q)
+                {
+                    // use the elements at the top half
+                    // printf("%f ", cov_matrix[covindex]);
+                    ucvcov8by8.v[p][q] = cov_matrix[covindex];
+                    if (p != q)
+                    {
+                        // assign value to another helf
+                        ucvcov8by8.v[q][p] = ucvcov8by8.v[p][q];
+                    }
+                    covindex++;
+                }
+            }
 
-        UCVMATH::vec_t sample_v;
-        UCVMATH::vec_t AUM;
+            // if (workIndex ==15822)
+            //{
+            //     matrix_show(&ucvcov4by4);
+            // }
+
+            // double result[8];
+            // eigen_solve_eigenvalues(&ucvcov8by8, 0.000001, 50, result);
+
+            UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov8by8);
+
+            UCVMATH::vec_t sample_v;
+            UCVMATH::vec_t AUM;
 
 #ifdef VTKM_CUDA
-        thrust::minstd_rand rng;
-        thrust::random::normal_distribution<double> norm;
+            thrust::minstd_rand rng;
+            thrust::random::normal_distribution<double> norm;
 #else
-        std::mt19937 rng;
-        rng.seed(std::mt19937::default_seed);
-        std::normal_distribution<double> norm;
+            std::mt19937 rng;
+            rng.seed(std::mt19937::default_seed);
+            std::normal_distribution<double> norm;
 #endif // VTKM_CUDA
 
-        vtkm::Vec<vtkm::FloatDefault, 256> probHistogram;
-        for (int i = 0; i < 256; i++)
-        {
-            probHistogram[i] = 0.0;
-        }
-
-        for (vtkm::Id n = 0; n < numSamples; ++n)
-        {
-            // get sample vector
-            for (int i = 0; i < numVertexies; i++)
+            vtkm::Vec<vtkm::FloatDefault, 256> probHistogram;
+            for (int i = 0; i < 256; i++)
             {
-                // using other sample mechanism such as thrust as needed
-                sample_v.v[i] = norm(rng);
+                probHistogram[i] = 0.0;
             }
 
-            AUM = UCVMATH::matrix_mul_vec_add_vec(&A, &sample_v, &ucvmeanv);
-
-            // compute the specific position
-            // map > or < to specific cases
-            uint caseValue = 0;
-            for (uint i = 0; i < numVertexies; i++)
+            for (vtkm::Id n = 0; n < numSamples; ++n)
             {
-                // setting associated position to 1 if iso larger then specific cases
-                if (m_isovalue >= AUM.v[i])
+                // get sample vector
+                for (int i = 0; i < numVertexies; i++)
                 {
-                    caseValue = (1 << i) | caseValue;
+                    // using other sample mechanism such as thrust as needed
+                    sample_v.v[i] = norm(rng);
                 }
+
+                AUM = UCVMATH::matrix_mul_vec_add_vec(&A, &sample_v, &ucvmeanv);
+
+                // compute the specific position
+                // map > or < to specific cases
+                uint caseValue = 0;
+                for (uint i = 0; i < numVertexies; i++)
+                {
+                    // setting associated position to 1 if iso larger then specific cases
+                    if (m_isovalue >= AUM.v[i])
+                    {
+                        caseValue = (1 << i) | caseValue;
+                    }
+                }
+
+                // the associated pos is 0 otherwise
+                probHistogram[caseValue] = probHistogram[caseValue] + 1.0;
             }
 
-            // the associated pos is 0 otherwise
-            probHistogram[caseValue] = probHistogram[caseValue] + 1.0;
-        }
-
-        // go through probHistogram and compute pro
-        for (int i = 0; i < numVertexies*numVertexies; i++)
-        {
-            probHistogram[i] = (probHistogram[i] / (1.0 * numSamples));
-            // printf("debug caseValue %d probHistogram %f\n", i, probHistogram[i]);
-        }
-
-        // cross probability
-        // outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
-        outCellFieldCProb = 1.0 - (probHistogram[0] + probHistogram[255]);
-
-        vtkm::Id nonzeroCases = 0;
-        vtkm::FloatDefault entropyValue = 0;
-        vtkm::FloatDefault templog = 0;
-        // compute number of nonzero cases
-        // compute entropy
-        for (int i = 0; i < 256; i++)
-        {
-            if (probHistogram[i] > 0.0001)
+            // go through probHistogram and compute pro
+            for (int i = 0; i < 256; i++)
             {
-                nonzeroCases++;
-                templog = vtkm::Log2(probHistogram[i]);
-                // if (i != 0 && i != totalNumCases - 1)
-                //{
-                //     totalnonzeroProb += probHistogram[i];
-                // }
+                probHistogram[i] = (probHistogram[i] / (1.0 * numSamples));
+                // printf("debug caseValue %d probHistogram %f\n", i, probHistogram[i]);
             }
-            // do not update entropy if the pro is zero
-            entropyValue = entropyValue + (-probHistogram[i]) * templog;
-        }
 
-        outCellFieldNumNonzeroProb = nonzeroCases;
-        outCellFieldEntropy = entropyValue;
+            // cross probability
+            // outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
+            outCellFieldCProb = 1.0 - (probHistogram[0] + probHistogram[255]);
+
+            vtkm::Id nonzeroCases = 0;
+            vtkm::FloatDefault entropyValue = 0;
+            vtkm::FloatDefault templog = 0;
+            // compute number of nonzero cases
+            // compute entropy
+            for (int i = 0; i < 256; i++)
+            {
+                if (probHistogram[i] > 0.0001)
+                {
+                    nonzeroCases++;
+                    templog = vtkm::Log2(probHistogram[i]);
+                    // if (i != 0 && i != totalNumCases - 1)
+                    //{
+                    //     totalnonzeroProb += probHistogram[i];
+                    // }
+                }
+                // do not update entropy if the pro is zero
+                entropyValue = entropyValue + (-probHistogram[i]) * templog;
+            }
+
+            outCellFieldNumNonzeroProb = nonzeroCases;
+            outCellFieldEntropy = entropyValue;
+        }
     }
 
     template <typename VecType>
@@ -230,4 +246,4 @@ private:
     int m_num_sample = 1000;
 };
 
-#endif // UCV_MULTIVARIANT_GAUSSIAN2D_h
+#endif // UCV_MULTIVARIANT_GAUSSIAN3D2_h

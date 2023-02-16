@@ -127,7 +127,7 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   outputDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
   outputDataSet.AddCellField("entropy" + isostr, entropy);
 
-  std::string outputFileName = "./red_sea_ucv_iso_" + datatype + "_" + isostr + ".vtk";
+  std::string outputFileName = "./red_sea_ucv_3d_iso_" + datatype + "_" + isostr + ".vtk";
   vtkm::io::VTKDataSetWriter writeCross(outputFileName);
   writeCross.WriteDataSet(outputDataSet);
 }
@@ -136,9 +136,9 @@ int main(int argc, char *argv[])
 {
   vtkm::cont::Initialize(argc, argv);
 
-  if (argc != 3)
+  if (argc != 4)
   {
-    std::cout << "<executable> <iso> <num of sample>" << std::endl;
+    std::cout << "<executable> <iso> <num of sample> <num of slices>" << std::endl;
     exit(0);
   }
 
@@ -146,7 +146,12 @@ int main(int argc, char *argv[])
   initBackend(timer);
   std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
 
-  vtkm::Id numSlices = 10;
+  double isovalue = std::stod(argv[1]);
+  int num_samples = std::stoi(argv[2]);
+  int numSlices = std::stoi(argv[3]);
+  //number slices should be 10 to 50
+  std::cout << "iso value is: " << isovalue << " num_samples is: " << num_samples << " numSlices " << numSlices << std::endl;
+
   vtkm::Id xdim = 500;
   vtkm::Id ydim = 500;
   vtkm::Id zdim = numSlices;
@@ -157,9 +162,6 @@ int main(int argc, char *argv[])
   vtkm::cont::DataSet vtkmDataSet = dataSetBuilder.Create(dims);
 
   std::string dataDir = "./red_sea_vtkdata_velocityMagnitude/";
-  double isovalue = std::stod(argv[1]);
-  int num_samples = std::stoi(argv[2]);
-  std::cout << "iso value is: " << isovalue << " num_samples is: " << num_samples << std::endl;
 
   const int numEnsembles = 20;
 
