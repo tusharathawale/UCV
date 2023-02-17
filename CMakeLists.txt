@@ -4,7 +4,7 @@ add_compile_options(-std=c++14)
 
 #Find the VTK-m package
 find_package(VTKm REQUIRED QUIET)
-set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::rendering vtkm::source vtkm::vtkmdiympi vtkm::io)
+set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::vtkmdiympi vtkm::io)
 
 #Find MPI
 find_package(MPI REQUIRED)
@@ -62,8 +62,8 @@ target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES} MPI::MPI_CXX)
 add_executable(test_mvgaussian_redsea_mpi test_mvgaussian_redsea_mpi.cpp)
 target_link_libraries(test_mvgaussian_redsea_mpi ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
-add_executable(test_mvgaussian_3d test_mvgaussian_3d.cpp)
-target_link_libraries(test_mvgaussian_3d ${VTKm_LIBRARIES} MPI::MPI_CXX)
+#add_executable(test_mvgaussian_3d test_mvgaussian_3d.cpp)
+#target_link_libraries(test_mvgaussian_3d ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 add_executable(compute_cases compute_cases.cpp)
 target_link_libraries(compute_cases)

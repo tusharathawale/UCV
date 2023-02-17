@@ -162,14 +162,14 @@ public:
         UCVMATH::vec_t sample_v;
         UCVMATH::vec_t AUM;
 
-//#ifdef VTKM_CUDA
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
         thrust::random::normal_distribution<double> norm;
-//#else
-//        std::mt19937 rng;
-//        rng.seed(std::mt19937::default_seed);
-//        std::normal_distribution<double> norm;
-//#endif // VTKM_CUDA
+#else
+        std::mt19937 rng;
+        rng.seed(std::mt19937::default_seed);
+        std::normal_distribution<double> norm;
+#endif // VTKM_CUDA
 
         for (vtkm::Id n = 0; n < numSamples; ++n)
         {

@@ -10,15 +10,14 @@
 
 #include <vtkm/Types.h>
 
-//#ifdef VTKM_CUDA
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
 #include <thrust/random/linear_congruential_engine.h>
 #include <thrust/random/normal_distribution.h>
-//#else
+#else
 // using the std library
-//#include <random>
-//#endif // VTKM_CUDA
+#include <random>
+#endif // VTKM_CUDA
 
-#define DIM 8
 namespace UCVMATH
 {
     // typical 8*8 matrix
@@ -29,19 +28,19 @@ namespace UCVMATH
 
     typedef struct
     {
-        int m = DIM, n = DIM; // m is row, n is column
-        double v[DIM][DIM] = {0};
+        int m = 8, n = 8; // m is row, n is column
+        double v[8][8] = {0};
     } mat_t, *mat;
 
     typedef struct
     {
-        int len = DIM;
-        double v[DIM] = {0};
+        int len = 8;
+        double v[8] = {0};
     } vec_t, *vec;
 
     VTKM_EXEC inline vec_t vec_new(int len)
     {
-        assert(len == DIM);
+        assert(len == 8);
         vec_t v;
         for (int i = 0; i < len; i++)
         {
@@ -63,8 +62,8 @@ namespace UCVMATH
     VTKM_EXEC inline mat_t matrix_new_eye(int m, int n)
     {
         mat_t x;
-        assert(m == DIM);
-        assert(n == DIM);
+        assert(m == 8);
+        assert(n == 8);
         x.m = m;
         x.n = n;
         for (int i = 0; i < m; i++)
@@ -311,9 +310,9 @@ namespace UCVMATH
         // create a list, the 0 position is A the 1 position is H1...
         // the 3th position is H3
         assert(m->m == m->n);
-        assert(m->m == DIM);
+        assert(m->m == 8);
 
-        mat_t mat_list[DIM];
+        mat_t mat_list[8];
         mat_list[0] = *m;
         *R = *m;
         for (int k = 1; k < m->m; k++)
@@ -474,11 +473,11 @@ namespace UCVMATH
         }
         assert(ifupt == true);
 
-        for (int i = DIM - 1; i >= 0; --i)
+        for (int i = 8 - 1; i >= 0; --i)
         {
             // The values x[i+1..n-1] have already been calculated
             double s = 0;
-            for (int j = i + 1; j < DIM; ++j)
+            for (int j = i + 1; j < 8; ++j)
             {
                 s = s + r->v[i][j] * x.v[j];
             }
@@ -503,7 +502,7 @@ namespace UCVMATH
         householder(m, &R, &Q);
         // R*x = Q_t*b
         // b is each colum of the I matrix
-        for (int j = 0; j < DIM; j++)
+        for (int j = 0; j < 8; j++)
         {
             // go through each column of I
             vec_t b;
@@ -511,9 +510,9 @@ namespace UCVMATH
 
             mat_t Qt = Q;
             // transpose Qt
-            for (int ii = 0; ii < DIM; ii++)
+            for (int ii = 0; ii < 8; ii++)
             {
-                for (int jj = ii + 1; jj < DIM; jj++)
+                for (int jj = ii + 1; jj < 8; jj++)
                 {
                     double temp = Qt.v[ii][jj];
                     Qt.v[ii][jj] = Qt.v[jj][ii];
@@ -528,7 +527,7 @@ namespace UCVMATH
             vec_t x = back_substition(&R, &Qtb);
 
             // puting the x into the ith column of the inv_m matrix
-            for (int i = 0; i < DIM; i++)
+            for (int i = 0; i < 8; i++)
             {
                 inv_m->v[i][j] = x.v[i];
             }
@@ -545,8 +544,8 @@ namespace UCVMATH
 
         // only works for 8*8 now, since the matirc reverse is designed for 8*8
         // add more flexible linear system solver in future
-        assert(m->m == DIM);
-        assert(m->n == DIM);
+        assert(m->m == 8);
+        assert(m->n == 8);
 
         // create the empty eigen vectors matrix
         // raw of matrix represents the size of eigen vec
@@ -654,13 +653,8 @@ namespace UCVMATH
         // assuming m has eigen value and eigen vectors
         // assuming it is not singular matrix
 
-        double result[DIM];
+        double result[8];
         eigen_solve_eigenvalues(x, 0.0001, 20, result);
-
-        // update this when we have flexible linear system solver
-        assert(x->m == DIM);
-        assert(x->n == DIM);
-        mat_t eigen_vectors = eigen_solve_eigen_vectors(x, result, DIM, DIM, 20);
 
         // create the diaganal matrix
         mat_t diag;
@@ -673,8 +667,8 @@ namespace UCVMATH
             {
                 if (fabs(result[i]) < 0.0002)
                 {
-                    //make sure all value is >0 and we can compute sqrt for it
-                    //there are some numerical errors for computing the eigen values
+                    // make sure all value is >0 and we can compute sqrt for it
+                    // there are some numerical errors for computing the eigen values
                     result[i] = -result[i];
                 }
                 else
@@ -682,7 +676,7 @@ namespace UCVMATH
                     // debug use
                     matrix_show(x);
                     printf("eigen values are\n");
-                    for (int j = 0; j < DIM; j++)
+                    for (int j = 0; j < 8; j++)
                     {
                         printf(" %f ", result[j]);
                     }
@@ -693,6 +687,11 @@ namespace UCVMATH
             diag.v[i][i] = sqrt(result[i]);
         }
 
+        // update this when we have flexible linear system solver
+        assert(x->m == 8);
+        assert(x->n == 8);
+        mat_t eigen_vectors = eigen_solve_eigen_vectors(x, result, 8, 8, 20);
+
         mat_t A = matrix_mul(&eigen_vectors, &diag);
 
         return A;
@@ -700,15 +699,15 @@ namespace UCVMATH
 
     VTKM_EXEC inline vec_t norm_sampling_vec(int row)
     {
-        assert(row == DIM);
-//#ifdef VTKM_CUDA
+        assert(row == 8);
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
         thrust::random::normal_distribution<double> norm;
-//#else
-//        std::mt19937 rng;
-//        rng.seed(std::mt19937::default_seed);
-//        std::normal_distribution<double> norm;
-//#endif // VTKM_CUDA
+#else
+        std::mt19937 rng;
+        rng.seed(std::mt19937::default_seed);
+        std::normal_distribution<double> norm;
+#endif // VTKM_CUDA
         vec_t samplev;
         for (int i = 0; i < row; i++)
         {

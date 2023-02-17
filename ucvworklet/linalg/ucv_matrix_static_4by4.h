@@ -10,13 +10,13 @@
 
 #include <vtkm/Types.h>
 
-//#ifdef VTKM_CUDA
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
 #include <thrust/random/linear_congruential_engine.h>
 #include <thrust/random/normal_distribution.h>
-//#else
-// using the std library
-//#include <random>
-//#endif // VTKM_CUDA
+#else
+//using the std library
+#include <random>
+#endif // VTKM_CUDA
 
 namespace UCVMATH
 {
@@ -748,14 +748,14 @@ namespace UCVMATH
     VTKM_EXEC inline vec_t norm_sampling_vec(int row)
     {
         assert(row == 4);
-//#ifdef VTKM_CUDA
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
         thrust::random::normal_distribution<double> norm;
-//#else
-//        std::mt19937 rng;
-//        rng.seed(std::mt19937::default_seed);
-//        std::normal_distribution<double> norm;
-//#endif // VTKM_CUDA
+#else
+        std::mt19937 rng;
+        rng.seed(std::mt19937::default_seed);
+        std::normal_distribution<double> norm;
+#endif // VTKM_CUDA
         vec_t samplev;
         for (int i = 0; i < row; i++)
         {

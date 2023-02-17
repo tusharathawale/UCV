@@ -211,14 +211,14 @@ void test_eigen_vectors_8by8()
     // do the checking to see if
     // A*vx=lambda*vx
 
-    for (int j = 0; j < DIM; j++)
+    for (int j = 0; j < 8; j++)
     {
         vec_t avx;
         vec_t eigenvct;
         double eigenvalue = result[j];
 
         // extract ith column eigen vector list
-        for (int i = 0; i < DIM; i++)
+        for (int i = 0; i < 8; i++)
         {
             eigenvct.v[i] = eigen_vectors.v[i][j];
         }
@@ -228,7 +228,7 @@ void test_eigen_vectors_8by8()
         matrix_mul_vec(&x, &eigenvct, &avx);
 
         // compare vector avx and lambda*eigenv
-        for (int i = 0; i < DIM; i++)
+        for (int i = 0; i < 8; i++)
         {
             eigenvct.v[i] = eigenvalue * eigenvct.v[i];
         }
@@ -236,7 +236,7 @@ void test_eigen_vectors_8by8()
         // vec_show(&avx);
         // vec_show(&eigenvct);
 
-        for (int i = 0; i < DIM; i++)
+        for (int i = 0; i < 8; i++)
         {
             // there are some accumulated errors
             // we have three digit precisions
