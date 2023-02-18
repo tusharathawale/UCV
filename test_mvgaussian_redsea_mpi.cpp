@@ -224,11 +224,13 @@ int main(int argc, char *argv[])
     if (sliceId % numProcesses == rank)
     {
       int actualSliceId = sliceId;
-      if(actualSliceId>=2*actualTotal){
-        actualSliceId = actualSliceId - 2*actualTotal;
+      if (actualSliceId >= 2 * actualTotal)
+      {
+        actualSliceId = actualSliceId - 2 * actualTotal;
       }
 
-      if(actualSliceId>=actualTotal){
+      if (actualSliceId >= actualTotal)
+      {
         actualSliceId = actualSliceId - actualTotal;
       }
 
@@ -241,6 +243,7 @@ int main(int argc, char *argv[])
 
   // do the processing for each member in the list
   // time it
+  MPI_Barrier(MPI_COMM_WORLD);
   timer.Start();
 
   for (std::size_t i = 0; i < dsList.size(); i++)
@@ -248,10 +251,10 @@ int main(int argc, char *argv[])
     callWorklet(dsList[i], isovalue, num_samples, "stru");
   }
 
-  //maybe add more operations here
-  //such as adding the collective operations based on entropy
-  //and compute some results back
-  //do some further snalysis here
+  // maybe add more operations here
+  // such as adding the collective operations based on entropy
+  // and compute some results back
+  // do some further snalysis here
 
   MPI_Barrier(MPI_COMM_WORLD);
   timer.Stop();

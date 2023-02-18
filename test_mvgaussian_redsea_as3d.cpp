@@ -149,7 +149,8 @@ int main(int argc, char *argv[])
   double isovalue = std::stod(argv[1]);
   int num_samples = std::stoi(argv[2]);
   int numSlices = std::stoi(argv[3]);
-  //number slices should be 10 to 50
+  //numbehh
+  //r slices should be 10 to 50
   std::cout << "iso value is: " << isovalue << " num_samples is: " << num_samples << " numSlices " << numSlices << std::endl;
 
   vtkm::Id xdim = 500;
