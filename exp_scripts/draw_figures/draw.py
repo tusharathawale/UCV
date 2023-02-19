@@ -152,6 +152,35 @@ def wind_reuslts_omp_gpu():
     plt.savefig("wind_results_omp_gpu.png",bbox_inches='tight')
     plt.savefig("wind_results_omp_gpu.pdf",bbox_inches='tight')    
 
+def strong_scale():
+    fig, ax = plt.subplots(figsize=(6,3.5))
+    # set titles
+    ax.set_xlabel('The number of gpu', fontsize='large')
+    ax.set_ylabel('Time(ms)', fontsize='large')
+    ax.grid(axis='y')
+    ax.set_axisbelow(True)
+
+    ax.set_ylim([6,15])
+
+    # set tick
+    N = 6
+
+    plt.xticks(range(N), ['4' , '8', '16', '32', '64', '128'], fontsize='large')
+    # set the value of the figure here
+    # use the capsize to control the error bar
+    v1 = (2587.53,  1395.59 , 800.964 , 461.165, 294.574, 196.13)
+    p1 = ax.plot(np.log2(v1), color=gblue, marker='^', label='redsea')    
+
+    v2 = (28773.8, 16329, 8474.02, 5018, 2857.01, 1856.51)
+    p2 = ax.plot(np.log2(v2), color=gred, marker='.', label='supernova')    
+
+    ax.legend(ncol=2, fontsize='large')
+    
+    plt.savefig("strong_scale_redsea_supernova.png",bbox_inches='tight')
+    plt.savefig("strong_scale_redsea_supernova.pdf",bbox_inches='tight')
+
+
 if __name__ == "__main__":
-    beetle_results_omp_gpu()
-    wind_reuslts_omp_gpu()
+    #beetle_results_omp_gpu()
+    #wind_reuslts_omp_gpu()
+    strong_scale()
