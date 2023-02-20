@@ -21,7 +21,7 @@ set(filter_sources
   SubsampleUncertaintyUniform.cxx
   )
 
-OPTION (USE_GPU OFF)
+OPTION (USE_GPU "Compile GPU support." OFF)
 message ("USE_GPU is setting as: " ${USE_GPU})
 if(USE_GPU)
 
