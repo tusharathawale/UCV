@@ -21,7 +21,7 @@ namespace uncertainty
 
 /// \brief Computes the probability of the location of a contour.
 ///
-/// This filter computes the location the probable location of a contour of a field
+/// This filter computes the probable location of a contour of a field
 /// with uncertainty. Unlike a typical contour filter that extracts a polygonal surface,
 /// this filter simply writes a cell field giving the probability of a contour being in
 /// that cell.
@@ -72,7 +72,14 @@ public:
   ///@}
 
   ///@{
-  /// Specifies the name of the output field that captures, uh, something. I don't know what this is.
+  /// Specifies the name of the output field that captures the number of possible marching
+  /// contour cases for each cell.
+  ///
+  /// When running a marching contour algorithm on certain data, an exact contour case
+  /// can be determined. But when marching uncertain data, multiple cases are possible.
+  /// This field reports the number of cases that have a non-zero probability. The more
+  /// cases that are possible, the more uncertain the contour.
+  ///
   VTKM_CONT void SetNumberNonzeroProbabilityName(const std::string& name)
   {
     this->NumberNonzeroProbabilityName = name;
@@ -84,7 +91,14 @@ public:
   ///@}
 
   ///@{
-  /// Specifies the name of the output field that captures the entropy of (?)
+  /// Specifies the name of the output field that captures the entropy of the possible
+  /// marching contour cases for each cell.
+  ///
+  /// When running a marching contour algorithm on certain data, an exact contour case
+  /// can be determined. But when marching uncertain data, multiple cases are possible.
+  /// This field reports the entropy of the contour cases. A high entropy means that
+  /// the case random, and thus the actual contour is uncertain.
+  ///
   VTKM_CONT void SetEntropyName(const std::string& name) { this->EntropyName = name; }
   VTKM_CONT const std::string& GetEntropyName() const { return this->EntropyName; }
   ///@}

@@ -1,0 +1,354 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="SubsampleWithUniformUncertainty"
+                 class="vtkSubsampleUncertaintyUniform"
+                 label="Subsample With Uniform Uncertainty">
+      <Documentation
+          long_help="Subsample image data and record the resulting uncertainty as the min/max of a uniform range."
+          short_help="Subsample an image with uniform uncertainty." />
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkImageData" />
+        </DataTypeDomain>
+      </InputProperty>
+      <IntVectorProperty
+          name="BlockSize"
+          command="SetBlockSize"
+          number_of_elements="1"
+          default_values="4" />
+      <StringVectorProperty
+          name="MinSuffix"
+          command="SetMinSuffix"
+          number_of_elements="1"
+          default_values="_min"
+          panel_visibility="advanced" />
+      <StringVectorProperty
+          name="MaxSuffix"
+          command="SetMaxSuffix"
+          number_of_elements="1"
+          default_values="_max"
+          panel_visibility="advanced" />
+      <Hints>
+        <ShowInMenu category="Uncertainty" />
+      </Hints>
+    </SourceProxy>
+
+    <SourceProxy name="SubsampleWithIndependentGaussianUncertainty"
+                 class="vtkSubsampleUncertaintyIndependentGaussian"
+                 label="Subsample With Independent Gaussian Uncertainty">
+      <Documentation
+          long_help="Subsample image data and record the resulting uncertainty as the mean and standard deviation of a single Gaussian distribution."
+          short_help="Subsample an image with normal uncertainty." />
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkImageData" />
+        </DataTypeDomain>
+      </InputProperty>
+      <IntVectorProperty
+          name="BlockSize"
+          command="SetBlockSize"
+          number_of_elements="1"
+          default_values="4" />
+      <StringVectorProperty
+          name="MeanSuffix"
+          command="SetMeanSuffix"
+          number_of_elements="1"
+          default_values="_mean"
+          panel_visibility="advanced" />
+      <StringVectorProperty
+          name="StdevSuffix"
+          command="SetStdevSuffix"
+          number_of_elements="1"
+          default_values="_stdev"
+          panel_visibility="advanced" />
+      <Hints>
+        <ShowInMenu category="Uncertainty" />
+      </Hints>
+    </SourceProxy>
+
+    <SourceProxy name="SubsampleWithEnsembleUncertainty"
+                 class="vtkSubsampleUncertaintyEnsemble"
+                 label="Subsample With Ensemble Uncertainty">
+      <Documentation
+          long_help="Subsample image data and record the resulting uncertainty as the mean and also capture an ensemble of the original data in a separate field."
+          short_help="Subsample an image with ensemble data." />
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkImageData" />
+        </DataTypeDomain>
+      </InputProperty>
+      <IntVectorProperty
+          name="BlockSize"
+          command="SetBlockSize"
+          number_of_elements="1"
+          default_values="4" />
+      <StringVectorProperty
+          name="MeanSuffix"
+          command="SetMeanSuffix"
+          number_of_elements="1"
+          default_values="_mean"
+          panel_visibility="advanced" />
+      <StringVectorProperty
+          name="EnsembleSuffix"
+          command="SetEnsembleSuffix"
+          number_of_elements="1"
+          default_values="_ensemble"
+          panel_visibility="advanced" />
+      <Hints>
+        <ShowInMenu category="Uncertainty" />
+      </Hints>
+    </SourceProxy>
+
+    <SourceProxy name="ContourWithUniformUncertainty"
+                 class="vtkContourUncertainUniform"
+                 label="Contour With Uniform Uncertainty">
+      <Documentation
+          long_help="Find the probable locations of a contour for a given isovalue using the min/max field values as a uniform range."
+          short_help="Find a contour with uniform uncertainty." />
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkImageData" />
+      </DataTypeDomain>
+      <InputArrayDomain attribute_type="point"
+                        name="input_array"
+                        number_of_components="1"
+                        data_type="vtkImageData" />
+      </InputProperty>
+      <!-- For the input field selections, the default_values specifies the input index. -->
+      <StringVectorProperty animateable="0"
+                            command="SetInputArrayToProcess"
+                            element_types="int int int int str"
+                            default_values="0"
+                            label="Minimum Value"
+                            name="SelectInputMinimum"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Scalars" name="array_list">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+      </StringVectorProperty>
+      <StringVectorProperty animateable="0"
+                            command="SetInputArrayToProcess"
+                            element_types="int int int int str"
+                            default_values="1"
+                            label="Maximum Value"
+                            name="SelectInputMaximum"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Scalars" name="array_list">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+      </StringVectorProperty>
+      <DoubleVectorProperty command="SetIsoValue"
+                            default_values="0"
+                            name="IsoValue"
+                            number_of_elements="1">
+        <!--
+        <ArrayRangeDomain name="range" default_mode="mid">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ArraySelection" name="SelectInputMinimum" />
+          </RequiredProperties>
+        </ArrayRangeDomain>
+        -->
+      </DoubleVectorProperty>
+      <StringVectorProperty name="ContourProbabilityFieldName"
+                            command="SetContourProbabilityName"
+                            number_of_elements="1"
+                            default_values="contour_probability"
+                            panel_visibility="advanced" />
+      <StringVectorProperty name="NumberNonzeroProbabilityFieldName"
+                            command="SetNumberNonzeroProbabilityName"
+                            number_of_elements="1"
+                            default_values="num_nonzero_probability"
+                            panel_visibility="advanced" />
+      <StringVectorProperty name="EntropyFieldName"
+                            command="SetEntropyName"
+                            number_of_elements="1"
+                            default_values="entropy"
+                            panel_visibility="advanced" />
+      <Hints>
+        <ShowInMenu category="Uncertainty" />
+      </Hints>
+    </SourceProxy>
+
+    <SourceProxy name="ContourWithIndependentGaussianUncertainty"
+                 class="vtkContourUncertainIndependentGaussian"
+                 label="Contour With Independent Gaussian">
+      <Documentation
+          long_help="Find the probable locations of a contour for a given isovalue using the mean and standard deviation fields of an independent Gaussian."
+          short_help="Find a contour with normally distributed uncertainty." />
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkImageData" />
+      </DataTypeDomain>
+      <InputArrayDomain attribute_type="point"
+                        name="input_array"
+                        number_of_components="1"
+                        data_type="vtkImageData" />
+      </InputProperty>
+      <!-- For the input field selections, the default_values specifies the input index. -->
+      <StringVectorProperty animateable="0"
+                            command="SetInputArrayToProcess"
+                            element_types="int int int int str"
+                            default_values="0"
+                            label="Mean Value"
+                            name="SelectInputMean"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Scalars" name="array_list">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+      </StringVectorProperty>
+      <StringVectorProperty animateable="0"
+                            command="SetInputArrayToProcess"
+                            element_types="int int int int str"
+                            default_values="1"
+                            label="Standard Deviation"
+                            name="SelectInputStandardDeviation"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Scalars" name="array_list">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+      </StringVectorProperty>
+      <DoubleVectorProperty command="SetIsoValue"
+                            default_values="0"
+                            name="IsoValue"
+                            number_of_elements="1">
+        <ArrayRangeDomain name="range" default_mode="mid">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ArraySelection" name="SelectInputMean" />
+          </RequiredProperties>
+        </ArrayRangeDomain>
+      </DoubleVectorProperty>
+      <StringVectorProperty name="ContourProbabilityFieldName"
+                            command="SetContourProbabilityName"
+                            number_of_elements="1"
+                            default_values="contour_probability"
+                            panel_visibility="advanced" />
+      <StringVectorProperty name="NumberNonzeroProbabilityFieldName"
+                            command="SetNumberNonzeroProbabilityName"
+                            number_of_elements="1"
+                            default_values="num_nonzero_probability"
+                            panel_visibility="advanced" />
+      <StringVectorProperty name="EntropyFieldName"
+                            command="SetEntropyName"
+                            number_of_elements="1"
+                            default_values="entropy"
+                            panel_visibility="advanced" />
+      <Hints>
+        <ShowInMenu category="Uncertainty" />
+      </Hints>
+    </SourceProxy>
+
+    <SourceProxy name="ContourWithEnsembleUncertainty"
+                 class="vtkContourUncertainEnsemble"
+                 label="Contour With Ensemble">
+      <Documentation
+          long_help="Find the probable locations of a contour for a given isovalue using the mean and ensemble fields."
+          short_help="Find a contour with uncertainty from an ensemble." />
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkImageData" />
+        </DataTypeDomain>
+        <InputArrayDomain name="mean_array"
+                          attribute_type="point"
+                          number_of_components="1"
+                          data_type="vtkImageData" />
+        <InputArrayDomain name="ensemble_array"
+                          attribute_type="point"
+                          data_type="vtkImageData" />
+      </InputProperty>
+      <!-- For the input field selections, the default_values specifies the input index. -->
+      <StringVectorProperty animateable="0"
+                            command="SetInputArrayToProcess"
+                            element_types="int int int int str"
+                            default_values="0"
+                            label="Mean Value"
+                            name="SelectInputMean"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Scalars"
+                         name="array_list"
+                         input_domain_name="mean_array">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+      </StringVectorProperty>
+      <StringVectorProperty animateable="0"
+                            command="SetInputArrayToProcess"
+                            element_types="int int int int str"
+                            default_values="1"
+                            label="Ensemble Values"
+                            name="SelectInputEnsemble"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Vectors"
+                         name="array_list"
+                         input_domain_name="ensemble_array">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+      </StringVectorProperty>
+      <DoubleVectorProperty command="SetIsoValue"
+                            default_values="0"
+                            name="IsoValue"
+                            number_of_elements="1">
+        <ArrayRangeDomain name="range" default_mode="mid">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ArraySelection" name="SelectInputMean" />
+          </RequiredProperties>
+        </ArrayRangeDomain>
+      </DoubleVectorProperty>
+      <StringVectorProperty name="ContourProbabilityFieldName"
+                            command="SetContourProbabilityName"
+                            number_of_elements="1"
+                            default_values="contour_probability"
+                            panel_visibility="advanced" />
+      <StringVectorProperty name="NumberNonzeroProbabilityFieldName"
+                            command="SetNumberNonzeroProbabilityName"
+                            number_of_elements="1"
+                            default_values="num_nonzero_probability"
+                            panel_visibility="advanced" />
+      <StringVectorProperty name="EntropyFieldName"
+                            command="SetEntropyName"
+                            number_of_elements="1"
+                            default_values="entropy"
+                            panel_visibility="advanced" />
+      <Hints>
+        <ShowInMenu category="Uncertainty" />
+      </Hints>
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>
