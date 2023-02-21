@@ -80,7 +80,6 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
   vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
 
-
   if (datatype == "poly")
   {
     // executing the uncertianty thing
@@ -133,19 +132,16 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
 int main(int argc, char *argv[])
 {
 
-  vtkm::cont::SetLogLevelName(vtkm::cont::LogLevel::Perf , "custom");
+  vtkm::cont::InitializeResult initResult = vtkm::cont::Initialize(
+      argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
+  vtkm::cont::Timer timer{initResult.Device};
 
-  vtkm::cont::Initialize(argc, argv);
-  
   if (argc != 3)
   {
     std::cout << "<executable> <iso> <num of sample>" << std::endl;
     exit(0);
   }
 
-
-  vtkm::cont::Timer timer;
-  initBackend(timer);
   std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
 
   vtkm::Id xdim = 500;
@@ -217,10 +213,10 @@ int main(int argc, char *argv[])
 
   callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
   std::cout << "ok for struc 1" << std::endl;
-  
+
   callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
   std::cout << "ok for struc 2" << std::endl;
-  
+
   // test unstructred grid
   // convert the original data to the unstructured grid
   vtkm::filter::clean_grid::CleanGrid clean;

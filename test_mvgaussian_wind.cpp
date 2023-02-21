@@ -103,12 +103,6 @@ int main(int argc, char *argv[])
   // load data set, the dim is m*n and for each point there are k ensemble values
   // the data set comes from here https://github.com/MengjiaoH/Probabilistic-Marching-Cubes-C-/tree/main/datasets/txt_files/wind_pressure_200
 
-  // vtkm::Id xdim = 240;
-  // vtkm::Id ydim = 121;
-
-  vtkm::Id gxdim = 240;
-  vtkm::Id gydim = 121;
-
   // there are some memory issue on cuda if larger than 150*120
   // vtkm::Id xdim = 2;
   // vtkm::Id ydim = 2;
@@ -172,7 +166,6 @@ int main(int argc, char *argv[])
   // for each points, there are 15 version
   int index = 0;
 
-  // for (vtkm::IdComponent i = 0; i < gxdim * gydim; i++)
   for (vtkm::IdComponent i = 0; i < xdim * ydim; i++)
   {
     Vec15 ensemble;

@@ -4,7 +4,7 @@ add_compile_options(-std=c++14)
 
 #Find the VTK-m package
 find_package(VTKm REQUIRED QUIET)
-set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::rendering vtkm::source vtkm::vtkmdiympi vtkm::io)
+set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::vtkmdiympi vtkm::io)
 
 #Find MPI
 find_package(MPI REQUIRED)
