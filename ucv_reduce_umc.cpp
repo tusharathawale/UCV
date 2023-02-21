@@ -121,9 +121,9 @@ int main(int argc, char *argv[])
 
     std::cout << "initResult.Device: " << initResult.Device.GetName() <<  " timer device: " << timer.GetDevice().GetName() << std::endl;
 
-    if (argc != 6)
+    if (argc != 7)
     {
-        std::cout << "executable [VTK-m options] <filename> <fieldname> <distribution> <blocksize> <isovalue>" << std::endl;
+        std::cout << "executable [VTK-m options] <filename> <fieldname> <distribution> <blocksize> <isovalue> <numSamples>" << std::endl;
         std::cout << "VTK-m options are:\n";
         std::cout << initResult.Usage << std::endl;
         exit(0);
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
     std::string distribution = argv[3];
     int blocksize = std::stoi(argv[4]);
     double isovalue = std::atof(argv[5]);
-
+    int numSamples = std::atof(argv[6]);
 #ifdef VTKM_CUDA
 
     if (backend == "cuda")
@@ -402,7 +402,7 @@ int main(int argc, char *argv[])
         using WorkletTypeMVG = MVGaussianWithEnsemble3DTryLialg;
         using DispatcherTypeMVG = vtkm::worklet::DispatcherMapTopology<WorkletTypeMVG>;
 
-        DispatcherTypeMVG dispatcherMVG(WorkletTypeMVG{isovalue, 1000});
+        DispatcherTypeMVG dispatcherMVG(WorkletTypeMVG{isovalue, numSamples});
         dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb, numNonZeroProb, entropyResult);
 
         // TODO make sure it actually finish
