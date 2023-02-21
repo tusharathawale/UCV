@@ -22,6 +22,58 @@ mkdir -p $SOFTWARE_BUILD_DIR
 mkdir -p $SOFTWARE_INSTALL_DIR
 
 
+echo "====> Installing kokkos"
+
+kokkos_src_dir="$SOFTWARE_SRC_DIR/kokkos-$KOKKOS_VERSION"
+kokkos_build_dir="$SOFTWARE_BUILD_DIR/kokkos-$KOKKOS_VERSION"
+# leting build dir == install dir
+# there are issues if setting install dir with the version info
+kokkos_install_dir="$SOFTWARE_INSTALL_DIR/kokkos-$KOKKOS_VERSION"
+
+if [ -d $kokkos_install_dir ]; then
+    echo "====> skip, $kokkos_install_dir already exists," \
+             "please remove it if you want to reinstall it"
+else
+
+    rm -rf ${kokkos_src_dir}
+    git clone -b master $KOKKOS_REPO ${kokkos_src_dir}
+    cd ${kokkos_src_dir}
+    git checkout 3.7.01
+ 
+    # switch the device in the cpp file
+    CXX=${kokkos_src_dir}/bin/nvcc_wrapper
+    sed -i 's/sm_35/sm_70/g' $CXX
+    # refer to 
+    # https://gitlab.kitware.com/vtk/vtk-m/-/blob/master/.gitlab/ci/docker/ubuntu1804/kokkos-cuda/Dockerfile
+    cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=${kokkos_install_dir} \
+    -DBUILD_SHARED_LIBS=ON\
+    -DCMAKE_CXX_FLAGS=-fPIC \
+    -DCMAKE_CXX_STANDARD=14 \
+    -DKokkos_ENABLE_CUDA=ON \
+    -DKokkos_ENABLE_CUDA_CONSTEXPR=ON \
+    -DKokkos_ENABLE_CUDA_LAMBDA=ON \
+    -DKokkos_ENABLE_CUDA_LDG_INTRINSIC=ON \
+    -DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=OFF \
+    -DKokkos_ENABLE_CUDA_UVM=ON \
+    -DKokkos_ARCH_TURING75=ON \
+    -DVTKm_ENABLE_KOKKOS=ON \
+    -DKokkos_DIR=${kokkos_install_dir}/lib/cmake/Kokkos \
+    -DKokkos_COMPILE_LAUNCHER=${kokkos_install_dir}/bin/kokkos_launch_compiler \
+    -DKokkos_NVCC_WRAPPER=${kokkos_install_dir}/bin/nvcc_wrapper \
+    -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
+
+    cmake --build ${kokkos_build_dir} -j${build_jobs}
+    
+    cmake --install ${kokkos_build_dir}
+
+    # there are some issues for installing by other ways
+    # make install 
+
+fi
+
+
 echo "====> Installing vtk-m"
 VTKM_SRC_DIR="$SOFTWARE_SRC_DIR/vtk-m"
 VTKM_BUILD_DIR="$SOFTWARE_BUILD_DIR/vtk-m"
@@ -41,7 +93,7 @@ else
     cd $SOFTWARE_SRC_DIR
     git clone $VTKM_REPO
     cd $VTKM_SRC_DIR
-    git checkout v2.0.0-rc1
+    git checkout $VTKM_VERSION
     fi
     
     cd $HERE
@@ -56,7 +108,7 @@ else
 
     cmake -B ${VTKM_BUILD_DIR} -S ${VTKM_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_SHARED_LIBS=OFF \
+    -DBUILD_SHARED_LIBS=ON \
     -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
     -DVTKm_USE_DOUBLE_PRECISION=ON \
     -DVTKm_USE_64BIT_IDS=OFF \
@@ -94,7 +146,7 @@ else
 
     cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_SHARED_LIBS=OFF \
+    -DBUILD_SHARED_LIBS=ON \
     -DUSE_GPU=ON \
     -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 \
     -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
