@@ -1,5 +1,4 @@
 #!/bin/bash
- 
 #BSUB -P csc143
 #BSUB -W 01:59
 #BSUB -nnodes 1
@@ -29,13 +28,13 @@ ISO=0.3
 
 export OMP_NUM_THREADS=42
 
-jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD uni 4 $ISO 1000 &> ucv_umc_openmp_uni.log
+jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD uni 4 $ISO 1000 &> ucv_umc_openmp_uni.log
 
-jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD ig 4 $ISO 1000 &> ucv_umc_openmp_ig.log
+jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD ig 4 $ISO 1000 &> ucv_umc_openmp_ig.log
 
-jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD mg 4 $ISO 1000 &> ucv_umc_openmp_mg_1000.log
+jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD mg 4 $ISO 1000 &> ucv_umc_openmp_mg_1000.log
 
-jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD mg 4 $ISO 2000 &> ucv_umc_openmp_mg_2000.log
+jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD mg 4 $ISO 2000 &> ucv_umc_openmp_mg_2000.log
 
 export OMP_NUM_THREADS=1
 

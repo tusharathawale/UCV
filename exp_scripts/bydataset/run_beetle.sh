@@ -1,5 +1,4 @@
 #!/bin/bash
- 
 #BSUB -P csc143
 #BSUB -W 01:59
 #BSUB -nnodes 1
@@ -27,14 +26,14 @@ DATASETPATH=/gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/$DATANA
 FIELD=ground_truth
 
 export OMP_NUM_THREADS=42
+#there are issues if we set g as 0 even if for the openmp backend
+jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD uni 4 900 1000 &> ucv_umc_openmp_uni.log
 
-jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD uni 4 900 1000 &> ucv_umc_openmp_uni.log
+jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD ig 4 900 1000 &> ucv_umc_openmp_ig.log
 
-jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD ig 4 900 1000 &> ucv_umc_openmp_ig.log
+jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD mg 4 900 1000 &> ucv_umc_openmp_mg_1000.log
 
-jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD mg 4 900 1000 &> ucv_umc_openmp_mg_1000.log
-
-jsrun -n1 -a1 -c42 -g0 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD mg 4 900 2000 &> ucv_umc_openmp_mg_2000.log
+jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD mg 4 900 2000 &> ucv_umc_openmp_mg_2000.log
 
 export OMP_NUM_THREADS=1
 
