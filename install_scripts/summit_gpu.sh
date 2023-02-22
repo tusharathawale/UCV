@@ -57,11 +57,6 @@ else
     -DKokkos_ENABLE_CUDA_LDG_INTRINSIC=ON \
     -DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=OFF \
     -DKokkos_ENABLE_CUDA_UVM=ON \
-    -DKokkos_ARCH_TURING75=ON \
-    -DVTKm_ENABLE_KOKKOS=ON \
-    -DKokkos_DIR=${kokkos_install_dir}/lib/cmake/Kokkos \
-    -DKokkos_COMPILE_LAUNCHER=${kokkos_install_dir}/bin/kokkos_launch_compiler \
-    -DKokkos_NVCC_WRAPPER=${kokkos_install_dir}/bin/nvcc_wrapper \
     -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
 
     cmake --build ${kokkos_build_dir} -j${build_jobs}
@@ -122,6 +117,10 @@ else
     -DVTKm_ENABLE_RENDERING=OFF \
     -DVTKm_CUDA_Architecture=volta \
     -DCMAKE_CUDA_ARCHITECTURES=70 \
+    -DVTKm_ENABLE_KOKKOS=ON \
+    -DKokkos_DIR=${kokkos_install_dir}/lib64/cmake/Kokkos \
+    -DKokkos_COMPILE_LAUNCHER=${kokkos_install_dir}/bin/kokkos_launch_compiler \
+    -DKokkos_NVCC_WRAPPER=${kokkos_install_dir}/bin/nvcc_wrapper \
     -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
 
     cmake --build ${VTKM_BUILD_DIR} -j${build_jobs}
@@ -148,6 +147,7 @@ else
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=ON \
     -DUSE_GPU=ON \
+    -DKokkos_DIR=${kokkos_install_dir}/lib64/cmake/Kokkos \
     -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 \
     -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
     
