@@ -15,12 +15,12 @@ def beetle_results_omp_gpu():
     fig, ax = plt.subplots(figsize=(6,3.5))
     ax.set_xlabel('Different stages of computing uncertainty metrics', fontsize=13.5)
     ax.set_ylabel('Time(ms)', fontsize=13.5)
-    ax.set_ylim([0,750])
+    ax.set_ylim([0,3000])
 
     N = 3
     ind = np.arange(N)  # the x locations for the groups
     width = 0.3      # the width of the bars
-    ax.set_xticks(ind + 1.5*width)
+    ax.set_xticks(ind + 2*width)
     ax.set_xticklabels(('Labeling','Downsampling','Uncertainty metrics'), fontsize=13.5)
 
     openmp_mean = (251.3486667,585.024,266.6013333)
@@ -32,7 +32,12 @@ def beetle_results_omp_gpu():
     cuda_std = (4.972551425,10.74274776,10.25276774)
     p3 = ax.bar(ind+ 2*width, cuda_mean,  width, color=[gblue]*3, capsize=3, yerr=cuda_std, ecolor='grey')
     
-    ax.legend(('OpenMP', 'Cuda'), loc='upper left', ncol=1, fontsize='large')
+    # kokkos cuda
+    kc_mean = (284.181,2904.106667,47.5)
+    kc_std=(1.913019341,1.029627764,0.2325790188)
+    p3 = ax.bar(ind+ 3*width, kc_mean,  width, color=[ggreen]*3, capsize=3, yerr=kc_std, ecolor='grey')
+   
+    ax.legend(('OpenMP', 'Cuda', 'Kokkos_Cuda'), loc='upper left', ncol=1, fontsize='large')
 
 
     plt.savefig("beetle_results_uni_omp_gpu.png",bbox_inches='tight')
@@ -181,6 +186,6 @@ def strong_scale():
 
 
 if __name__ == "__main__":
-    #beetle_results_omp_gpu()
+    beetle_results_omp_gpu()
     #wind_reuslts_omp_gpu()
-    strong_scale()
+    #strong_scale()

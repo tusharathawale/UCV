@@ -92,6 +92,9 @@ target_link_libraries(compute_cases)
 add_executable(test_ucv_matrix ./ucvworklet/linalg/test_ucv_matrix.cpp)
 target_link_libraries(test_ucv_matrix ${VTKm_LIBRARIES})
 
+add_executable(uvm_point_neighborhood uvm_point_neighborhood.cpp)
+target_link_libraries(uvm_point_neighborhood ${VTKm_LIBRARIES})
+
 add_executable(test_ucv_matrix_static_3by3 ./ucvworklet/linalg/test_ucv_matrix_static_3by3.cpp)
 target_link_libraries(test_ucv_matrix_static_3by3 ${VTKm_LIBRARIES})
 

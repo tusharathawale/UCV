@@ -100,6 +100,9 @@ void initBackend(vtkm::cont::Timer &timer)
     return;
 }
 
+//this might cause some kokkos finalize error
+//since it is created before the init operation 
+//of the kokkos
 using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::Float64,
                                   vtkm::Int8,
