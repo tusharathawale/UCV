@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
       std::cout << "ExtractingMeanRawTime time: " << timer.GetElapsedTime() << std::endl;
 
       vtkm::filter::uncertainty::ContourUncertainEnsemble contour;
-      contour.SetMeanField(fieldName);
+      contour.SetMeanField(fieldName + subsample.GetMeanSuffix());
       contour.SetEnsembleField(fieldName + subsample.GetEnsembleSuffix());
       contour.SetIsoValue(isovalue);
 

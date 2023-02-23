@@ -1,0 +1,12 @@
+NAME
+  UncertainContourVTKFilters
+LIBRARY_NAME
+  vtkUncertainContourFilters
+DESCRIPTION
+  Filters to compute the probable locations of contours given uncertainty
+  in the data.
+DEPENDS
+  VTK::AcceleratorsVTKmCore
+  VTK::AcceleratorsVTKmDataModel
+  VTK::CommonExecutionModel
+  VTK::FiltersCore

@@ -118,7 +118,7 @@ VTKM_CONT void SubsampleUncertaintyEnsemble::MapField(
     // to preserve the original data type.
     field.GetData().CastAndCallForTypesWithFloatFallback<vtkm::TypeListFieldScalar, VTKM_DEFAULT_STORAGE_LIST>(
           resolveType);
-    data.AddPointField(field.GetName(), meanArray);
+    data.AddPointField(field.GetName() + this->GetMeanSuffix(), meanArray);
     data.AddPointField(field.GetName() + this->GetEnsembleSuffix(), ensembleArray);
   }
   else if (field.IsWholeDataSetField())

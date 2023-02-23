@@ -1,0 +1,5 @@
+NAME
+  UncertainContour
+DESCRIPTION
+  A plugin containing filters to compute the probable locations of contours
+  given uncertainty in the data.
