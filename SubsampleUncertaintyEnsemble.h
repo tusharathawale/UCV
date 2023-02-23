@@ -36,6 +36,7 @@ namespace uncertainty
 /// original data as a `Vec`.
 class SubsampleUncertaintyEnsemble : public vtkm::filter::Filter
 {
+  std::string MeanSuffix = "_mean";
   std::string EnsembleSuffix = "_ensemble";
   vtkm::IdComponent BlockSize = 4;
 
@@ -45,9 +46,12 @@ public:
   ///@{
   /// \brief The suffix used for fields modeling ensemble.
   ///
-  /// When this filter subsamples data, it captures the original data as an ensemble field. This
-  /// new field is given the name of the input field appended with the appropriate suffix.
+  /// When this filter subsamples data, it captures the original data as the mean and an
+  /// ensemble field. These new fields are given the name of the input field appended with
+  /// the appropriate suffix.
   ///
+  VTKM_CONT void SetMeanSuffix(const std::string& suffix) { this->MeanSuffix = suffix; }
+  VTKM_CONT const std::string& GetMeanSuffix() const { return this->MeanSuffix; }
   VTKM_CONT void SetEnsembleSuffix(const std::string& suffix) { this->EnsembleSuffix = suffix; }
   VTKM_CONT const std::string& GetEnsembleSuffix() const { return this->EnsembleSuffix; }
   ///@}
