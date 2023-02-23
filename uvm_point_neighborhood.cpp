@@ -9,7 +9,7 @@
 #include <vtkm/cont/Timer.h>
 
 #include <vtkm/worklet/DispatcherPointNeighborhood.h>
-#include "ucvworklet/MVGaussianByNeigoborhood.hpp"
+#include "ucvworklet/ExtractingByNeigoborhoodMinMax.hpp"
 
 #include <sstream>
 #include <iomanip>
@@ -133,14 +133,18 @@ int main(int argc, char *argv[])
 
     auto keyArray =
         vtkm::cont::ArrayHandleCounting<vtkm::Id>(0, 1, static_cast<vtkm::Id>(xdim * ydim * zdim));
+    
+    if(xdim % blocksize != 0 || ydim % blocksize != 0 || zdim % blocksize != 0){
+        throw std::runtime_error("dim is supposed to be dividied by blocksize");
+    }
 
     vtkm::Id numberBlockx = xdim % blocksize == 0 ? xdim / blocksize : xdim / blocksize + 1;
     vtkm::Id numberBlocky = ydim % blocksize == 0 ? ydim / blocksize : ydim / blocksize + 1;
     vtkm::Id numberBlockz = zdim % blocksize == 0 ? zdim / blocksize : zdim / blocksize + 1;
-     
+
     const vtkm::Id3 reducedDims(numberBlockx, numberBlocky, numberBlockz);
-    
-    std::cout <<"reducedDims " << reducedDims << std::endl;
+
+    std::cout << "reducedDims " << reducedDims << std::endl;
 
     auto coords = inData.GetCoordinateSystem();
     auto bounds = coords.GetBounds();
@@ -163,18 +167,19 @@ int main(int argc, char *argv[])
     vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> entropyResult;
 
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> blockMean;
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> minArray;
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> maxArray;
 
     // using the cellset of reducedDataSet
     // using the field data from original data
     // only one pass
-    using WorkletType = MVGaussianByNeigoborhood;
+    using WorkletType = ExtractingByNeigoborhoodMinMax;
     using DispatcherType = vtkm::worklet::DispatcherPointNeighborhood<WorkletType>;
 
     auto resolveType = [&](const auto &concrete)
     {
-        DispatcherType dispatcher(WorkletType{isovalue, numSamples, blocksize});
-        dispatcher.Invoke(reducedDataSet.GetCellSet(), concrete, blockMean);
+        DispatcherType dispatcher(WorkletType{isovalue, numSamples, blocksize, xdim, ydim, zdim});
+        dispatcher.Invoke(reducedDataSet.GetCellSet(), concrete, minArray, maxArray);
     };
 
     field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
