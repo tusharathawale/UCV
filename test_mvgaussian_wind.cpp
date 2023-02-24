@@ -7,7 +7,7 @@
 #include <vtkm/cont/Initialize.h>
 
 #include "ucvworklet/CreateNewKey.hpp"
-//#include "ucvworklet/MVGaussianWithEnsemble2D.hpp"
+// #include "ucvworklet/MVGaussianWithEnsemble2D.hpp"
 #include "ucvworklet/MVGaussianWithEnsemble2DTryLialg.hpp"
 
 #include <vtkm/cont/Timer.h>
@@ -35,65 +35,19 @@ void exampleDataSet(int pointNum, std::vector<std::vector<double>> &data)
   }
 }
 
-std::string backend = "openmp";
-
-void initBackend(vtkm::cont::Timer &timer)
-{
-  // init the vtkh device
-  char const *tmp = getenv("UCV_VTKM_BACKEND");
-
-  if (tmp == nullptr)
-  {
-    std::cout << "no UCV_VTKM_BACKEND env, use openmp" << std::endl;
-    backend = "openmp";
-  }
-  else
-  {
-    backend = std::string(tmp);
-  }
-
-  // if (rank == 0)
-  //{
-  std::cout << "vtkm backend is:" << backend << std::endl;
-  //}
-
-  if (backend == "serial")
-  {
-    vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
-    device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagSerial());
-    timer.Reset(vtkm::cont::DeviceAdapterTagSerial());
-  }
-  else if (backend == "openmp")
-  {
-    vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
-    device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagOpenMP());
-    timer.Reset(vtkm::cont::DeviceAdapterTagOpenMP());
-  }
-  else if (backend == "cuda")
-  {
-    vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
-    device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
-    timer.Reset(vtkm::cont::DeviceAdapterTagCuda());
-  }
-  else
-  {
-    std::cerr << " unrecognized backend " << backend << std::endl;
-  }
-  return;
-}
 int main(int argc, char *argv[])
 {
 
-  if(argc!=3){
+  vtkm::cont::InitializeResult initResult = vtkm::cont::Initialize(
+      argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
+  vtkm::cont::Timer timer{initResult.Device};
+  std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
+
+  if (argc != 3)
+  {
     std::cout << "<executable> <iso> <num of sample>" << std::endl;
     exit(0);
-  } 
-
-  vtkm::cont::Initialize(argc, argv);
-  vtkm::cont::Timer timer;
-  initBackend(timer);
-  std::cout << "timer device: "<< timer.GetDevice().GetName()<< std::endl;
-
+  }
 
   // assuming the ensemble data set is already been extracted out
   // we test results by this dataset
@@ -124,7 +78,7 @@ int main(int argc, char *argv[])
   double isovalue = std::stod(argv[1]);
   int num_samples = std::stoi(argv[2]);
   std::cout << "iso is: " << isovalue << " num_samples is: " << num_samples << std::endl;
-  
+
   // double isovalue = 1.5;
   //  15 files each contains all data in one file
   //  std::vector<vtkm::cont::ArrayHandle<vtkm::Float64>> componentArrays;
@@ -183,8 +137,8 @@ int main(int argc, char *argv[])
 
   vtkmDataSet.AddPointField("ensembles", dataArraySOA);
 
-  //std::cout << "checking input dataset" << std::endl;
-  //vtkmDataSet.PrintSummary(std::cout);
+  // std::cout << "checking input dataset" << std::endl;
+  // vtkmDataSet.PrintSummary(std::cout);
 
   // std::string outputFileNameOriginal = "./wind_pressure_200_original.vtk";
   // vtkm::io::VTKDataSetWriter write(outputFileNameOriginal);
@@ -193,7 +147,7 @@ int main(int argc, char *argv[])
   // start the timer
   timer.Start();
   // let the data set go through the multivariant gaussian filter
-  //using WorkletType = MVGaussianWithEnsemble2D;
+  // using WorkletType = MVGaussianWithEnsemble2D;
   using WorkletType = MVGaussianWithEnsemble2DTryLialg;
   using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
@@ -210,9 +164,9 @@ int main(int argc, char *argv[])
 
   // stop timer
   timer.Stop();
-  
+
   // output is ms
-  std::cout << "execution time: " << timer.GetElapsedTime()*1000 << std::endl;
+  std::cout << "execution time: " << timer.GetElapsedTime() * 1000 << std::endl;
 
   // check results
   vtkmDataSet.AddCellField("cross_prob", crossProbability);
