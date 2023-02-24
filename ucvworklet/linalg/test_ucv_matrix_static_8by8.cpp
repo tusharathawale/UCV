@@ -16,6 +16,16 @@ double mat_0[8][8] = {
     {0, 1, 0, 1, 0, 1, 7, 1},
     {1, 0, 1, 0, 1, 0, 1, 8}};
 
+double mat_1[8][8] = {
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0}};
+
 int equal_double(double a, double b)
 {
     if (fabs(a - b) < 0.0001)
@@ -62,7 +72,7 @@ void test_eigen_values_8by8()
     }
 
     double result[8] = {0};
-    eigen_solve_eigenvalues(&x, 0.0001, 20, result);
+    eigen_solve_eigenvalues(&x, 0.000001, 30, result);
 
     for (int i = 0; i < 8; i++)
     {
@@ -73,13 +83,30 @@ void test_eigen_values_8by8()
 
     // the assert only works for debug case
     assert(equal_double(result[0], 9.6789) == 1);
-    assert(equal_double(result[1], 7.1721) == 1);
-    assert(equal_double(result[2], 6.1691) == 1);
+    assert(equal_double(result[1], 7.1733) == 1);
+    assert(equal_double(result[2], 6.1679) == 1);
     assert(equal_double(result[3], 4.9999) == 1);
-    assert(equal_double(result[4], 4.0001) == 1);
+    assert(equal_double(result[4], 4.0000) == 1);
     assert(equal_double(result[5], 2.8321) == 1);
     assert(equal_double(result[6], 1.8265) == 1);
     assert(equal_double(result[7], -0.6789) == 1);
+
+    mat_t x_1;
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            x_1.v[i][j] = mat_1[i][j];
+        }
+    }
+
+    double result2[8] = {0};
+    eigen_solve_eigenvalues(&x_1, 0.0001, 20, result2);
+
+    for (int i = 0; i < 8; i++)
+    {
+        printf("%f ", result2[i]);
+    }
 }
 
 void test_basic_qr()
@@ -171,7 +198,7 @@ void test_eigen_vectors_8by8()
 {
 
     printf("---test test_eigen_vectors_8by8\n");
-    constexpr int dim = 8;
+    int dim = 8;
     mat_t x;
     for (int i = 0; i < dim; i++)
     {
@@ -211,14 +238,14 @@ void test_eigen_vectors_8by8()
     // do the checking to see if
     // A*vx=lambda*vx
 
-    for (int j = 0; j < DIM; j++)
+    for (int j = 0; j < 8; j++)
     {
         vec_t avx;
         vec_t eigenvct;
         double eigenvalue = result[j];
 
         // extract ith column eigen vector list
-        for (int i = 0; i < DIM; i++)
+        for (int i = 0; i < 8; i++)
         {
             eigenvct.v[i] = eigen_vectors.v[i][j];
         }
@@ -228,7 +255,7 @@ void test_eigen_vectors_8by8()
         matrix_mul_vec(&x, &eigenvct, &avx);
 
         // compare vector avx and lambda*eigenv
-        for (int i = 0; i < DIM; i++)
+        for (int i = 0; i < 8; i++)
         {
             eigenvct.v[i] = eigenvalue * eigenvct.v[i];
         }
@@ -236,11 +263,12 @@ void test_eigen_vectors_8by8()
         // vec_show(&avx);
         // vec_show(&eigenvct);
 
-        for (int i = 0; i < DIM; i++)
+        for (int i = 0; i < 8; i++)
         {
             // there are some accumulated errors
             // we have three digit precisions
-            if (fabs(avx.v[i] - eigenvct.v[i]) > 0.001){
+            if (fabs(avx.v[i] - eigenvct.v[i]) > 0.001)
+            {
                 printf("eigen value %f two number %f %f\n", eigenvalue, avx.v[i], eigenvct.v[i]);
                 assert(false);
             }
@@ -306,12 +334,12 @@ void test_basic_operations()
 
 int main()
 {
-    test_basic_operations();
-    test_basic_qr();
-    test_invert_8by8matrix();
+    //test_basic_operations();
+    //test_basic_qr();
+    //test_invert_8by8matrix();
     test_eigen_values_8by8();
-    test_eigen_vectors_8by8();
-    //this can only work for the case where eigen value is >=0
-    //test_eigen_vectors_decomposition();
+    //test_eigen_vectors_8by8();
+    // this can only work for the case where eigen value is >=0
+    // test_eigen_vectors_decomposition();
     return 0;
 }

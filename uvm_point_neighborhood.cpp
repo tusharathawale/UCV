@@ -10,6 +10,7 @@
 
 #include <vtkm/worklet/DispatcherPointNeighborhood.h>
 #include "ucvworklet/ExtractingByNeigoborhoodMinMax.hpp"
+#include "ucvworklet/EntropyUniform.hpp"
 
 #include <sstream>
 #include <iomanip>
@@ -133,8 +134,9 @@ int main(int argc, char *argv[])
 
     auto keyArray =
         vtkm::cont::ArrayHandleCounting<vtkm::Id>(0, 1, static_cast<vtkm::Id>(xdim * ydim * zdim));
-    
-    if(xdim % blocksize != 0 || ydim % blocksize != 0 || zdim % blocksize != 0){
+
+    if (xdim % blocksize != 0 || ydim % blocksize != 0 || zdim % blocksize != 0)
+    {
         throw std::runtime_error("dim is supposed to be dividied by blocksize");
     }
 
@@ -167,28 +169,58 @@ int main(int argc, char *argv[])
     vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> entropyResult;
 
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> minArray;
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> maxArray;
-
-    // using the cellset of reducedDataSet
-    // using the field data from original data
-    // only one pass
-    using WorkletType = ExtractingByNeigoborhoodMinMax;
-    using DispatcherType = vtkm::worklet::DispatcherPointNeighborhood<WorkletType>;
-
-    auto resolveType = [&](const auto &concrete)
+    if (distribution == "uni")
     {
-        DispatcherType dispatcher(WorkletType{isovalue, numSamples, blocksize, xdim, ydim, zdim});
-        dispatcher.Invoke(reducedDataSet.GetCellSet(), concrete, minArray, maxArray);
-    };
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> minArray;
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> maxArray;
 
-    field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
-        resolveType);
+        // using the cellset of reducedDataSet
+        // using the field data from original data
+        // only one pass
+        using WorkletTypeNMinMax = ExtractingByNeigoborhoodMinMax;
+        using DispatcherType = vtkm::worklet::DispatcherPointNeighborhood<WorkletTypeNMinMax>;
+
+        auto resolveType = [&](const auto &concrete)
+        {
+            DispatcherType dispatcher(WorkletTypeNMinMax{isovalue, numSamples, blocksize, xdim, ydim, zdim});
+            dispatcher.Invoke(reducedDataSet.GetCellSet(), concrete, minArray, maxArray);
+        };
+
+        field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
+            resolveType);
+
+        timer.Stop();
+
+        std::cout << "sampling time " << timer.GetElapsedTime() * 1000 << std::endl;
+
+        timer.Start();
+        using WorkletType = EntropyUniform;
+        using DispatcherEntropyUniform = vtkm::worklet::DispatcherMapTopology<WorkletType>;
+
+        DispatcherEntropyUniform dispatcherEntropyUniform(EntropyUniform{isovalue});
+        dispatcherEntropyUniform.Invoke(reducedDataSet.GetCellSet(), minArray, maxArray, crossProb, numNonZeroProb, entropyResult);
+
+        timer.Stop();
+
+        std::cout << "uncertainty uni time " << timer.GetElapsedTime() * 1000 << std::endl;
+    }
+    else if (distribution == "ig")
+    {
+
+    }
+    else if (distribution == "mg")
+    {
+        
+    }
+    else
+    {
+        throw std::runtime_error("unsupported distribution: " + distribution);
+    }
 
     // using the same type as the assumption for the output type
     // std::cout << "===data summary for reduced data with uncertainty:" << std::endl;
 
-    /* write results
+    /* write results*/
     reducedDataSet.AddCellField("entropy", entropyResult);
     reducedDataSet.AddCellField("num_nonzero_prob", numNonZeroProb);
     reducedDataSet.AddCellField("cross_prob", crossProb);
@@ -200,11 +232,10 @@ int main(int argc, char *argv[])
 
     // output the dataset into the vtk file for results checking
     std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
-    std::string outputFileName = fileSuffix + "_iso" + isostr + "_" + distribution + "_block" + std::to_string(blocksize) + std::string("_Prob.vtk");
+    std::string outputFileName = fileSuffix + "_iso" + isostr + "_" + distribution + "_block" + std::to_string(blocksize) + std::string("_NeighborProb.vtk");
     vtkm::io::VTKDataSetWriter write(outputFileName);
     write.SetFileTypeToBinary();
     write.WriteDataSet(reducedDataSet);
-    */
 
     return 0;
 }

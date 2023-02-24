@@ -29,7 +29,7 @@ public:
         OutputType &minValue, OutputType &maxValue, vtkm::Id workIndex) const
     {
         // get the ijk (the simple map field can not get the ijk)
-        std::cout << boundary.IJK << std::endl;
+        // std::cout << boundary.IJK << std::endl;
 
         // get the original bounding box
         // left and right for bounding box for each dim
@@ -51,17 +51,17 @@ public:
                 for (vtkm::Id i = l_i; i < r_i; i++)
                 {
                     vtkm::Id index = k * m_xdim * m_ydim + j * m_xdim + i;
-                    if (workIndex == 0)
-                    {
-                        std::cout << index << std::endl;
-                    }
+                    //if (workIndex == 0)
+                    //{
+                    //    std::cout << index << std::endl;
+                    //}
                     // access the global array
-                    //vtkm::FloatDefault originalvalue = inPointFieldPortal.Get(index);
-                    //boxMin = vtkm::Min(boxMin, originalvalue);
-                    //boxMax = vtkm::Max(boxMax, originalvalue);
+                    vtkm::FloatDefault originalvalue = inPointFieldPortal.Get(index);
+                    boxMin = vtkm::Min(boxMin, originalvalue);
+                    boxMax = vtkm::Max(boxMax, originalvalue);
 
-                    //minValue = boxMin;
-                    //maxValue = boxMax;
+                    minValue = boxMin;
+                    maxValue = boxMax;
                 }
             }
         }
