@@ -12,6 +12,12 @@
 #include "ucvworklet/ExtractingByNeigoborhoodMinMax.hpp"
 #include "ucvworklet/EntropyUniform.hpp"
 
+#include "ucvworklet/ExtractingByNeigoborhoodMeanStdev.hpp"
+#include "ucvworklet/EntropyIndependentGaussian.hpp"
+
+#include "ucvworklet/ExtractingByNeigoborhoodMeanRaw.hpp"
+#include "ucvworklet/MVGaussianWithEnsemble3DTryLialg.hpp"
+
 #include <sstream>
 #include <iomanip>
 
@@ -191,9 +197,10 @@ int main(int argc, char *argv[])
 
         timer.Stop();
 
-        std::cout << "sampling time " << timer.GetElapsedTime() * 1000 << std::endl;
+        std::cout << "sampling min and max time " << timer.GetElapsedTime() * 1000 << std::endl;
 
         timer.Start();
+
         using WorkletType = EntropyUniform;
         using DispatcherEntropyUniform = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
@@ -206,24 +213,85 @@ int main(int argc, char *argv[])
     }
     else if (distribution == "ig")
     {
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> stdevArray;
 
+        using WorkletTypeNMeanStdev = ExtractingByNeigoborhoodMeanStdev;
+        using DispatcherType = vtkm::worklet::DispatcherPointNeighborhood<WorkletTypeNMeanStdev>;
+
+        auto resolveType = [&](const auto &concrete)
+        {
+            DispatcherType dispatcher(WorkletTypeNMeanStdev{isovalue, numSamples, blocksize, xdim, ydim, zdim});
+            dispatcher.Invoke(reducedDataSet.GetCellSet(), concrete, meanArray, stdevArray);
+        };
+
+        field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
+            resolveType);
+
+        timer.Stop();
+
+        std::cout << "sampling mean and stdev time " << timer.GetElapsedTime() * 1000 << std::endl;
+
+        timer.Start();
+        using WorkletType = EntropyIndependentGaussian;
+        using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
+
+        DispatcherEntropyIG dispatcherEntropyIG(EntropyIndependentGaussian{isovalue});
+        dispatcherEntropyIG.Invoke(reducedDataSet.GetCellSet(), meanArray, stdevArray, crossProb, numNonZeroProb, entropyResult);
+        timer.Stop();
+        std::cout << "EIGaussianTime time: " << timer.GetElapsedTime() * 1000 << std::endl;
     }
     else if (distribution == "mg")
     {
-        
+        if (xdim % 4 != 0 || ydim % 4 != 0 || zdim % 4 != 0)
+        {
+            // if the data size is not divided by blocksize
+            // we can reample or padding the data set before hand
+            // it will be convenient to compute cov matrix by this way
+            throw std::runtime_error("only support blocksize = 4 and the case where xyz dim is diveide dy blocksize for current mg");
+        }
+
+        using VecType = vtkm::Vec<vtkm::FloatDefault, 4 * 4 * 4>;
+        vtkm::cont::ArrayHandle<VecType> SOARawArray;
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
+
+        using WorkletTypeMeanRaw = ExtractingByNeigoborhoodMeanRaw;
+        using DispatcherType = vtkm::worklet::DispatcherPointNeighborhood<WorkletTypeMeanRaw>;
+
+        auto resolveType = [&](const auto &concrete)
+        {
+            DispatcherType dispatcher(WorkletTypeMeanRaw{isovalue, numSamples, blocksize, xdim, ydim, zdim});
+            dispatcher.Invoke(reducedDataSet.GetCellSet(), concrete, meanArray, SOARawArray);
+        };
+
+        field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
+            resolveType);
+
+        timer.Stop();
+
+        std::cout << "sampling mean and raw time " << timer.GetElapsedTime() * 1000 << std::endl;
+
+        using WorkletTypeMVG = MVGaussianWithEnsemble3DTryLialg;
+        using DispatcherTypeMVG = vtkm::worklet::DispatcherMapTopology<WorkletTypeMVG>;
+
+        DispatcherTypeMVG dispatcherMVG(WorkletTypeMVG{isovalue, numSamples});
+        dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb, numNonZeroProb, entropyResult);
+
+        timer.Stop();
+        std::cout << "MVGTime time: " << timer.GetElapsedTime() * 1000 << std::endl;
     }
     else
     {
         throw std::runtime_error("unsupported distribution: " + distribution);
     }
 
-    // using the same type as the assumption for the output type
-    // std::cout << "===data summary for reduced data with uncertainty:" << std::endl;
-
     /* write results*/
     reducedDataSet.AddCellField("entropy", entropyResult);
     reducedDataSet.AddCellField("num_nonzero_prob", numNonZeroProb);
     reducedDataSet.AddCellField("cross_prob", crossProb);
+
+    // using the same type as the assumption for the output type
+    // std::cout << "===data summary for reduced data with uncertainty:" << std::endl;
 
     // reducedDataSet.PrintSummary(std::cout);
     std::stringstream stream;

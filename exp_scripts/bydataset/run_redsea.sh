@@ -48,7 +48,7 @@ jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_redsea --vtkm-device=cuda 0.1 2000 &> cu
 jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_redsea --vtkm-device=cuda 0.1 4000 &> cuda_4000.log
 
 #kokkos cuda case
-
+export OMP_NUM_THREADS=1
 jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_redsea --vtkm-device=kokkos 0.1 1000 &> kokkos_1000_1.log
 
 jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_redsea --vtkm-device=kokkos 0.1 1000 &> kokkos_1000_2.log
