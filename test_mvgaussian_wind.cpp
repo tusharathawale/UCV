@@ -17,7 +17,6 @@
 #include <string>
 #include <fstream>
 
-using SupportedTypesVec = vtkm::List<vtkm::Vec<double, 15>>;
 
 void exampleDataSet(int pointNum, std::vector<std::vector<double>> &data)
 {
@@ -37,6 +36,8 @@ void exampleDataSet(int pointNum, std::vector<std::vector<double>> &data)
 
 int main(int argc, char *argv[])
 {
+
+ using SupportedTypesVec = vtkm::List<vtkm::Vec<double, 15>>;
 
   vtkm::cont::InitializeResult initResult = vtkm::cont::Initialize(
       argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
