@@ -17,7 +17,6 @@
 #include <string>
 #include <fstream>
 
-
 void exampleDataSet(int pointNum, std::vector<std::vector<double>> &data)
 {
 
@@ -37,12 +36,12 @@ void exampleDataSet(int pointNum, std::vector<std::vector<double>> &data)
 int main(int argc, char *argv[])
 {
 
- using SupportedTypesVec = vtkm::List<vtkm::Vec<double, 15>>;
-
   vtkm::cont::InitializeResult initResult = vtkm::cont::Initialize(
       argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
   vtkm::cont::Timer timer{initResult.Device};
   std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
+
+  using SupportedTypesVec = vtkm::List<vtkm::Vec<double, 15>>;
 
   if (argc != 3)
   {
