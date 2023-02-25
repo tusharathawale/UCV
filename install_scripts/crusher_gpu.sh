@@ -45,9 +45,9 @@ cmake --install ${kokkos_build_dir}
 fi
 
 echo "====> Installing vtk-m"
-VTKM_SRC_DIR="$SOFTWARE_SRC_DIR/vtk-m"
-VTKM_BUILD_DIR="$SOFTWARE_BUILD_DIR/vtk-m"
-VTKM_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/vtk-m"
+VTKM_SRC_DIR="${SOFTWARE_SRC_DIR}/vtk-m"
+VTKM_BUILD_DIR="${SOFTWARE_BUILD_DIR}/vtk-m"
+VTKM_INSTALL_DIR="${SOFTWARE_INSTALL_DIR}/vtk-m"
 
 # check the install dir
 if [ -d $VTKM_INSTALL_DIR ]; then
@@ -102,6 +102,8 @@ fi
 
 echo "====> Installing vtk-m, ok"
 
+echo "vtkm install dir ${VTKM_INSTALL_DIR}"
+
 echo "====> build UCV"
 # the only have build dir without the install dir
 # the install dir is same with the build dir
@@ -118,9 +120,10 @@ UCV_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/UCV"
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=OFF \
     -DUSE_GPU=ON \
-    -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 \
     -DCMAKE_PREFIX_PATH=${kokkos_install_dir} \
-    -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_COMPILER=gcc
+    -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 \
+    -DCMAKE_HIP_ARCHITECTURES=gfx90a \
+    -DCMAKE_CXX_COMPILER=hipcc -DCMAKE_C_COMPILER=hipcc
     
     cd $HERE
 

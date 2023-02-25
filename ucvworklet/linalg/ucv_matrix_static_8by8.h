@@ -26,17 +26,19 @@ namespace UCVMATH
     // https://stackoverflow.com/questions/34820324/macro-for-dynamic-types-in-c
     // or maybe use the code generation tool in future
 
-    typedef struct
+    struct mat_t
     {
         int m = 8, n = 8; // m is row, n is column
-        double v[8][8] = {0};
-    } mat_t, *mat;
+        double v[8][8] = {{0}};
+    };
+		using mat=mat_t*;
 
-    typedef struct
+    struct vec_t
     {
         int len = 8;
         double v[8] = {0};
-    } vec_t, *vec;
+    };
+		using vec=vec_t*;
 
     VTKM_EXEC inline vec_t vec_new(int len)
     {
@@ -96,11 +98,11 @@ namespace UCVMATH
         }
     }
 
-    VTKM_EXEC inline void matrix_mul_toz(mat x, mat y, mat z)
+    VTKM_EXEC inline void matrix_mul_toz(mat x, mat y, mat z, int workindex)
     {
         if (x->n != y->m)
         {
-            printf("error for matrix_mul_toz for dims");
+            printf("error for matrix_mul_toz for dims %d %d index %d\n",x->n,y->m,workindex);
             return;
         }
 
@@ -294,7 +296,7 @@ namespace UCVMATH
         {
             for (int j = 0; j < m->n; j++)
             {
-                printf(" %8.3f", m->v[i][j]);
+                printf(" %8.7f", m->v[i][j]);
             }
             printf("\n");
         }
@@ -302,7 +304,7 @@ namespace UCVMATH
     }
     // m is the original matrix
     // Q and R are matrix we want
-    VTKM_EXEC inline void householder(mat m, mat R, mat Q)
+    VTKM_EXEC inline void householder(mat m, mat R, mat Q, int windex)
     {
         // cuda compiler does not allow this dynamic allocation
         // mat q[m->m];
@@ -312,9 +314,12 @@ namespace UCVMATH
         assert(m->m == m->n);
         assert(m->m == 8);
 
-        mat_t mat_list[8];
+        mat_t mat_list[8]={NULL};
         mat_list[0] = *m;
         *R = *m;
+        if(windex==300925){
+        matrix_show(R);
+        }
         for (int k = 1; k < m->m; k++)
         {
             // in c++ we can not declare array by this way
@@ -380,6 +385,14 @@ namespace UCVMATH
 
             // update R
             *R = matrix_mul(&mat_list[k], R);
+            if(windex==300925){
+            printf("debug check Q\n");
+            matrix_show(Q);
+            printf("debug check R\n");
+            matrix_show(R);
+
+}
+
         }
     }
 
@@ -401,7 +414,7 @@ namespace UCVMATH
     }
 
     // only tested for n*n matrix and it is symetric
-    VTKM_EXEC inline void eigen_solve_eigenvalues(mat x, double tol, int max_iter, double *eigen_array)
+    VTKM_EXEC inline void eigen_solve_eigenvalues(mat x, double tol, int max_iter, double *eigen_array, int workindex)
     {
         // refer to https://www.andreinc.net/2021/01/25/computing-eigenvalues-and-eigenvectors-using-qr-decomposition
         mat_t ak = *x;
@@ -414,15 +427,21 @@ namespace UCVMATH
 
             // it is not ok to init the empty pointer on cuda device by this way
             mat_t R, Q;
+            if(R.m !=8 || R.n!=8 || Q.m!=8 || Q.n!=8){
+                printf("dbeug error qr %d %d %d %d\n", R.m,R.n,Q.m,Q.n);
+            }
             // the hoiseholder will assign new r and q each time
             // TODO update householder to reuse the matrix
-            householder(&ak, &R, &Q);
+            householder(&ak, &R, &Q, workindex);
 
+            if(R.m !=8 || R.n!=8 || Q.m!=8 || Q.n!=8){
+                printf("dbeug error after qr %d %d %d %d index %d\n", R.m,R.n,Q.m,Q.n,workindex);
+            }
             // mat m = matrix_mul(R, Q);
             // puts("eigen m");
             // matrix_show(m);
 
-            matrix_mul_toz(&R, &Q, &ak);
+            matrix_mul_toz(&R, &Q, &ak, workindex);
             // ak = matrix_copy_mat(m);
             // puts("eigen ak");
             // matrix_show(ak);
@@ -462,14 +481,15 @@ namespace UCVMATH
     }
     // refer to
     // https://www.cs.upc.edu/~jordicf/Teaching/programming/pdf4/MATH03_Gaussian-4slides.pdf
-    VTKM_EXEC inline vec_t back_substition(mat r, vec b)
+    VTKM_EXEC inline vec_t back_substition(mat r, vec b, int windex)
     {
         vec_t x;
         // r should be a up trangular matrix
         bool ifupt = matrix_is_upper_triangular(r, 0.0001);
         if (ifupt == false)
         {
-            matrix_show(r);
+            printf("matrix is not the upt\n");
+            //matrix_show(r);
         }
         assert(ifupt == true);
 
@@ -494,12 +514,12 @@ namespace UCVMATH
 
     // TODO, checking singularity for inverting the matrix
     // refer to https://inst.eecs.berkeley.edu/~ee127/sp21/livebook/l_lineqs_solving.html
-    VTKM_EXEC inline void invert8by8matrix(mat m, mat inv_m)
+    VTKM_EXEC inline void invert8by8matrix(mat m, mat inv_m, int windex)
     {
 
         // executing qr decomposition for 8*8 matrix
         mat_t R, Q;
-        householder(m, &R, &Q);
+        householder(m, &R, &Q, windex);
         // R*x = Q_t*b
         // b is each colum of the I matrix
         for (int j = 0; j < 8; j++)
@@ -524,7 +544,7 @@ namespace UCVMATH
             matrix_mul_vec(&Qt, &b, &Qtb);
 
             // using back substituion for solving Rx = Qtb;
-            vec_t x = back_substition(&R, &Qtb);
+            vec_t x = back_substition(&R, &Qtb, windex);
 
             // puting the x into the ith column of the inv_m matrix
             for (int i = 0; i < 8; i++)
@@ -539,7 +559,7 @@ namespace UCVMATH
     // if the eigen value is 0, the associated eigen vector is 0
     // other wise, using the inverse iteration algorithm to compute the eigen vector
     // https://en.wikipedia.org/wiki/Inverse_iteration
-    VTKM_EXEC inline mat_t eigen_solve_eigen_vectors(mat m, double *eigen_value_array, int len_eigen_vec, int num_eigen_value, int iter_max)
+    VTKM_EXEC inline mat_t eigen_solve_eigen_vectors(mat m, double *eigen_value_array, int len_eigen_vec, int num_eigen_value, int iter_max, int windex)
     {
 
         // only works for 8*8 now, since the matirc reverse is designed for 8*8
@@ -568,6 +588,10 @@ namespace UCVMATH
         //  this is the colm of matrix
         for (int j = 0; j < num_eigen_value; j++)
         {
+            if(eigen_value_array[j]<-0.00001){
+								printf("debug negative eighen value %lf index %d\n", eigen_value_array[j], windex);
+								continue;
+						}
             if (fabs(eigen_value_array[j] - 0.0) < 0.0001)
             {
                 continue;
@@ -599,7 +623,7 @@ namespace UCVMATH
             // puts("m_minus_lambda_i");
             // matrix_show(m_minus_lambda_i);
             //  solve equation bk+1 = m_minus_lambda_i_rev * bk i
-            invert8by8matrix(&m_minus_lambda_i, &m_minus_lambda_i_inv);
+            invert8by8matrix(&m_minus_lambda_i, &m_minus_lambda_i_inv, windex);
 
             // puts("m_minus_lambda_i_inv");
             // matrix_show(&m_minus_lambda_i_inv);
@@ -647,14 +671,14 @@ namespace UCVMATH
     }
 
     // input m and get its eigen vector decomposition a where a*a^t = m
-    VTKM_EXEC inline mat_t eigen_vector_decomposition(mat x)
+    VTKM_EXEC inline mat_t eigen_vector_decomposition(mat x, int windex)
     {
 
         // assuming m has eigen value and eigen vectors
         // assuming it is not singular matrix
 
-        double result[8];
-        eigen_solve_eigenvalues(x, 0.0001, 20, result);
+        double result[8]={0};
+        eigen_solve_eigenvalues(x, 0.0001, 20, result, windex);
 
         // create the diaganal matrix
         mat_t diag;
@@ -674,7 +698,7 @@ namespace UCVMATH
                 else
                 {
                     // debug use
-                    matrix_show(x);
+                    // matrix_show(x);
                     printf("eigen values are\n");
                     for (int j = 0; j < 8; j++)
                     {
@@ -690,7 +714,7 @@ namespace UCVMATH
         // update this when we have flexible linear system solver
         assert(x->m == 8);
         assert(x->n == 8);
-        mat_t eigen_vectors = eigen_solve_eigen_vectors(x, result, 8, 8, 20);
+        mat_t eigen_vectors = eigen_solve_eigen_vectors(x, result, 8, 8, 20, windex);
 
         mat_t A = matrix_mul(&eigen_vectors, &diag);
 

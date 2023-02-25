@@ -19,7 +19,7 @@ public:
                                   FieldOutCell,
                                   FieldOutCell);
 
-    using ExecutionSignature = void(_2, _3, _4, _5, _6);
+    using ExecutionSignature = void(_2, _3, _4, _5, _6, WorkIndex);
 
     // the first parameter is binded with the worklet
     using InputDomain = _1;
@@ -34,7 +34,7 @@ public:
         const InPointFieldVecMean &inMeanArray,
         OutCellFieldType1 &outCellFieldCProb,
         OutCellFieldType2 &outCellFieldNumNonzeroProb,
-        OutCellFieldType3 &outCellFieldEntropy) const
+        OutCellFieldType3 &outCellFieldEntropy, vtkm::Id workindex) const
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
@@ -102,12 +102,25 @@ public:
 
         vtkm::IdComponent numSamples = this->m_numSamples;
 
-        UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov8by8);
-
+        UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov8by8, workindex);
         UCVMATH::vec_t sample_v;
         UCVMATH::vec_t AUM;
 
-	 
+        //double result[8]={0};
+        //eigen_solve_eigenvalues(&ucvcov8by8, 0.0001, 20, result, workindex);
+				//for(int i=0;i<8;i++){
+        //      if(result[i] < -0.00001){	
+			//					printf("debug 1 wrong eigen %f index %d\n", result[i], workindex);	
+			 // 					return;							
+       //         }
+				//}
+        // HIP version only works for 124*208*208 cases for beetle dataset
+        // there are issues if we adding more operations in the worklet
+        // new added opertiaon will influence the previous results
+        //UCVMATH::mat_t eigen_vectors = UCVMATH::eigen_solve_eigen_vectors(&ucvcov8by8, result, 8, 8, 20, workindex);
+        
+
+
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
         thrust::random::normal_distribution<double> norm;
@@ -202,7 +215,8 @@ public:
 
         outCellFieldNumNonzeroProb = nonzeroCases;
         outCellFieldEntropy = entropyValue;
-    }
+    
+		}
 
     // how to get this vtkm::Vec<double, 64> in an more efficient way
     vtkm::FloatDefault find_mean(const vtkm::Vec<double, 64> &arr) const
