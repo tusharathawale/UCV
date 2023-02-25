@@ -12,10 +12,12 @@ find_package(MPI REQUIRED)
 #Fine eigen assume this is installed by apt-get install
 #find_package (Eigen3 3.3 REQUIRED)
 
-OPTION (USE_GPU OFF)
-message ("USE_GPU is setting as: " ${USE_GPU})
-if(USE_GPU)
+OPTION (USE_CUDA OFF)
+OPTION (USE_HIP OFF)
+message ("USE_CUDA is setting as: " ${USE_CUDA})
+message ("USE_HIP is setting as: " ${USE_HIP})
 
+if(USE_CUDA)
 set_source_files_properties(ucv_reduce_umc.cpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/EntropyUniform.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/ExtractingMeanRaw.hpp PROPERTIES LANGUAGE "CUDA")
@@ -53,6 +55,34 @@ set_source_files_properties(test_mvg_supernova.cpp PROPERTIES LANGUAGE "CUDA")
 add_executable(test_mvg_supernova test_mvg_supernova.cpp)
 set_target_properties(test_mvg_supernova PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 target_link_libraries(test_mvg_supernova ${VTKm_LIBRARIES})
+
+set_source_files_properties(uvm_point_neighborhood.cpp PROPERTIES LANGUAGE "CUDA")
+add_executable(uvm_point_neighborhood uvm_point_neighborhood.cpp)
+set_target_properties(uvm_point_neighborhood PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(uvm_point_neighborhood ${VTKm_LIBRARIES})
+
+elseif(USE_HIP)
+
+set_source_files_properties(ucvworklet/EntropyUniform.hpp PROPERTIES LANGUAGE "HIP")
+set_source_files_properties(ucvworklet/ExtractingMeanRaw.hpp PROPERTIES LANGUAGE "HIP")
+set_source_files_properties(ucvworklet/ExtractingMeanStdev.hpp PROPERTIES LANGUAGE "HIP")
+set_source_files_properties(ucvworklet/ExtractingMinMax.hpp PROPERTIES LANGUAGE "HIP")
+
+set_source_files_properties(ucv_reduce_umc.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
+target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
+set_source_files_properties(test_mvgaussian_wind.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
+target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES})
+
+set_source_files_properties(test_mvgaussian_redsea.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(test_mvgaussian_redsea test_mvgaussian_redsea.cpp)
+target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES})
+
+set_source_files_properties(uvm_point_neighborhood.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(uvm_point_neighborhood uvm_point_neighborhood.cpp)
+target_link_libraries(uvm_point_neighborhood ${VTKm_LIBRARIES})
 
 else()
  

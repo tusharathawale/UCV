@@ -148,7 +148,7 @@ UCV_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/UCV"
     cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=Debug \
     -DBUILD_SHARED_LIBS=OFF \
-    -DUSE_GPU=ON \
+    -DUSE_CUDA=ON \
     -DVTKm_CUDA_Architecture=${GPU_ARCHITECTURE} \
     -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 \
     -DVTKm_CUDA_Architecture=${GPU_ARCHITECTURE} \

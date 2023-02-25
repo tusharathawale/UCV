@@ -107,7 +107,7 @@ public:
         UCVMATH::vec_t sample_v;
         UCVMATH::vec_t AUM;
 
-#ifdef VTKM_CUDA
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
         thrust::random::normal_distribution<double> norm;
 #else

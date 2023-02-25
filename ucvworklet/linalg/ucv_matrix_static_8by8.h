@@ -10,7 +10,7 @@
 
 #include <vtkm/Types.h>
 
-#ifdef VTKM_CUDA
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
 #include <thrust/random/linear_congruential_engine.h>
 #include <thrust/random/normal_distribution.h>
 #else
@@ -470,6 +470,7 @@ namespace UCVMATH
         bool ifupt = matrix_is_upper_triangular(r, 0.0001);
         if (ifupt == false)
         {
+            printf("matrix is not upt\n");
             matrix_show(r);
         }
         assert(ifupt == true);
@@ -508,8 +509,8 @@ namespace UCVMATH
             // go through each column of I
             vec_t b;
             b.v[j] = 1.0;
-
             mat_t Qt = Q;
+
             // transpose Qt
             for (int ii = 0; ii < DIM; ii++)
             {
@@ -701,7 +702,7 @@ namespace UCVMATH
     VTKM_EXEC inline vec_t norm_sampling_vec(int row)
     {
         assert(row == DIM);
-#ifdef VTKM_CUDA
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
         thrust::random::normal_distribution<double> norm;
 #else

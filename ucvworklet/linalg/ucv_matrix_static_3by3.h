@@ -10,7 +10,7 @@
 
 #include <vtkm/Types.h>
 
-#ifdef VTKM_CUDA
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
 #include <thrust/random/linear_congruential_engine.h>
 #include <thrust/random/normal_distribution.h>
 #else
@@ -659,7 +659,7 @@ namespace UCVMATH_THREE
     VTKM_EXEC inline vec_t norm_sampling_vec(int row)
     {
         assert(row == MSIZE);
-#ifdef VTKM_CUDA
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
         thrust::random::normal_distribution<double> norm;
 #else

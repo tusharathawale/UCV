@@ -26,6 +26,16 @@ double mat_1[8][8] = {
     {0, 0, 0, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 0, 0}};
 
+double mat_2[8][8] = {
+    {-122513.914, 0, 0, 0, 0, 0, 0, 0},
+    {0, -122513.914, 0, 0, 0, 0, 0, 0},
+    {0, 0, -122513.914, 0, 0, 0, 0, 0},
+    {0, 0, 0, -122513.914, 0, 0, 0, 0.011},
+    {0, 0, 0, 0, -122513.914, 0, 0, 0},
+    {0, 0, 0, 0, 0, -122513.914, 0, 0},
+    {0, 0, 0, 0, 0, 0, -122513.914, 0},
+    {0, 0, 0, 0.011, 0, 0, 0, -122513.914}};
+
 int equal_double(double a, double b)
 {
     if (fabs(a - b) < 0.0001)
@@ -135,6 +145,44 @@ void test_basic_qr()
     matrix_show(&R);
 
     // check orthoganal
+    bool ifupper = matrix_is_upper_triangular(&R, 0.0001);
+    assert(ifupper == true);
+
+    // to show their product is the input matrix
+    mat_t m = matrix_mul(&Q, &R);
+    puts("Q * R");
+    matrix_show(&m);
+
+    assert(equal_matrix(&m, &x) == 1);
+}
+
+
+void test_qr2()
+{
+    printf("---test_qr2\n");
+    mat_t R, Q;
+    int msize = 8;
+    mat_t x;
+
+    for (int i = 0; i < msize; i++)
+    {
+        for (int j = 0; j < msize; j++)
+        {
+            x.v[i][j] = mat_2[i][j];
+        }
+    }
+
+    puts("original matrix");
+    matrix_show(&x);
+
+    householder(&x, &R, &Q);
+
+    puts("Q");
+    matrix_show(&Q);
+    puts("R");
+    matrix_show(&R);
+
+    // check orthoganal
     bool ifupper = matrix_is_upper_triangular(&R, 0.00001);
     assert(ifupper == true);
 
@@ -156,6 +204,54 @@ void test_invert_8by8matrix()
         for (int j = 0; j < dim; j++)
         {
             x.v[i][j] = mat_0[i][j];
+        }
+    }
+
+    invert8by8matrix(&x, &x_inv);
+
+    puts("x");
+    matrix_show(&x);
+    puts("x_inv");
+    matrix_show(&x_inv);
+
+    mat_t c1 = matrix_mul(&x, &x_inv);
+
+    puts("x*x_inv");
+    matrix_show(&c1);
+
+    mat_t c2 = matrix_mul(&x_inv, &x);
+
+    puts("x_inv*x");
+    matrix_show(&c2);
+
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            if (i == j)
+            {
+                assert(equal_double(c1.v[i][j], 1.0) == 1);
+                assert(equal_double(c1.v[i][j], 1.0) == 1);
+            }
+            else
+            {
+                assert(equal_double(c2.v[i][j], 0.0) == 1);
+                assert(equal_double(c2.v[i][j], 0.0) == 1);
+            }
+        }
+    }
+}
+
+void test_invert_8by8matrix_2()
+{
+    int dim = 8;
+    mat_t x;
+    mat_t x_inv;
+    for (int i = 0; i < dim; i++)
+    {
+        for (int j = 0; j < dim; j++)
+        {
+            x.v[i][j] = mat_2[i][j];
         }
     }
 
@@ -336,8 +432,10 @@ int main()
 {
     //test_basic_operations();
     //test_basic_qr();
+    //test_qr2();
     //test_invert_8by8matrix();
-    test_eigen_values_8by8();
+    test_invert_8by8matrix_2();
+    //test_eigen_values_8by8();
     //test_eigen_vectors_8by8();
     // this can only work for the case where eigen value is >=0
     // test_eigen_vectors_decomposition();

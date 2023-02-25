@@ -60,10 +60,21 @@ G = np.array([
 [0.0, 60.0, 180.0]
 ])
 
+H = np.array([
+[-122513.914, 0, 0, 0, 0, 0, 0, 0],
+[0, -122513.914, 0, 0, 0, 0, 0, 0],
+[0, 0, -122513.914, 0, 0, 0, 0, 0],
+[0, 0, 0, -122513.914, 0, 0, 0, 0.011],
+[0, 0, 0, 0, -122513.914, 0, 0, 0],
+[0, 0, 0, 0, 0, -122513.914, 0, 0],
+[0, 0, 0, 0, 0, 0, -122513.914, 0],
+[0, 0, 0, 0, 0, 0, 0, -122513.914]
+])
+
 np.set_printoptions(formatter={'float': lambda x: "{0:0.8f}".format(x)})
 
 
-inputM = G
+inputM = H
 
 print("inputM=")
 print((inputM))
@@ -75,11 +86,11 @@ print("eigen r")
 print(R)
 
 # check eigen values
-w, v = LA.eig(inputM)
-print("eigen values")
-print(w)
-print("eigen vectors")
-print(v)
+#w, v = LA.eig(inputM)
+#print("eigen values")
+#print(w)
+#print("eigen vectors")
+#print(v)
 
 '''
 print("A=")

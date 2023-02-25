@@ -78,6 +78,8 @@ int main(int argc, char *argv[])
                                       vtkm::UInt32,
                                       vtkm::Id>;
 
+/*
+
 #ifdef VTKM_CUDA
 
     if (backend == "cuda")
@@ -95,7 +97,7 @@ int main(int argc, char *argv[])
     }
 
 #endif
-
+*/
     // load the dataset (beetles data set, structured one)
     // TODO, the data set can be distributed between different ranks
 
@@ -270,6 +272,8 @@ int main(int argc, char *argv[])
         timer.Stop();
 
         std::cout << "sampling mean and raw time " << timer.GetElapsedTime() * 1000 << std::endl;
+        
+        timer.Start();
 
         using WorkletTypeMVG = MVGaussianWithEnsemble3DTryLialg;
         using DispatcherTypeMVG = vtkm::worklet::DispatcherMapTopology<WorkletTypeMVG>;
