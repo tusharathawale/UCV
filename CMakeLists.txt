@@ -28,8 +28,11 @@ target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 set_source_files_properties(test_mvgaussian_wind.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
-#set_target_properties(test_mvgaussian_wind PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES})
+
+set_source_files_properties(test_mvgaussian_redsea.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(test_mvgaussian_redsea test_mvgaussian_redsea.cpp)
+target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES})
 
 #set_source_files_properties(test_mvgaussian_redsea_mpi.cpp PROPERTIES LANGUAGE "CUDA")
 #add_executable(test_mvgaussian_redsea_mpi test_mvgaussian_redsea_mpi.cpp)

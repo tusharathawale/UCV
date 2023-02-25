@@ -26,17 +26,19 @@ namespace UCVMATH
     // https://stackoverflow.com/questions/34820324/macro-for-dynamic-types-in-c
     // or maybe use the code generation tool in future
 
-    typedef struct
+    struct mat_t
     {
         int m = 4, n = 4; // m is row, n is column
         double v[4][4] = {0};
-    } mat_t, *mat;
-
-    typedef struct
+    };
+    using mat=mat_t*;
+    
+    struct vec_t
     {
         int len = 4;
         double v[4] = {0};
-    } vec_t, *vec;
+    };
+    using vec=vec_t*;
 
     VTKM_EXEC inline vec_t vec_new(int len)
     {

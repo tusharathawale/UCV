@@ -65,6 +65,12 @@ void initBackend(vtkm::cont::Timer &timer)
     device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
     timer.Reset(vtkm::cont::DeviceAdapterTagCuda());
   }
+  else if (backend == "hip")
+  {
+    vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
+    device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagKokkos());
+    timer.Reset(vtkm::cont::DeviceAdapterTagKokkos());
+  }
   else
   {
     std::cerr << " unrecognized backend " << backend << std::endl;
@@ -79,7 +85,6 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
   vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
   vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
-
 
   if (datatype == "poly")
   {
