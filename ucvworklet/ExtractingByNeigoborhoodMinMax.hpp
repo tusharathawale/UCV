@@ -18,7 +18,7 @@ public:
                                   FieldOut,
                                   FieldOut);
 
-    using ExecutionSignature = void(Boundary, _2, _3, _4, WorkIndex);
+    using ExecutionSignature = void(Boundary, _2, _3, _4);
 
     template <typename InPointFieldRaw,
               typename OutputType>
@@ -26,7 +26,7 @@ public:
     VTKM_EXEC void operator()(
         const vtkm::exec::BoundaryState &boundary,
         const InPointFieldRaw &inPointFieldPortal,
-        OutputType &minValue, OutputType &maxValue, vtkm::Id workIndex) const
+        OutputType &minValue, OutputType &maxValue) const
     {
         // get the ijk (the simple map field can not get the ijk)
         // std::cout << boundary.IJK << std::endl;
