@@ -78,26 +78,26 @@ int main(int argc, char *argv[])
                                       vtkm::UInt32,
                                       vtkm::Id>;
 
-/*
+    /*
 
-#ifdef VTKM_CUDA
+    #ifdef VTKM_CUDA
 
-    if (backend == "cuda")
-    {
-        char const *nblock = getenv("UCV_GPU_NUMBLOCK");
-        char const *nthread = getenv("UCV_GPU_BLOCKPERTHREAD");
-        if (nblock != NULL && nthread != NULL)
+        if (backend == "cuda")
         {
-            oneDBlocks = std::stoi(std::string(nblock));
-            threadsPerBlock = std::stoi(std::string(nthread));
-            // the input value for the init scheduled parameter is a function
-            vtkm::cont::cuda::InitScheduleParameters(mySchedParams);
-            std::cout << "cuda parameters: " << oneDBlocks << " " << threadsPerBlock << std::endl;
+            char const *nblock = getenv("UCV_GPU_NUMBLOCK");
+            char const *nthread = getenv("UCV_GPU_BLOCKPERTHREAD");
+            if (nblock != NULL && nthread != NULL)
+            {
+                oneDBlocks = std::stoi(std::string(nblock));
+                threadsPerBlock = std::stoi(std::string(nthread));
+                // the input value for the init scheduled parameter is a function
+                vtkm::cont::cuda::InitScheduleParameters(mySchedParams);
+                std::cout << "cuda parameters: " << oneDBlocks << " " << threadsPerBlock << std::endl;
+            }
         }
-    }
 
-#endif
-*/
+    #endif
+    */
     // load the dataset (beetles data set, structured one)
     // TODO, the data set can be distributed between different ranks
 
@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
     // TODO timer start to extract key
     // auto timer1 = std::chrono::steady_clock::now();
 
+    timer.Synchronize();
     timer.Start();
 
     auto field = inData.GetField(fieldName);
@@ -196,11 +197,11 @@ int main(int argc, char *argv[])
 
         field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
             resolveType);
-
+        timer.Synchronize();
         timer.Stop();
 
         std::cout << "sampling min and max time " << timer.GetElapsedTime() * 1000 << std::endl;
-
+        timer.Synchronize();
         timer.Start();
 
         using WorkletType = EntropyUniform;
@@ -208,7 +209,7 @@ int main(int argc, char *argv[])
 
         DispatcherEntropyUniform dispatcherEntropyUniform(EntropyUniform{isovalue});
         dispatcherEntropyUniform.Invoke(reducedDataSet.GetCellSet(), minArray, maxArray, crossProb, numNonZeroProb, entropyResult);
-
+        timer.Synchronize();
         timer.Stop();
 
         std::cout << "uncertainty uni time " << timer.GetElapsedTime() * 1000 << std::endl;
@@ -229,17 +230,18 @@ int main(int argc, char *argv[])
 
         field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
             resolveType);
-
+        timer.Synchronize();
         timer.Stop();
 
         std::cout << "sampling mean and stdev time " << timer.GetElapsedTime() * 1000 << std::endl;
-
+        timer.Synchronize();
         timer.Start();
         using WorkletType = EntropyIndependentGaussian;
         using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
         DispatcherEntropyIG dispatcherEntropyIG(EntropyIndependentGaussian{isovalue});
         dispatcherEntropyIG.Invoke(reducedDataSet.GetCellSet(), meanArray, stdevArray, crossProb, numNonZeroProb, entropyResult);
+        timer.Synchronize();
         timer.Stop();
         std::cout << "EIGaussianTime time: " << timer.GetElapsedTime() * 1000 << std::endl;
     }
@@ -268,11 +270,11 @@ int main(int argc, char *argv[])
 
         field.GetData().CastAndCallForTypesWithFloatFallback<SupportedTypes, VTKM_DEFAULT_STORAGE_LIST>(
             resolveType);
-
+        timer.Synchronize();
         timer.Stop();
 
         std::cout << "sampling mean and raw time " << timer.GetElapsedTime() * 1000 << std::endl;
-        
+        timer.Synchronize();
         timer.Start();
 
         using WorkletTypeMVG = MVGaussianWithEnsemble3DTryLialg;
@@ -280,7 +282,7 @@ int main(int argc, char *argv[])
 
         DispatcherTypeMVG dispatcherMVG(WorkletTypeMVG{isovalue, numSamples});
         dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb, numNonZeroProb, entropyResult);
-
+        timer.Synchronize();
         timer.Stop();
         std::cout << "MVGTime time: " << timer.GetElapsedTime() * 1000 << std::endl;
     }

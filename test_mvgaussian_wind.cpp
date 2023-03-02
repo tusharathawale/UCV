@@ -144,15 +144,15 @@ int main(int argc, char *argv[])
   // vtkm::io::VTKDataSetWriter write(outputFileNameOriginal);
   // write.WriteDataSet(vtkmDataSet);
 
-  // start the timer
-  timer.Start();
+
   // let the data set go through the multivariant gaussian filter
   // using WorkletType = MVGaussianWithEnsemble2D;
   using WorkletType = MVGaussianWithEnsemble2DTryLialg;
   using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
-
   vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
 
+  // start the timer
+  timer.Start();
   auto resolveType = [&](const auto &concrete)
   {
     // DispatcherType dispatcher(MVGaussianWithEnsemble2D{isovalue});

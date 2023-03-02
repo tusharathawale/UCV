@@ -100,9 +100,9 @@ void initBackend(vtkm::cont::Timer &timer)
     return;
 }
 
-//this might cause some kokkos finalize error
-//since this global vtkm object is created before the init operation 
-//of the kokkos
+// this might cause some kokkos finalize error
+// since this global vtkm object is created before the init operation
+// of the kokkos
 using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::Float64,
                                   vtkm::Int8,
@@ -119,8 +119,8 @@ int main(int argc, char *argv[])
     // init the vtkm (set the backend and log level here)
     vtkm::cont::InitializeResult initResult = vtkm::cont::Initialize(
         argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
-    vtkm::cont::Timer timer{ initResult.Device };
-    std::cout << "initResult.Device: " << initResult.Device.GetName() <<  " timer device: " << timer.GetDevice().GetName() << std::endl;
+    vtkm::cont::Timer timer{initResult.Device};
+    std::cout << "initResult.Device: " << initResult.Device.GetName() << " timer device: " << timer.GetDevice().GetName() << std::endl;
 
     if (argc != 7)
     {
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 
     // TODO timer start to extract key
     // auto timer1 = std::chrono::steady_clock::now();
-
+    timer.Synchronize();
     timer.Start();
 
     auto field = inData.GetField(fieldName);
@@ -255,9 +255,10 @@ int main(int argc, char *argv[])
     // auto timer2 = std::chrono::steady_clock::now();
     // float extractKey =
     //     std::chrono::duration<float, std::milli>(timer2 - timer1).count();
+    timer.Synchronize();
     timer.Stop();
-    std::cout << "extractKey time: " << timer.GetElapsedTime()*1000 << std::endl;
-
+    std::cout << "extractKey time: " << timer.GetElapsedTime() * 1000 << std::endl;
+    timer.Synchronize();
     timer.Start();
 
     if (distribution == "uni")
@@ -282,9 +283,10 @@ int main(int argc, char *argv[])
         // auto timer3 = std::chrono::steady_clock::now();
         // float extractMinMax =
         //    std::chrono::duration<float, std::milli>(timer3 - timer2).count();
+        timer.Synchronize();
         timer.Stop();
-        std::cout << "extractMinMax time: " << timer.GetElapsedTime()*1000 << std::endl;
-
+        std::cout << "extractMinMax time: " << timer.GetElapsedTime() * 1000 << std::endl;
+        timer.Synchronize();
         timer.Start();
         // generate the new data sets with min and max
         // reducedDataSet.AddPointField("ensemble_min", minArray);
@@ -309,8 +311,9 @@ int main(int argc, char *argv[])
         // auto timer4 = std::chrono::steady_clock::now();
         // float EntropyUniformTime =
         //    std::chrono::duration<float, std::milli>(timer4 - timer3).count();
+        timer.Synchronize();
         timer.Stop();
-        std::cout << "EntropyUniformTime time: " << timer.GetElapsedTime()*1000 << std::endl;
+        std::cout << "EntropyUniformTime time: " << timer.GetElapsedTime() * 1000 << std::endl;
     }
     else if (distribution == "ig")
     {
@@ -336,9 +339,10 @@ int main(int argc, char *argv[])
         // auto timer3 = std::chrono::steady_clock::now();
         // float ExtractingMeanStdevTime =
         //    std::chrono::duration<float, std::milli>(timer3 - timer2).count();
+        timer.Synchronize();
         timer.Stop();
-        std::cout << "ExtractingMeanStdev time: " << timer.GetElapsedTime()*1000 << std::endl;
-
+        std::cout << "ExtractingMeanStdev time: " << timer.GetElapsedTime() * 1000 << std::endl;
+        timer.Synchronize();
         timer.Start();
         using WorkletType = EntropyIndependentGaussian;
         using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
@@ -350,8 +354,9 @@ int main(int argc, char *argv[])
         // auto timer4 = std::chrono::steady_clock::now();
         // float EIGaussianTime =
         //    std::chrono::duration<float, std::milli>(timer4 - timer3).count();
+        timer.Synchronize();
         timer.Stop();
-        std::cout << "EIGaussianTime time: " << timer.GetElapsedTime()*1000 << std::endl;
+        std::cout << "EIGaussianTime time: " << timer.GetElapsedTime() * 1000 << std::endl;
     }
     else if (distribution == "mg")
     {
@@ -393,9 +398,10 @@ int main(int argc, char *argv[])
         // auto timer3 = std::chrono::steady_clock::now();
         // float ExtractingMeanRawTime =
         //     std::chrono::duration<float, std::milli>(timer3 - timer2).count();
+        timer.Synchronize();
         timer.Stop();
-        std::cout << "ExtractingMeanRawTime time: " << timer.GetElapsedTime()*1000 << std::endl;
-
+        std::cout << "ExtractingMeanRawTime time: " << timer.GetElapsedTime() * 1000 << std::endl;
+        timer.Synchronize();
         timer.Start();
 
         // step3 computing the cross probability
@@ -410,9 +416,9 @@ int main(int argc, char *argv[])
         // auto timer4 = std::chrono::steady_clock::now();
         // float MVGTime =
         //    std::chrono::duration<float, std::milli>(timer4 - timer3).count();
-
+        timer.Synchronize();
         timer.Stop();
-        std::cout << "MVGTime time: " << timer.GetElapsedTime()*1000 << std::endl;
+        std::cout << "MVGTime time: " << timer.GetElapsedTime() * 1000 << std::endl;
 
         // #endif // VTKM_CUDA
     }
