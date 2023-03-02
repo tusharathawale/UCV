@@ -17,7 +17,7 @@ public:
                                   WholeArrayIn,
                                   FieldOut,
                                   FieldOut);
-
+    //workindex will decrease the execution speed of function call
     using ExecutionSignature = void(Boundary, _2, _3, _4);
 
     template <typename InPointFieldRaw,
