@@ -51,20 +51,20 @@ public:
                 for (vtkm::Id i = l_i; i < r_i; i++)
                 {
                     vtkm::Id index = k * m_xdim * m_ydim + j * m_xdim + i;
-                    //if (workIndex == 0)
+                    // if (workIndex == 0)
                     //{
-                    //    std::cout << index << std::endl;
-                    //}
-                    // access the global array
+                    //     std::cout << index << std::endl;
+                    // }
+                    //  access the global array
                     vtkm::FloatDefault originalvalue = inPointFieldPortal.Get(index);
                     boxMin = vtkm::Min(boxMin, originalvalue);
                     boxMax = vtkm::Max(boxMax, originalvalue);
-
-                    minValue = boxMin;
-                    maxValue = boxMax;
                 }
             }
         }
+
+        minValue = boxMin;
+        maxValue = boxMax;
     }
 
 private:
