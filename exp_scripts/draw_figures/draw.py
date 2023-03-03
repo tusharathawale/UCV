@@ -145,7 +145,30 @@ def strong_scale():
     plt.savefig("strong_scale_redsea_supernova.pdf",bbox_inches='tight')
 
 
+def beetle_results_sum_small():
+    # combination of different cases
+    
+    fig, ax = plt.subplots(figsize=(6,3.5))
+    ax.set_xlabel('Different VTK-m backends', fontsize=13.5)
+    ax.set_ylabel('Log(Time(ms))', fontsize=13.5)
+    #ax.set_ylim([0,1800])
+    #ax.set_ylim([0,10])
+
+    N = 4
+    ind = np.arange(N)  # the x locations for the groups
+    width = 0.2     # the width of the bars
+    ax.set_xticks(ind + 2.5*width)
+    ax.set_xticklabels(('OpenMP','Cuda','Kokkos_Cuda','Kokkos_Hip'), fontsize=12.8)
+
+    subsample_key=[903.3715, 21.84766667, 25.37676333, 74.05266667, 49.861]
+    subsample_fixed=[107.334, 4.135666667, 15.63343333, 13.832, 16.732]
+    ig=[]
+    mg=[]
+
+
+
 if __name__ == "__main__":
-    beetle_results_stages()
+    #beetle_results_stages()
     #wind_reuslts_omp_gpu()
     #strong_scale()
+    beetle_results_sum_small()
