@@ -161,7 +161,10 @@ int main(int argc, char *argv[])
 
     //auto coords = inData.GetCoordinateSystem();
     auto bounds = inData.GetCoordinateSystem().GetBounds();
-
+    timerDetails.Stop();
+    std::cout << "timerDetails 1.1 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
+    timerDetails.Start();
+    
     auto reducedOrigin = bounds.MinCorner();
 
     vtkm::FloatDefault spacex = (bounds.X.Max - bounds.X.Min) / (numberBlockx - 1);
@@ -171,7 +174,12 @@ int main(int argc, char *argv[])
     vtkm::Vec3f_64 reducedSpaceing(spacex, spacey, spacez);
 
     timerDetails.Stop();
-    std::cout << "timerDetails 1.5 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
+    std::cout << "timerDetails 1.2 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
+    timerDetails.Start();
+
+
+    timerDetails.Stop();
+    std::cout << "timerDetails 1.3 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
     timerDetails.Start();
 
     vtkm::cont::DataSetBuilderUniform dataSetBuilder;
