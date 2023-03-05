@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
     vtkm::cont::InitializeResult initResult = vtkm::cont::Initialize(
         argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
     vtkm::cont::Timer timer{initResult.Device};
+    vtkm::cont::Timer timerDetails{initResult.Device};
 
     std::cout << "initResult.Device: " << initResult.Device.GetName() << " timer device: " << timer.GetDevice().GetName() << std::endl;
 
@@ -114,6 +115,7 @@ int main(int argc, char *argv[])
 
     timer.Synchronize();
     timer.Start();
+    timerDetails.Start();
 
     auto field = inData.GetField(fieldName);
 
@@ -153,6 +155,9 @@ int main(int argc, char *argv[])
     const vtkm::Id3 reducedDims(numberBlockx, numberBlocky, numberBlockz);
 
     std::cout << "reducedDims " << reducedDims << std::endl;
+    timerDetails.Stop();
+    std::cout << "timerDetails 1 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
+    timerDetails.Start();
 
     auto coords = inData.GetCoordinateSystem();
     auto bounds = coords.GetBounds();
@@ -169,6 +174,10 @@ int main(int argc, char *argv[])
     // origin is {0,0,0} spacing is {blocksize,blocksize,blocksize} make sure the reduced data
     // are in same shape with original data
     vtkm::cont::DataSet reducedDataSet = dataSetBuilder.Create(reducedDims, reducedOrigin, reducedSpaceing);
+
+    timerDetails.Stop();
+    std::cout << "timerDetails 2 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
+    timerDetails.Start();
 
     // declare results array
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> crossProb;
@@ -197,7 +206,11 @@ int main(int argc, char *argv[])
         timer.Synchronize();
         timer.Stop();
 
+        timerDetails.Stop();
+        std::cout << "timerDetails 3 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
+
         std::cout << "sampling min and max time " << timer.GetElapsedTime() * 1000 << std::endl;
+
         timer.Synchronize();
         timer.Start();
 
