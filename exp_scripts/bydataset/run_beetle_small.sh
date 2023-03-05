@@ -33,6 +33,8 @@ jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASE
 
 jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD mg 4 900 1000 &> ucv_umc_openmp_mg_1000.log
 
+jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASETPATH $FIELD mg 4 900 2000 &> ucv_umc_openmp_mg_2000.log
+
 
 export OMP_NUM_THREADS=1
 
@@ -43,6 +45,8 @@ jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device cuda $DATASETPATH $FIELD un
 jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device cuda $DATASETPATH $FIELD ig 4 900 1000 &> ucv_umc_cuda_ig.log
 
 jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device cuda $DATASETPATH $FIELD mg 4 900 1000 &> ucv_umc_cuda_mg_1000.log
+
+jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device cuda $DATASETPATH $FIELD mg 4 900 2000 &> ucv_umc_cuda_mg_2000.log
 
 
 # kokkos backend
@@ -55,6 +59,7 @@ jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH $FIELD 
 
 jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH $FIELD mg 4 900 1000 &> ucv_umc_kokkos_mg_1000.log
 
+jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH $FIELD mg 4 900 2000 &> ucv_umc_kokkos_mg_2000.log
 # copy things back
 
 cp *.log $CURRDIR/$LOGDIRNAME

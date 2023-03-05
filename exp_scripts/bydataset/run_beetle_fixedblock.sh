@@ -27,7 +27,9 @@ FIELD=ground_truth
 
 export OMP_NUM_THREADS=42
 #there are issues if we set g as 0 even if for the openmp backend
-jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./uvm_point_neighborhood --vtkm-device openmp $DATASETPATH $FIELD uni 4 900 1000 &> ucv_umc_openmp_uni.log
+jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./uvm_point_neighborhood --vtkm-device openmp $DATASETPATH $FIELD uni 4 900 1000 &> ucv_umc_openmp_uni_1.log
+
+jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./uvm_point_neighborhood --vtkm-device openmp $DATASETPATH $FIELD uni 4 900 1000 &> ucv_umc_openmp_uni_2.log
 
 jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./uvm_point_neighborhood --vtkm-device openmp $DATASETPATH $FIELD ig 4 900 1000 &> ucv_umc_openmp_ig.log
 

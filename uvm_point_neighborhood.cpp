@@ -141,9 +141,6 @@ int main(int argc, char *argv[])
     vtkm::Id ydim = pointDims[1];
     vtkm::Id zdim = pointDims[2];
 
-    auto keyArray =
-        vtkm::cont::ArrayHandleCounting<vtkm::Id>(0, 1, static_cast<vtkm::Id>(xdim * ydim * zdim));
-
     if (xdim % blocksize != 0 || ydim % blocksize != 0 || zdim % blocksize != 0)
     {
         throw std::runtime_error("dim is supposed to be dividied by blocksize");
