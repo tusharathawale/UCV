@@ -55,7 +55,7 @@ srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closes
 DATANAME=beetle_124_208_208.vtk
 DATASETPATH=/gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/$DATANAME
 
-jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH $FIELD mg 4 900 1000 &> beetle_small_mg_1000.log
+srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH $FIELD mg 4 900 1000 &> beetle_small_mg_1000.log
 
 
 # checking the supernova
@@ -64,11 +64,11 @@ DATASETPATH=/gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/$DATANA
 FIELD=Iron
 ISO=0.3
 
-jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH $FIELD uni 4 $ISO 1000 &> super_uni_1.log
+srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH $FIELD uni 4 $ISO 1000 &> super_uni_1.log
 
-jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH $FIELD uni 4 $ISO 1000 &> super_uni_2.log
+srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH $FIELD uni 4 $ISO 1000 &> super_uni_2.log
 
-jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH $FIELD ig 4 $ISO 1000 &> super_ig.log
+srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH $FIELD ig 4 $ISO 1000 &> super_ig.log
 
 
 # using the smaller data size, check supernova mg
@@ -76,32 +76,32 @@ jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH $FIELD 
 DATANAME=supernova_visit_152_152_152.vtk
 DATASETPATH=/gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/$DATANAME
 
-jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH Iron mg 4 0.3 1000 &> supernova_small_mg_1000.log
+srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH Iron mg 4 0.3 1000 &> supernova_small_mg_1000.log
 
 # wind data set
 ln -s $CURRDIR/../../install_scripts/summit_gpu/install/UCV/test_mvgaussian_wind test_mvgaussian_wind
 DATASETPATH=/gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/wind_pressure_200 
 
-jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_wind --vtkm-device=kokkos 0.3 1000 &> wind_mg_1000_1.log
+srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./test_mvgaussian_wind --vtkm-device=kokkos 0.3 1000 &> wind_mg_1000_1.log
 
-jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_wind --vtkm-device=kokkos 0.3 1000 &> wind_mg_1000_2.log
+srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./test_mvgaussian_wind --vtkm-device=kokkos 0.3 1000 &> wind_mg_1000_2.log
 
-jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_wind --vtkm-device=kokkos 0.3 2000 &> wind_mg_2000.log
+srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./test_mvgaussian_wind --vtkm-device=kokkos 0.3 2000 &> wind_mg_2000.log
 
-jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_wind --vtkm-device=kokkos 0.3 4000 &> wind_mg_4000.log
+srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./test_mvgaussian_wind --vtkm-device=kokkos 0.3 4000 &> wind_mg_4000.log
 
 
 # red sea data set
 ln -s $CURRDIR/../../install_scripts/summit_gpu/install/UCV/test_mvgaussian_redsea test_mvgaussian_redsea
 ln -s /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/red_sea_vtkdata_velocityMagnitude red_sea_vtkdata_velocityMagnitude
 
-jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_redsea --vtkm-device=kokkos 0.1 1000 &> redsea_mg_1000_1.log
+srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./test_mvgaussian_redsea --vtkm-device=kokkos 0.1 1000 &> redsea_mg_1000_1.log
 
-jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_redsea --vtkm-device=kokkos 0.1 1000 &> redsea_mg_1000_2.log
+srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./test_mvgaussian_redsea --vtkm-device=kokkos 0.1 1000 &> redsea_mg_1000_2.log
 
-jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_redsea --vtkm-device=kokkos 0.1 2000 &> redsea_mg_2000.log
+srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./test_mvgaussian_redsea --vtkm-device=kokkos 0.1 2000 &> redsea_mg_2000.log
 
-jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_redsea --vtkm-device=kokkos 0.1 4000 &> redsea_mg_4000.log
+srun -A CSC331 -N 1 -n 1 --ntasks-per-node=1 --gpus-per-node=1 --gpu-bind=closest ./test_mvgaussian_redsea --vtkm-device=kokkos 0.1 4000 &> redsea_mg_4000.log
 
 
 # copy things back

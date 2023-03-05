@@ -170,6 +170,10 @@ int main(int argc, char *argv[])
 
     vtkm::Vec3f_64 reducedSpaceing(spacex, spacey, spacez);
 
+    timerDetails.Stop();
+    std::cout << "timerDetails 1.5 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
+    timerDetails.Start();
+    
     vtkm::cont::DataSetBuilderUniform dataSetBuilder;
     // origin is {0,0,0} spacing is {blocksize,blocksize,blocksize} make sure the reduced data
     // are in same shape with original data
