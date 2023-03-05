@@ -159,8 +159,8 @@ int main(int argc, char *argv[])
     std::cout << "timerDetails 1 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
     timerDetails.Start();
 
-    auto coords = inData.GetCoordinateSystem();
-    auto bounds = coords.GetBounds();
+    //auto coords = inData.GetCoordinateSystem();
+    auto bounds = inData.GetCoordinateSystem().GetBounds();
 
     auto reducedOrigin = bounds.MinCorner();
 
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
     timerDetails.Stop();
     std::cout << "timerDetails 1.5 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
     timerDetails.Start();
-    
+
     vtkm::cont::DataSetBuilderUniform dataSetBuilder;
     // origin is {0,0,0} spacing is {blocksize,blocksize,blocksize} make sure the reduced data
     // are in same shape with original data
