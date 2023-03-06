@@ -157,12 +157,14 @@ int main(int argc, char *argv[])
     std::cout << "reducedDims " << reducedDims << std::endl;
     timerDetails.Stop();
     std::cout << "timerDetails 1 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
+    
     timerDetails.Start();
-
     //auto coords = inData.GetCoordinateSystem();
     auto bounds = inData.GetCoordinateSystem().GetBounds();
     timerDetails.Stop();
     std::cout << "timerDetails 1.1 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
+    
+    
     timerDetails.Start();
     
     auto reducedOrigin = bounds.MinCorner();
@@ -175,11 +177,7 @@ int main(int argc, char *argv[])
 
     timerDetails.Stop();
     std::cout << "timerDetails 1.2 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
-    timerDetails.Start();
-
-
-    timerDetails.Stop();
-    std::cout << "timerDetails 1.3 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
+        
     timerDetails.Start();
 
     vtkm::cont::DataSetBuilderUniform dataSetBuilder;
@@ -189,8 +187,8 @@ int main(int argc, char *argv[])
 
     timerDetails.Stop();
     std::cout << "timerDetails 2 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
+    
     timerDetails.Start();
-
     // declare results array
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> crossProb;
     vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;

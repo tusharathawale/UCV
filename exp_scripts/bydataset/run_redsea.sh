@@ -35,10 +35,19 @@ jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./test_mvgaussian_redsea --vtkm-device=openmp
 
 jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./test_mvgaussian_redsea --vtkm-device=openmp 0.1 4000 &> openmp_4000.log
 
-# cuda case
-# run two times
+
 export OMP_NUM_THREADS=1
 
+#serial adaptor
+jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_redsea --vtkm-device=serial 0.1 1000 &> serial_1000.log
+
+jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_redsea --vtkm-device=serial 0.1 2000 &> serial_2000.log
+
+jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_redsea --vtkm-device=serial 0.1 4000 &> serial_4000.log
+
+
+# cuda case
+# run two times
 jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_redsea --vtkm-device=cuda 0.1 1000 &> cuda_1000_1.log
 
 jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_redsea --vtkm-device=cuda 0.1 1000 &> cuda_1000_2.log

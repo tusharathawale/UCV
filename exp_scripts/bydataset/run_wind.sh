@@ -37,9 +37,21 @@ jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./test_mvgaussian_wind --vtkm-device=openmp 0
 
 jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./test_mvgaussian_wind --vtkm-device=openmp 0.3 4000 &> openmp_4000.log
 
+
+
+
+
+export OMP_NUM_THREADS=1
+
+# serial case
+jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_wind --vtkm-device=serial 0.3 1000 &> serial_1000.log
+
+jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_wind --vtkm-device=serial 0.3 2000 &> serial_2000.log
+
+jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_wind --vtkm-device=serial 0.3 4000 &> serial_4000.log
+
 # cuda case
 # run two times
-export OMP_NUM_THREADS=1
 
 jsrun -n1 -a1 -c1 -g1 ./test_mvgaussian_wind --vtkm-device=cuda 0.3 1000 &> cuda_1000_1.log
 

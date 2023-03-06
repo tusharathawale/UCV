@@ -60,6 +60,13 @@ jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH $FIELD 
 
 jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device kokkos $DATASETPATH $FIELD mg 4 $ISO 2000 &> ucv_umc_kokkos_mg_2000.log
 
+
+#test supernova small
+
+DATANAME=supernova_visit_152_152_152.vtk
+DATASETPATH=/gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/$DATANAME
+jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device serial $DATASETPATH $FIELD mg 4 $ISO 1000 &> ucv_umc_serial_mg_1000.log
+
 # copy things back
 
 cp *.log $CURRDIR/$LOGDIRNAME

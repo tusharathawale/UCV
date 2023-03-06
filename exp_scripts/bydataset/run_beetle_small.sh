@@ -38,6 +38,16 @@ jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./ucv_reduce_umc --vtkm-device openmp $DATASE
 
 export OMP_NUM_THREADS=1
 
+# serial 
+
+jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device serial $DATASETPATH $FIELD uni 4 900 1000 &> ucv_umc_serial_uni.log
+
+jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device serial $DATASETPATH $FIELD ig 4 900 1000 &> ucv_umc_serial_ig.log
+
+jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device serial $DATASETPATH $FIELD mg 4 900 1000 &> ucv_umc_serial_mg_1000.log
+
+# cuda
+
 jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device cuda $DATASETPATH $FIELD uni 4 900 1000 &> ucv_umc_cuda_uni_1.log
 
 jsrun -n1 -a1 -c1 -g1 ./ucv_reduce_umc --vtkm-device cuda $DATASETPATH $FIELD uni 4 900 1000 &> ucv_umc_cuda_uni_2.log
