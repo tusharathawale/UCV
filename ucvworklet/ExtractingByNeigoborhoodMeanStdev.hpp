@@ -7,9 +7,9 @@
 class ExtractingByNeigoborhoodMeanStdev : public vtkm::worklet::WorkletPointNeighborhood
 {
 public:
-    ExtractingByNeigoborhoodMeanStdev(double isovalue, int numSamples, int blockSize,
-                                      int xdim, int ydim, int zdim)
-        : m_isovalue(isovalue), m_numSamples(numSamples), m_blockSize(blockSize),
+    ExtractingByNeigoborhoodMeanStdev(vtkm::IdComponent blockSize,
+                                      vtkm::Id xdim, vtkm::Id ydim, vtkm::Id zdim)
+        : m_blockSize(blockSize),
           m_xdim(xdim), m_ydim(ydim), m_zdim(zdim){};
 
     // the second f
@@ -91,12 +91,10 @@ public:
     }
 
 private:
-    double m_isovalue;
-    int m_numSamples;
-    int m_blockSize;
-    int m_xdim;
-    int m_ydim;
-    int m_zdim;
+    vtkm::IdComponent m_blockSize;
+    vtkm::Id m_xdim;
+    vtkm::Id m_ydim;
+    vtkm::Id m_zdim;
 };
 
 #endif // UCV_MULTIVARIANT_GAUSSIAN3D_h

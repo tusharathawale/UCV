@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 
         auto resolveType = [&](const auto &concrete)
         {
-            DispatcherType dispatcher(WorkletTypeNMinMax{isovalue, numSamples, blocksize, xdim, ydim, zdim});
+            DispatcherType dispatcher(WorkletTypeNMinMax{blocksize, xdim, ydim, zdim});
             dispatcher.Invoke(reducedDataSet.GetCellSet(), concrete, minArray, maxArray);
         };
 
@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
 
         auto resolveType = [&](const auto &concrete)
         {
-            DispatcherType dispatcher(WorkletTypeNMeanStdev{isovalue, numSamples, blocksize, xdim, ydim, zdim});
+            DispatcherType dispatcher(WorkletTypeNMeanStdev{blocksize, xdim, ydim, zdim});
             dispatcher.Invoke(reducedDataSet.GetCellSet(), concrete, meanArray, stdevArray);
         };
 
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
 
         auto resolveType = [&](const auto &concrete)
         {
-            DispatcherType dispatcher(WorkletTypeMeanRaw{isovalue, numSamples, blocksize, xdim, ydim, zdim});
+            DispatcherType dispatcher(WorkletTypeMeanRaw{blocksize, xdim, ydim, zdim});
             dispatcher.Invoke(reducedDataSet.GetCellSet(), concrete, meanArray, SOARawArray);
         };
 
