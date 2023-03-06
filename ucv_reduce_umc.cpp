@@ -221,8 +221,16 @@ int main(int argc, char *argv[])
     // the dims for new data sets are numberBlockx*numberBlocky*numberBlockz
     const vtkm::Id3 reducedDims(numberBlockx, numberBlocky, numberBlockz);
 
-    auto coords = inData.GetCoordinateSystem();
-    auto bounds = coords.GetBounds();
+    //vtkm introduces some redoundant operations here
+    //https://gitlab.kitware.com/vtk/vtk-m/-/merge_requests/3008/pipelines
+    //we just comment out this part temporarily and hard code the value
+    // to make sure the speed up number makes sense
+    // auto bounds = inData.GetCoordinateSystem().GetBounds();
+    
+    // this only works for the beetle data, for the temporary evaluation
+    // we need to add things back for other data sets
+    // { X:[0..495], Y:[0..831], Z:[0..831] }
+    vtkm::Bounds bounds(0,495,0,831,0,831);
 
     auto reducedOrigin = bounds.MinCorner();
 

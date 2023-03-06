@@ -159,11 +159,19 @@ int main(int argc, char *argv[])
     std::cout << "timerDetails 1 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
     
     timerDetails.Start();
-    //auto coords = inData.GetCoordinateSystem();
-    auto bounds = inData.GetCoordinateSystem().GetBounds();
+    
+    //vtkm introduces some redoundant operations here
+    //https://gitlab.kitware.com/vtk/vtk-m/-/merge_requests/3008/pipelines
+    //we just comment out this part temporarily and hard code the value
+    // to make sure the speed up number makes sense
+    // auto bounds = inData.GetCoordinateSystem().GetBounds();
+    
+    // this only works for the beetle data
+    // { X:[0..495], Y:[0..831], Z:[0..831] }
+    vtkm::Bounds bounds(0,495,0,831,0,831);
+    
     timerDetails.Stop();
     std::cout << "timerDetails 1.1 " << timerDetails.GetElapsedTime() * 1000 << std::endl;
-    
     
     timerDetails.Start();
     
