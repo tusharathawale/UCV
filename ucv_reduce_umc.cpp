@@ -230,6 +230,10 @@ int main(int argc, char *argv[])
     // this only works for the beetle data, for the temporary evaluation
     // we need to add things back for other data sets
     // { X:[0..495], Y:[0..831], Z:[0..831] }
+    // another way is to 
+    // get the coordinates as an `ArrayHandleUniformPointCoordinates` 
+    // and get the bounds from that
+    // this can also avoid the bounds issue
     vtkm::Bounds bounds(0,495,0,831,0,831);
 
     auto reducedOrigin = bounds.MinCorner();

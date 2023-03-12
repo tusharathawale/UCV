@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -x
 
 module load rocm/5.3.0
 module load cmake
@@ -26,7 +27,10 @@ kokkos_src_dir=${SOFTWARE_SRC_DIR}/kokkos
 kokkos_build_dir=${SOFTWARE_BUILD_DIR}/kokkos
 kokkos_install_dir=${SOFTWARE_INSTALL_DIR}/kokkos
 
-if false; then
+if [ -d $kokkos_install_dir ]; then
+    echo "====> skip, $kokkos_install_dir already exists," \
+             "please remove it if you want to reinstall it"
+else
 rm -rf ${kokkos_src_dir}
 git clone -b master https://github.com/kokkos/kokkos.git ${kokkos_src_dir}
 rm -rf ${kokkos_build_dir}
@@ -63,7 +67,7 @@ else
     cd $SOFTWARE_SRC_DIR
     git clone $VTKM_REPO
     cd $VTKM_SRC_DIR
-    git checkout master
+    git checkout $VTKM_VERSION
     fi
     
     cd $HERE
@@ -76,7 +80,7 @@ else
     # there are still some issues to run gpu and cpu backend
     # by the same binary? the gpu is dorced to be used anyway?
 
-    cmake -B ${VTKM_BUILD_DIR} -S ${VTKM_SRC_DIR} \
+    cmake -S ${VTKM_SRC_DIR} -B ${VTKM_BUILD_DIR} \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=OFF \
     -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
@@ -95,6 +99,10 @@ else
     -DCMAKE_CXX_COMPILER=hipcc -DCMAKE_C_COMPILER=hipcc
 
     cmake --build ${VTKM_BUILD_DIR} -j${build_jobs}
+
+    #cd ${VTKM_BUILD_DIR}
+    
+    #make install
 
     echo "**** Installing vtk-m"
     cmake --install ${VTKM_BUILD_DIR}
@@ -116,7 +124,7 @@ UCV_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/UCV"
 #             "please remove it if you want to reinstall it"
 #else
 
-    cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
+    cmake -S ${UCV_SRC_DIR} -B ${UCV_INSTALL_DIR} \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=OFF \
     -DUSE_HIP=ON \

@@ -5,6 +5,7 @@ add_compile_options(-std=c++14)
 #Find the VTK-m package
 find_package(VTKm REQUIRED QUIET)
 set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::vtkmdiympi vtkm::io)
+set(VTKm_LIBRARIESNOMPI vtkm::cont vtkm::filter vtkm::source vtkm::io)
 
 #Find MPI
 find_package(MPI REQUIRED)
@@ -70,19 +71,19 @@ set_source_files_properties(ucvworklet/ExtractingMinMax.hpp PROPERTIES LANGUAGE 
 
 set_source_files_properties(ucv_reduce_umc.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
-target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
+target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIESNOMPI} MPI::MPI_CXX)
 
 set_source_files_properties(test_mvgaussian_wind.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
-target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES})
+target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIESNOMPI})
 
 set_source_files_properties(test_mvgaussian_redsea.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(test_mvgaussian_redsea test_mvgaussian_redsea.cpp)
-target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES})
+target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIESNOMPI})
 
 set_source_files_properties(uvm_point_neighborhood.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(uvm_point_neighborhood uvm_point_neighborhood.cpp)
-target_link_libraries(uvm_point_neighborhood ${VTKm_LIBRARIES})
+target_link_libraries(uvm_point_neighborhood ${VTKm_LIBRARIESNOMPI})
 
 else()
  
