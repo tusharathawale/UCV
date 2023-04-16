@@ -135,6 +135,11 @@ target_link_libraries(test_ucv_matrix_static_4by4 ${VTKm_LIBRARIES})
 add_executable(test_ucv_matrix_static_8by8 ./ucvworklet/linalg/test_ucv_matrix_static_8by8.cpp)
 target_link_libraries(test_ucv_matrix_static_8by8 ${VTKm_LIBRARIES})
 
+
+find_package(GSL REQUIRED)
+add_executable(try_gsl ./ucvworklet/linalg/try_gsl.cpp)
+target_link_libraries(try_gsl ${VTKm_LIBRARIES} GSL::gsl)
+
 endif()
 
 

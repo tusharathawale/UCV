@@ -75,11 +75,8 @@ else
     # build and install
     echo "**** Building vtk-m"
 
-    # TODO, the gpu version can be different here
-    # we only use the cpu version here
-    # there are still some issues to run gpu and cpu backend
-    # by the same binary? the gpu is dorced to be used anyway?
-
+    # putting the -B before the -S may causing some issues sometimes
+    
     cmake -S ${VTKM_SRC_DIR} -B ${VTKM_BUILD_DIR} \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=OFF \
