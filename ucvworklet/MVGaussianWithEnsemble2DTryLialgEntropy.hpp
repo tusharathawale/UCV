@@ -51,11 +51,13 @@ public:
         // get the type in the fieldVec
         // the VecType specifies the number of ensembles
         using VecType = decltype(inPointFieldVecEnsemble[0]);
-
+        
+       
         meanArray[0] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(0)]);
         meanArray[1] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(1)]);
         meanArray[2] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(2)]);
         meanArray[3] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(3)]);
+
 
         // set the trim options to filter the 0 values
         if (fabs(meanArray[0]) < 0.000001 && fabs(meanArray[1]) < 0.000001 && fabs(meanArray[2]) < 0.000001 && fabs(meanArray[3]) < 0.000001)
@@ -63,7 +65,7 @@ public:
             outCellFieldCProb = 0;
             return;
         }
-
+        
         // if (workIndex == 0)
         //{
         //     std::cout << meanArray[0] << " " << meanArray[1] << " " << meanArray[2] << " " << meanArray[3] << std::endl;
@@ -84,21 +86,21 @@ public:
                 index++;
             }
         }
-
+        
         // generate sample
 
-        UCVMATH::vec_t ucvmeanv;
+        UCVMATH4BY4::vec_t ucvmeanv;
 
         for (int i = 0; i < 4; i++)
         {
             ucvmeanv.v[i] = meanArray[i];
         }
-
+        
         vtkm::IdComponent numSamples = m_num_sample;
         // vtkm::Id numCrossings = 0;
         // this can be adapted to 3d case
 
-        UCVMATH::mat_t ucvcov4by4;
+        UCVMATH4BY4::mat_t ucvcov4by4;
         int covindex = 0;
         for (int p = 0; p < 4; ++p)
         {
@@ -120,14 +122,12 @@ public:
         //{
         //     matrix_show(&ucvcov4by4);
         // }
+        // printf("start index %lld\n", workIndex);
+        
+        UCVMATH4BY4::mat_t A = UCVMATH4BY4::eigen_vector_decomposition(&ucvcov4by4);
 
-        double result[4];
-        eigen_solve_eigenvalues(&ucvcov4by4, 0.000001, 50, result);
-
-        UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov4by4);
-
-        UCVMATH::vec_t sample_v;
-        UCVMATH::vec_t AUM;
+        UCVMATH4BY4::vec_t sample_v;
+        UCVMATH4BY4::vec_t AUM;
 
 #ifdef VTKM_CUDA
         thrust::minstd_rand rng;
@@ -137,7 +137,7 @@ public:
         rng.seed(std::mt19937::default_seed);
         std::normal_distribution<double> norm;
 #endif // VTKM_CUDA
-
+        
         vtkm::Vec<vtkm::FloatDefault, 16> probHistogram;
         for (int i = 0; i < 16; i++)
         {
@@ -153,7 +153,7 @@ public:
                 sample_v.v[i] = norm(rng);
             }
 
-            AUM = UCVMATH::matrix_mul_vec_add_vec(&A, &sample_v, &ucvmeanv);
+            AUM = UCVMATH4BY4::matrix_mul_vec_add_vec(&A, &sample_v, &ucvmeanv);
 
             // compute the specific position
             // map > or < to specific cases
@@ -204,6 +204,7 @@ public:
 
         outCellFieldNumNonzeroProb = nonzeroCases;
         outCellFieldEntropy = entropyValue;
+        
     }
 
     VTKM_EXEC int updateIndex4(int index) const

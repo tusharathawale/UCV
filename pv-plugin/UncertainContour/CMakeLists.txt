@@ -5,6 +5,7 @@ set(classes
   vtkSubsampleUncertaintyEnsemble
   vtkSubsampleUncertaintyIndependentGaussian
   vtkSubsampleUncertaintyUniform
+  vtkContourUncertainEnsemble2D
   )
 
 vtk_module_add_module(UncertainContourVTKFilters

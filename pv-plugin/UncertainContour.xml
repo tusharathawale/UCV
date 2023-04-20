@@ -350,5 +350,73 @@
         <ShowInMenu category="Uncertainty" />
       </Hints>
     </SourceProxy>
+    
+    <SourceProxy name="ContourWithEnsembleUncertainty2D"
+                 class="vtkContourUncertainEnsemble2D"
+                 label="Contour With Ensemble for 2D data set">
+      <Documentation
+          long_help="Find the probable locations of a contour for a given isovalue using the ensemble fields."
+          short_help="Find a contour with uncertainty from an ensemble for 2d data." />
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkImageData" />
+        </DataTypeDomain>
+
+        <InputArrayDomain name="ensemble_array"
+                          attribute_type="point"
+                          data_type="vtkImageData" />
+      </InputProperty>
+      <!-- For the input field selections, the default_values specifies the input index. -->
+      <StringVectorProperty animateable="0"
+                            command="SetInputArrayToProcess"
+                            element_types="int int int int str"
+                            default_values="0"
+                            label="Ensemble Values"
+                            name="SelectInputEnsemble"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Vectors"
+                         name="array_list"
+                         input_domain_name="ensemble_array">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+      </StringVectorProperty>
+      <DoubleVectorProperty command="SetIsoValue"
+                            default_values="0.1"
+                            name="IsoValue"
+                            number_of_elements="1">
+        <ArrayRangeDomain name="range" default_mode="mid">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ArraySelection" name="SelectInputEnsemble" />
+          </RequiredProperties>
+        </ArrayRangeDomain>
+      </DoubleVectorProperty>
+      <StringVectorProperty name="ContourProbabilityFieldName"
+                            command="SetContourProbabilityName"
+                            number_of_elements="1"
+                            default_values="contour_probability"
+                            panel_visibility="advanced" />
+      <StringVectorProperty name="NumberNonzeroProbabilityFieldName"
+                            command="SetNumberNonzeroProbabilityName"
+                            number_of_elements="1"
+                            default_values="num_nonzero_probability"
+                            panel_visibility="advanced" />
+      <StringVectorProperty name="EntropyFieldName"
+                            command="SetEntropyName"
+                            number_of_elements="1"
+                            default_values="entropy"
+                            panel_visibility="advanced" />
+      <Hints>
+        <ShowInMenu category="Uncertainty" />
+      </Hints>
+    </SourceProxy>   
+
+
   </ProxyGroup>
 </ServerManagerConfiguration>

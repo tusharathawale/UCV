@@ -12,7 +12,8 @@ endif()
 
 #Find the VTK-m package
 find_package(VTKm REQUIRED QUIET)
-set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::vtkmdiympi vtkm::io)
+#set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::vtkmdiympi vtkm::io)
+set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::io)
 message("${VTKm_DIR}")
 
 #Find MPI
@@ -28,6 +29,7 @@ set(filter_sources
   SubsampleUncertaintyEnsemble.cxx
   SubsampleUncertaintyIndependentGaussian.cxx
   SubsampleUncertaintyUniform.cxx
+  ContourUncertainEnsemble2D.cxx
   )
 
 OPTION (USE_GPU "Compile GPU support." OFF)
@@ -61,7 +63,7 @@ target_link_libraries(test_mvgaussian_redsea_mpi ${VTKm_LIBRARIES})
 set_source_files_properties(test_mvgaussian_redsea.cpp PROPERTIES LANGUAGE "CUDA")
 add_executable(test_mvgaussian_redsea test_mvgaussian_redsea.cpp)
 set_target_properties(test_mvgaussian_redsea PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES})
+target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES} filter_uncertainty)
 
 #add_executable(test_ucv_matrix ./ucvworklet/linalg/test_ucv_matrix.cpp)
 #target_link_libraries(test_ucv_matrix ${VTKm_LIBRARIES})
@@ -96,7 +98,7 @@ add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
 target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 add_executable(test_mvgaussian_redsea test_mvgaussian_redsea.cpp)
-target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES} MPI::MPI_CXX)
+target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES} MPI::MPI_CXX filter_uncertainty)
 
 add_executable(test_mvgaussian_redsea_mpi test_mvgaussian_redsea_mpi.cpp)
 target_link_libraries(test_mvgaussian_redsea_mpi ${VTKm_LIBRARIES} MPI::MPI_CXX)

@@ -2,7 +2,7 @@
 #include "./ucv_matrix_static_4by4.h"
 #include <assert.h>
 
-using namespace UCVMATH;
+using namespace UCVMATH4BY4;
 
 // for symetric matrix
 

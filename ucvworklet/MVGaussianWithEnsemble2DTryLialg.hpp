@@ -86,7 +86,7 @@ public:
 
         // generate sample
 
-        UCVMATH::vec_t ucvmeanv;
+        UCVMATH4BY4::vec_t ucvmeanv;
 
         for (int i = 0; i < 4; i++)
         {
@@ -97,7 +97,7 @@ public:
         vtkm::Id numCrossings = 0;
         // this can be adapted to 3d case
 
-        UCVMATH::mat_t ucvcov4by4;
+        UCVMATH4BY4::mat_t ucvcov4by4;
         int covindex = 0;
         for (int p = 0; p < 4; ++p)
         {
@@ -121,9 +121,9 @@ public:
         // }
 
         double result[4];
-        eigen_solve_eigenvalues(&ucvcov4by4, 0.000001, 50, result);
+        UCVMATH4BY4::eigen_solve_eigenvalues(&ucvcov4by4, 0.000001, 50, result);
 
-        UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov4by4);
+        UCVMATH4BY4::mat_t A = UCVMATH4BY4::eigen_vector_decomposition(&ucvcov4by4);
 
         // if (workIndex ==15822)
         //{
@@ -159,8 +159,8 @@ public:
         }
         */
 
-        UCVMATH::vec_t sample_v;
-        UCVMATH::vec_t AUM;
+        UCVMATH4BY4::vec_t sample_v;
+        UCVMATH4BY4::vec_t AUM;
 
 #ifdef VTKM_CUDA
         thrust::minstd_rand rng;
@@ -180,7 +180,7 @@ public:
                 sample_v.v[i] = norm(rng);
             }
 
-            AUM = UCVMATH::matrix_mul_vec_add_vec(&A, &sample_v, &ucvmeanv);
+            AUM = UCVMATH4BY4::matrix_mul_vec_add_vec(&A, &sample_v, &ucvmeanv);
 
             // if (n==0 && workIndex == 15822)
             //{

@@ -12,6 +12,7 @@
 
 #include "ucvworklet/CreateNewKey.hpp"
 #include "ucvworklet/MVGaussianWithEnsemble2DTryLialgEntropy.hpp"
+#include "ContourUncertainEnsemble2D.h"
 #include "ucvworklet/MVGaussianWithEnsemble2DPolyTryLialgEntropy.hpp"
 
 #include <vtkm/cont/Timer.h>
@@ -80,6 +81,9 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
   vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
 
+  std::stringstream stream;
+  stream << std::fixed << std::setprecision(2) << iso;
+  std::string isostr = stream.str();
 
   if (datatype == "poly")
   {
@@ -93,10 +97,21 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
       dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability, numNonZeroProb, entropy);
     };
 
-    vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
+    vtkmDataSet.GetField("ensemble_array").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
+
+    vtkmDataSet.AddCellField("cross_prob_" + isostr, crossProbability);
+    vtkmDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
+    vtkmDataSet.AddCellField("entropy" + isostr, entropy);
   }
-  else
+  else if (datatype == "stru")
   {
+    //try to test the filter
+    vtkm::filter::uncertainty::ContourUncertainEnsemble2D contour;
+    contour.SetEnsembleField("ensemble_array");
+    contour.SetIsoValue(iso);
+    vtkmDataSet = contour.Execute(vtkmDataSet);
+
+  }else{
     // executing the uncertianty thing
     using WorkletType = MVGaussianWithEnsemble2DTryLialgEntropy;
     using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
@@ -106,7 +121,11 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
       dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability, numNonZeroProb, entropy);
     };
 
-    vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
+    vtkmDataSet.GetField("ensemble_array").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
+
+    vtkmDataSet.AddCellField("cross_prob_" + isostr, crossProbability);
+    vtkmDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
+    vtkmDataSet.AddCellField("entropy" + isostr, entropy);
   }
 
   timer.Stop();
@@ -114,16 +133,12 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   // output is ms
   std::cout << "execution time: " << timer.GetElapsedTime() * 1000 << std::endl;
 
-  std::stringstream stream;
-  stream << std::fixed << std::setprecision(2) << iso;
-  std::string isostr = stream.str();
+
 
   // check results
   // we use a shallow copy as the data set for
   auto outputDataSet = vtkmDataSet;
-  outputDataSet.AddCellField("cross_prob_" + isostr, crossProbability);
-  outputDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
-  outputDataSet.AddCellField("entropy" + isostr, entropy);
+
 
   std::string outputFileName = "./red_sea_ucv_iso_" + datatype + "_" + isostr + ".vtk";
   vtkm::io::VTKDataSetWriter writeCross(outputFileName);
@@ -207,13 +222,13 @@ int main(int argc, char *argv[])
     }
   }
 
-  vtkmDataSet.AddPointField("ensembles", dataArraySOA);
+  vtkmDataSet.AddPointField("ensemble_array", dataArraySOA);
   std::cout << "checking input dataset" << std::endl;
   vtkmDataSet.PrintSummary(std::cout);
 
-  // std::string outputFileName = "./red_sea_ens_slice_" + std::to_string(sliceId) + ".vtk";
-  // vtkm::io::VTKDataSetWriter writeEnsembles(outputFileName);
-  // writeEnsembles.WriteDataSet(vtkmDataSet);
+  std::string outputFileName = "./red_sea_ens_slice_" + std::to_string(sliceId) + ".vtk";
+  vtkm::io::VTKDataSetWriter writeEnsembles(outputFileName);
+  writeEnsembles.WriteDataSet(vtkmDataSet);
 
   callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
   std::cout << "ok for struc 1" << std::endl;

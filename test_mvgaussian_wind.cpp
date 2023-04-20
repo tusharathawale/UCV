@@ -193,9 +193,9 @@ int main(int argc, char *argv[])
   //std::cout << "checking input dataset" << std::endl;
   //vtkmDataSet.PrintSummary(std::cout);
 
-  // std::string outputFileNameOriginal = "./wind_pressure_200_original.vtk";
-  // vtkm::io::VTKDataSetWriter write(outputFileNameOriginal);
-  // write.WriteDataSet(vtkmDataSet);
+  std::string outputFileNameOriginal = "./wind_pressure_200_original.vtk";
+  vtkm::io::VTKDataSetWriter write(outputFileNameOriginal);
+  write.WriteDataSet(vtkmDataSet);
 
   // start the timer
   timer.Start();
