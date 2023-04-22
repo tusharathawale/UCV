@@ -38,9 +38,6 @@ jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./test_mvgaussian_wind --vtkm-device=openmp 0
 jsrun -n1 -a1 -c42 -g1 -bpacked:42 ./test_mvgaussian_wind --vtkm-device=openmp 0.3 4000 &> openmp_4000.log
 
 
-
-
-
 export OMP_NUM_THREADS=1
 
 # serial case

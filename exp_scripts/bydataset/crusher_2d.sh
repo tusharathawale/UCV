@@ -22,7 +22,8 @@ rm -rf $LOGDIRNAME
 mkdir $LOGDIRNAME
 
 cd $LOGDIRNAME
-
+# it seems that the crusher dir is updated and this file system can not be accessed anymore
+# just try to copy file into the specific dir direactly
 ln -s $CURRDIR/../../install_scripts/crusher_gpu/install/UCV/test_mvgaussian_wind test_mvgaussian_wind
 # wind data set
 ln -s /gpfs/alpine/proj-shared/csc143/zhewang/datasets/uncertainty/wind_pressure_200 wind_pressure_200

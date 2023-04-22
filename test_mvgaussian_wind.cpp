@@ -7,8 +7,12 @@
 #include <vtkm/cont/Initialize.h>
 
 #include "ucvworklet/CreateNewKey.hpp"
-// #include "ucvworklet/MVGaussianWithEnsemble2D.hpp"
-#include "ucvworklet/MVGaussianWithEnsemble2DTryLialg.hpp"
+
+#include "ucvworklet/MVGaussianWithEnsemble2DTryLialgEntropy.hpp"
+#include "ucvworklet/MVGaussianWithEnsemble2DPolyTryLialgEntropy.hpp"
+
+#include <vtkm/filter/clean_grid/CleanGrid.h>
+#include <vtkm/filter/geometry_refinement/Triangulate.h>
 
 #include <vtkm/cont/Timer.h>
 
@@ -16,6 +20,9 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <iomanip>
+
+using SupportedTypesVec = vtkm::List<vtkm::Vec<double, 15>>;
 
 void exampleDataSet(int pointNum, std::vector<std::vector<double>> &data)
 {
@@ -33,21 +40,130 @@ void exampleDataSet(int pointNum, std::vector<std::vector<double>> &data)
   }
 }
 
+std::string backend = "openmp";
+
+void initBackend(vtkm::cont::Timer &timer)
+{
+  // init the vtkh device
+  char const *tmp = getenv("UCV_VTKM_BACKEND");
+
+  if (tmp == nullptr)
+  {
+    std::cout << "no UCV_VTKM_BACKEND env, use openmp" << std::endl;
+    backend = "openmp";
+  }
+  else
+  {
+    backend = std::string(tmp);
+  }
+
+  // if (rank == 0)
+  //{
+  std::cout << "vtkm backend is:" << backend << std::endl;
+  //}
+
+  if (backend == "serial")
+  {
+    vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
+    device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagSerial());
+    timer.Reset(vtkm::cont::DeviceAdapterTagSerial());
+  }
+  else if (backend == "openmp")
+  {
+    vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
+    device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagOpenMP());
+    timer.Reset(vtkm::cont::DeviceAdapterTagOpenMP());
+  }
+  else if (backend == "cuda")
+  {
+    vtkm::cont::RuntimeDeviceTracker &device_tracker = vtkm::cont::GetRuntimeDeviceTracker();
+    device_tracker.ForceDevice(vtkm::cont::DeviceAdapterTagCuda());
+    timer.Reset(vtkm::cont::DeviceAdapterTagCuda());
+  }
+  else
+  {
+    std::cerr << " unrecognized backend " << backend << std::endl;
+  }
+  return;
+}
+
+void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, double iso, int numSamples, std::string datatype)
+{
+  timer.Start();
+
+  vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
+  vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
+  vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
+
+  if (datatype == "poly")
+  {
+    // executing the uncertianty thing
+    using WorkletType = MVGaussianWithEnsemble2DPolyTryLialgEntropy;
+    using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
+    // There are three vertecies
+    auto resolveType = [&](const auto &concrete)
+    {
+      DispatcherType dispatcher(MVGaussianWithEnsemble2DPolyTryLialgEntropy{iso, numSamples});
+      dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability, numNonZeroProb, entropy);
+    };
+
+    vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
+  }
+  else
+  {
+    // executing the uncertianty thing
+    using WorkletType = MVGaussianWithEnsemble2DTryLialgEntropy;
+    using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
+    auto resolveType = [&](const auto &concrete)
+    {
+      DispatcherType dispatcher(MVGaussianWithEnsemble2DTryLialgEntropy{iso, numSamples});
+      dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability, numNonZeroProb, entropy);
+    };
+
+    vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
+  }
+
+  timer.Stop();
+
+  // output is ms
+  std::cout << "execution time: " << timer.GetElapsedTime() * 1000 << std::endl;
+
+  std::stringstream stream;
+  stream << std::fixed << std::setprecision(2) << iso;
+  std::string isostr = stream.str();
+
+  // check results
+  // we use a shallow copy as the data set for
+  auto outputDataSet = vtkmDataSet;
+  outputDataSet.AddCellField("cross_prob_" + isostr, crossProbability);
+  outputDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
+  outputDataSet.AddCellField("entropy" + isostr, entropy);
+
+  // std::string outputFileName = "./red_sea_ucv_iso_" + datatype + "_" + isostr + ".vtk";
+  // vtkm::io::VTKDataSetWriter writeCross(outputFileName);
+  // writeCross.WriteDataSet(outputDataSet);
+
+  // check results
+  // vtkmDataSet.AddCellField("cross_prob", crossProbability);
+  std::string outputFileName = "./" + datatype + "_wind_pressure_200_ucv.vtk";
+  vtkm::io::VTKDataSetWriter writeCross(outputFileName);
+  writeCross.WriteDataSet(outputDataSet);
+}
+
 int main(int argc, char *argv[])
 {
 
   vtkm::cont::InitializeResult initResult = vtkm::cont::Initialize(
       argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
   vtkm::cont::Timer timer{initResult.Device};
-  std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
-
-  using SupportedTypesVec = vtkm::List<vtkm::Vec<double, 15>>;
-
+  
   if (argc != 3)
   {
     std::cout << "<executable> <iso> <num of sample>" << std::endl;
     exit(0);
   }
+
+  std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
 
   // assuming the ensemble data set is already been extracted out
   // we test results by this dataset
@@ -56,6 +172,12 @@ int main(int argc, char *argv[])
 
   // load data set, the dim is m*n and for each point there are k ensemble values
   // the data set comes from here https://github.com/MengjiaoH/Probabilistic-Marching-Cubes-C-/tree/main/datasets/txt_files/wind_pressure_200
+
+  // vtkm::Id xdim = 240;
+  // vtkm::Id ydim = 121;
+
+  vtkm::Id gxdim = 240;
+  vtkm::Id gydim = 121;
 
   // there are some memory issue on cuda if larger than 150*120
   // vtkm::Id xdim = 2;
@@ -120,6 +242,7 @@ int main(int argc, char *argv[])
   // for each points, there are 15 version
   int index = 0;
 
+  // for (vtkm::IdComponent i = 0; i < gxdim * gydim; i++)
   for (vtkm::IdComponent i = 0; i < xdim * ydim; i++)
   {
     Vec15 ensemble;
@@ -140,37 +263,25 @@ int main(int argc, char *argv[])
   // std::cout << "checking input dataset" << std::endl;
   // vtkmDataSet.PrintSummary(std::cout);
 
-  // std::string outputFileNameOriginal = "./wind_pressure_200_original.vtk";
-  // vtkm::io::VTKDataSetWriter write(outputFileNameOriginal);
-  // write.WriteDataSet(vtkmDataSet);
+  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
+  std::cout << "ok for struc 1" << std::endl;
 
+  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
+  std::cout << "ok for struc 2" << std::endl;
 
-  // let the data set go through the multivariant gaussian filter
-  // using WorkletType = MVGaussianWithEnsemble2D;
-  using WorkletType = MVGaussianWithEnsemble2DTryLialg;
-  using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
-  vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
+  // test unstructred grid
+  // convert the original data to the unstructured grid
+  vtkm::filter::clean_grid::CleanGrid clean;
+  auto cleanedDataSet = clean.Execute(vtkmDataSet);
+  //cleanedDataSet.PrintSummary(std::cout);
 
-  // start the timer
-  timer.Start();
-  auto resolveType = [&](const auto &concrete)
-  {
-    // DispatcherType dispatcher(MVGaussianWithEnsemble2D{isovalue});
-    DispatcherType dispatcher(MVGaussianWithEnsemble2DTryLialg{isovalue, num_samples});
-    dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability);
-  };
+  callWorklet(timer, cleanedDataSet, isovalue, num_samples, "unstru");
+  std::cout << "ok for unstru" << std::endl;
 
-  vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
+  vtkm::filter::geometry_refinement::Triangulate triangulate;
+  auto tranDataSet = triangulate.Execute(vtkmDataSet);
 
-  // stop timer
-  timer.Stop();
-
-  // output is ms
-  std::cout << "execution time: " << timer.GetElapsedTime() * 1000 << std::endl;
-
-  // check results
-  vtkmDataSet.AddCellField("cross_prob", crossProbability);
-  std::string outputFileName = "./wind_pressure_200_ucv.vtk";
-  vtkm::io::VTKDataSetWriter writeCross(outputFileName);
-  writeCross.WriteDataSet(vtkmDataSet);
+  //tranDataSet.PrintSummary(std::cout);
+  callWorklet(timer, tranDataSet, isovalue, num_samples, "poly");
+  std::cout << "ok for poly" << std::endl;
 }
