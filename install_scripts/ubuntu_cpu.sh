@@ -37,9 +37,8 @@ else
     git clone $VTKM_REPO
     cd $VTKM_SRC_DIR
     #git checkout v2.0.0-rc1
-    git checkout master
-    
-    fi
+    git checkout $VTKM_VERSION    
+fi
     
     cd $HERE
 
@@ -87,7 +86,7 @@ else
     cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=Debug \
     -DBUILD_SHARED_LIBS=ON \
-    -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 \
+    -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0
     
     cd $HERE
 
