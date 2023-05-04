@@ -150,9 +150,36 @@ def strong_scale():
     plt.savefig("strong_scale_redsea_supernova.pdf",bbox_inches='tight')
 
 
+def supernova_vary_datasize():
 
+    fig, ax = plt.subplots(figsize=(6,3.5))
+    ax.set_xlabel('Size of the Supernova data set', fontsize=13.5)
+    ax.set_ylabel('Speed-up ratio', fontsize=13.5)
+    ax.set_ylim([0,250])
+
+    N = 4
+    ind = np.arange(N)  # the x locations for the groups
+    width = 0.25      # the width of the bars
+    ax.set_xticks(ind + 2*width)
+    ax.set_xticklabels(('100^3','200^3','400^3','800^3'), fontsize=13.5)
+
+    openmp = (4.245909796,20.17766345,40.27546709,4.23E+01)
+    p1 = ax.bar(ind+width, openmp,  width, color=[gblue]*3, capsize=3)
+
+    cuda = (8.895467484,22.41004959,61.45443496,1.35E+02)
+    p2 = ax.bar(ind+ 2*width, cuda,  width, color=[gred]*3, capsize=3)
+    
+    kokkoscuda = (48.96928374,105.6823176,167.917479,2.36E+02)
+    p3 = ax.bar(ind+ 3*width, kokkoscuda,  width, color=[gyellow]*3, capsize=3)
+
+    ax.legend(('OpenMP', 'Cuda','Kokkos_CUDA'), loc='upper left', ncol=1, fontsize='large')
+
+
+    plt.savefig("supernova_vary_datasize.png",bbox_inches='tight')
+    plt.savefig("supernova_vary_datasize.pdf",bbox_inches='tight') 
 
 if __name__ == "__main__":
     #beetle_results_stages()
     #wind_reuslts_omp_gpu()
     #strong_scale()
+    supernova_vary_datasize()
