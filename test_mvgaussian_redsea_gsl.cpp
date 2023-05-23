@@ -12,7 +12,8 @@
 
 #include "ucvworklet/CreateNewKey.hpp"
 
-#include "ucvworklet/MVGaussianWithEnsemble2DTryLialgEntropy.hpp"
+//#include "ucvworklet/MVGaussianWithEnsemble2DTryLialgEntropy.hpp"
+#include "ucvworklet/MVGaussianWithEnsemble2DTryGslEntropy.hpp"
 
 #include "ucvworklet/MVGaussianWithEnsemble2DPolyTryLialgEntropy.hpp"
 
@@ -99,11 +100,12 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   else
   {
     // executing the uncertianty thing
-    using WorkletType = MVGaussianWithEnsemble2DTryLialgEntropy;
+    std::cout << "--Test using gsl library---" << std::endl;
+    using WorkletType = MVGaussianWithEnsemble2DTryGslEntropy;
     using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
     auto resolveType = [&](const auto &concrete)
     {
-      DispatcherType dispatcher(MVGaussianWithEnsemble2DTryLialgEntropy{iso, numSamples});
+      DispatcherType dispatcher(MVGaussianWithEnsemble2DTryGslEntropy{iso, numSamples});
       dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability, numNonZeroProb, entropy);
     };
 
@@ -214,6 +216,9 @@ int main(int argc, char *argv[])
   // writeEnsembles.WriteDataSet(vtkmDataSet);
 
   callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
+
+  /*
+
   std::cout << "ok for struc 1" << std::endl;
 
   callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
@@ -234,6 +239,6 @@ int main(int argc, char *argv[])
 
   callWorklet(timer, tranDataSet, isovalue, num_samples, "poly");
   std::cout << "ok for poly" << std::endl;
-  
+  */
   return 0;
 }

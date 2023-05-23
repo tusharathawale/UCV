@@ -1,16 +1,24 @@
-#ifndef UCV_MULTIVARIANT_POLY_GAUSSIAN2D_h
-#define UCV_MULTIVARIANT_POLY_GAUSSIAN2D_h
+#ifndef UCV_MULTIVARIANT_GAUSSIAN2D_GSL_h
+#define UCV_MULTIVARIANT_GAUSSIAN2D_GSL_h
 
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <cmath>
 
 // #include "./linalg/ucv_matrix.h"
-#include "./linalg/ucv_matrix_static_3by3.h"
+// #include "./linalg/ucv_matrix_static_4by4.h"
+#include "./linalg/trygsl/cstm_gsl.hpp"
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
+#include <thrust/random/linear_congruential_engine.h>
+#include <thrust/random/normal_distribution.h>
+#else
+// using the std library
+#include <random>
+#endif // VTKM_CUDA
 
-class MVGaussianWithEnsemble2DPolyTryLialgEntropy : public vtkm::worklet::WorkletVisitCellsWithPoints
+class MVGaussianWithEnsemble2DTryGslEntropy : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    MVGaussianWithEnsemble2DPolyTryLialgEntropy(double isovalue, int num_sample)
+    MVGaussianWithEnsemble2DTryGslEntropy(double isovalue, int num_sample)
         : m_isovalue(isovalue), m_num_sample(num_sample){};
 
     using ControlSignature = void(CellSetIn,
@@ -19,7 +27,7 @@ public:
                                   FieldOutCell,
                                   FieldOutCell);
 
-    using ExecutionSignature = void(_2, _3, _4, _5);
+    using ExecutionSignature = void(_2, _3, _4, _5, WorkIndex);
 
     // the first parameter is binded with the worklet
     using InputDomain = _1;
@@ -33,34 +41,33 @@ public:
         const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
         OutCellFieldType1 &outCellFieldCProb,
         OutCellFieldType2 &outCellFieldNumNonzeroProb,
-        OutCellFieldType3 &outCellFieldEntropy) const
+        OutCellFieldType3 &outCellFieldEntropy,
+        vtkm::Id workIndex) const
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
-        // TODO, how to make the worklet more general
-        // or using different worklet?
-        const int numv = 3;
-        if (numVertexies != numv)
-        {
-            printf("the MVGaussianWithEnsemble2DPolyTryLialg only support poly data");
-            printf("numVertexies %d", numVertexies);
-            return;
-        }
 
         // TODO, using numVertexies to decide the length of mean and cov
         // and decide them at the runtime
+        if (numVertexies != 4)
+        {
+            printf("the MVGaussianWithEnsemble2DTryLialg only support cell with 4 vertexies");
+            return;
+        }
 
-        vtkm::Vec3f_64 meanArray;
+        vtkm::Vec4f_64 meanArray;
 
         // get the type in the fieldVec
         // the VecType specifies the number of ensembles
         using VecType = decltype(inPointFieldVecEnsemble[0]);
 
-        meanArray[0] = find_mean<VecType>(inPointFieldVecEnsemble[0]);
-        meanArray[1] = find_mean<VecType>(inPointFieldVecEnsemble[1]);
-        meanArray[2] = find_mean<VecType>(inPointFieldVecEnsemble[2]);
-
-        if (fabs(meanArray[0]) < 0.000001 && fabs(meanArray[1]) < 0.000001 && fabs(meanArray[2]) < 0.000001)
+        meanArray[0] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(0)]);
+        meanArray[1] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(1)]);
+        meanArray[2] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(2)]);
+        meanArray[3] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(3)]);
+        
+        // set the trim options to filter out the 0 values
+        if (fabs(meanArray[0]) < 0.000001 && fabs(meanArray[1]) < 0.000001 && fabs(meanArray[2]) < 0.000001 && fabs(meanArray[3]) < 0.000001)
         {
             outCellFieldCProb = 0;
             return;
@@ -72,14 +79,16 @@ public:
         // }
 
         // std::vector<double> cov_matrix;
-        // for 3*3 matrix, there are 6 numbers at upper conner
+        // for 4*4 matrix, there are 10 numbers at upper conner
         vtkm::Vec<vtkm::FloatDefault, 10> cov_matrix;
         vtkm::IdComponent index = 0;
-        for (int p = 0; p < numv; ++p)
+        for (int p = 0; p < 4; ++p)
         {
-            for (int q = p; q < numv; ++q)
+            for (int q = p; q < 4; ++q)
             {
-                float cov = find_covariance<VecType>(inPointFieldVecEnsemble[p], inPointFieldVecEnsemble[q], meanArray[p], meanArray[q]);
+                int updatep = updateIndex4(p);
+                int updateq = updateIndex4(q);
+                float cov = find_covariance<VecType>(inPointFieldVecEnsemble[updatep], inPointFieldVecEnsemble[updateq], meanArray[p], meanArray[q]);
                 cov_matrix[index] = cov;
                 index++;
             }
@@ -87,42 +96,71 @@ public:
 
         // generate sample
 
-        UCVMATH_THREE::vec_t ucvmeanv;
+        // UCVMATH::vec_t ucvmeanv;
+        gsl_vector *ucvmeanv = UCVMATH_CSTM_GSL::cstm_gsl_vector_alloc(4);
 
-        for (int i = 0; i < numv; i++)
+        for (int i = 0; i < 4; i++)
         {
-            ucvmeanv.v[i] = meanArray[i];
+            // ucvmeanv.v[i] = meanArray[i];
+            gsl_vector_set(ucvmeanv, i, meanArray[i]);
         }
 
         vtkm::IdComponent numSamples = m_num_sample;
-        //vtkm::Id numCrossings = 0;
+        // vtkm::Id numCrossings = 0;
         // this can be adapted to 3d case
 
-        UCVMATH_THREE::mat_t ucvcov3by3;
+        //UCVMATH::mat_t ucvcov4by4_original;
+        gsl_matrix *ucvcov4by4 = gsl_matrix_alloc(4, 4);
+
         int covindex = 0;
-        for (int p = 0; p < numv; ++p)
+        for (int p = 0; p < 4; ++p)
         {
-            for (int q = p; q < numv; ++q)
+            for (int q = p; q < 4; ++q)
             {
                 // use the elements at the top half
                 // printf("%f ", cov_matrix[covindex]);
-                ucvcov3by3.v[p][q] = cov_matrix[covindex];
+                //ucvcov4by4_original.v[p][q] = cov_matrix[covindex];
+                gsl_matrix_set(ucvcov4by4, p, q, cov_matrix[covindex]);
+
                 if (p != q)
                 {
                     // assign value to another helf
-                    ucvcov3by3.v[q][p] = ucvcov3by3.v[p][q];
+                    //ucvcov4by4_original.v[q][p] = ucvcov4by4_original.v[p][q];
+                    gsl_matrix_set(ucvcov4by4, q, p, gsl_matrix_get(ucvcov4by4, p, q));
                 }
                 covindex++;
             }
         }
 
-        //double result[numv];
-        //eigen_solve_eigenvalues(&ucvcov3by3, 0.000001, 20, result);
+        // if (workIndex ==15822)
+        //{
+        //     matrix_show(&ucvcov4by4);
+        // }
 
-        UCVMATH_THREE::mat_t A = UCVMATH_THREE::eigen_vector_decomposition(&ucvcov3by3);
+        // UCVMATH::mat_t AOriginal = UCVMATH::eigen_vector_decomposition(&ucvcov4by4_original);
+        gsl_matrix *A = UCVMATH_CSTM_GSL::gsl_eigen_vector_decomposition(ucvcov4by4);
+        
+        // some values are filtered out since it can be in the empty region 
+        // with 0 values there
+        /*
+        if (workIndex < 10000)
+        {
+            printf("index is %d\n",workIndex);
+            printf("original matrix ucvcov4by4\n");
+            //UCVMATH::matrix_show(&ucvcov4by4_original);            
+            printf("original matrix A\n");
+            //UCVMATH::matrix_show(&AOriginal);
+            printf("A matrix based on gsl\n");
+            UCVMATH_CSTM_GSL::cstm_gsl_matrix_show(A);
+            printf("\n");
+        }
+        */
 
-        UCVMATH_THREE::vec_t sample_v;
-        UCVMATH_THREE::vec_t AUM;
+        
+        //UCVMATH::vec_t sample_v;
+        //UCVMATH::vec_t AUM;
+        gsl_vector *sample_v = UCVMATH_CSTM_GSL::cstm_gsl_vector_alloc(4);
+        gsl_vector *AUM = UCVMATH_CSTM_GSL::cstm_gsl_vector_alloc(4);
 
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
@@ -132,42 +170,39 @@ public:
         rng.seed(std::mt19937::default_seed);
         std::normal_distribution<double> norm;
 #endif // VTKM_CUDA
-       // three vertexies and there are 8 cases in totoal
-        vtkm::Vec<vtkm::FloatDefault, 8> probHistogram;
-        for (int i = 0; i < 8; i++)
+        
+        
+        vtkm::Vec<vtkm::FloatDefault, 16> probHistogram;
+        for (int i = 0; i < 16; i++)
         {
             probHistogram[i] = 0.0;
         }
+
         for (vtkm::Id n = 0; n < numSamples; ++n)
         {
             // get sample vector
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 4; i++)
             {
                 // using other sample mechanism such as thrust as needed
-                sample_v.v[i] = norm(rng);
-            }
+                // sample_v.v[i] = norm(rng);
+                gsl_vector_set(sample_v,i,norm(rng));
+                //init the aum
+                gsl_vector_set(AUM,i,gsl_vector_get(ucvmeanv,i));
 
-            AUM = UCVMATH_THREE::matrix_mul_vec_add_vec(&A, &sample_v, &ucvmeanv);
+            }
+            
+            //Ax+b operation
+            gsl_blas_dgemv(CblasNoTrans, 1.0, A, sample_v, 0.0, AUM);
+            
+            //AUM = UCVMATH::matrix_mul_vec_add_vec(&A, &sample_v, &ucvmeanv);
 
-            /*
-            if ((m_isovalue <= AUM.v[0]) && (m_isovalue <= AUM.v[1]) && (m_isovalue <= AUM.v[2]))
-            {
-                numCrossings = numCrossings + 0;
-            }
-            else if ((m_isovalue >= AUM.v[0]) && (m_isovalue >= AUM.v[1]) && (m_isovalue >= AUM.v[2]))
-            {
-                numCrossings = numCrossings + 0;
-            }
-            else
-            {
-                numCrossings = numCrossings + 1;
-            }
-            */
+            // compute the specific position
+            // map > or < to specific cases
             uint caseValue = 0;
-            for (uint i = 0; i < 3; i++)
+            for (uint i = 0; i < 4; i++)
             {
                 // setting associated position to 1 if iso larger then specific cases
-                if (m_isovalue >= AUM.v[i])
+                if (m_isovalue >= gsl_vector_get(AUM,i))
                 {
                     caseValue = (1 << i) | caseValue;
                 }
@@ -178,7 +213,7 @@ public:
         }
 
         // go through probHistogram and compute pro
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 16; i++)
         {
             probHistogram[i] = (probHistogram[i] / (1.0 * numSamples));
             // printf("debug caseValue %d probHistogram %f\n", i, probHistogram[i]);
@@ -186,14 +221,14 @@ public:
 
         // cross probability
         // outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
-        outCellFieldCProb = 1.0 - (probHistogram[0] + probHistogram[7]);
+        outCellFieldCProb = 1.0 - (probHistogram[0] + probHistogram[15]);
 
         vtkm::Id nonzeroCases = 0;
         vtkm::FloatDefault entropyValue = 0;
         vtkm::FloatDefault templog = 0;
         // compute number of nonzero cases
         // compute entropy
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 16; i++)
         {
             if (probHistogram[i] > 0.0001)
             {
@@ -208,8 +243,42 @@ public:
             entropyValue = entropyValue + (-probHistogram[i]) * templog;
         }
 
+
         outCellFieldNumNonzeroProb = nonzeroCases;
         outCellFieldEntropy = entropyValue;
+        
+
+        // free allocated elements
+        UCVMATH_CSTM_GSL::cstm_gsl_vector_free(ucvmeanv);
+        gsl_matrix_free(ucvcov4by4);
+
+        UCVMATH_CSTM_GSL::cstm_gsl_vector_free(AUM);
+        UCVMATH_CSTM_GSL::cstm_gsl_vector_free(sample_v);
+        gsl_matrix_free(A);
+    }
+
+    VTKM_EXEC int updateIndex4(int index) const
+    {
+        if (index == 0)
+        {
+            return 0;
+        }
+        else if (index == 1)
+        {
+            return 3;
+        }
+        else if (index == 2)
+        {
+            return 1;
+        }
+        else if (index == 3)
+        {
+            return 2;
+        }
+
+        printf("error, failed to compute updateIndex4\n");
+
+        return 0;
     }
 
     template <typename VecType>
