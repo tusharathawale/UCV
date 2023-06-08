@@ -125,6 +125,7 @@ public:
 
         UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov4by4);
 
+
         // if (workIndex ==15822)
         //{
         //     printf("eigen values\n");

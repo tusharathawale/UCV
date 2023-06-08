@@ -44,11 +44,17 @@ add_executable(test_mvgaussian_redsea test_mvgaussian_redsea.cpp)
 set_target_properties(test_mvgaussian_redsea PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES})
 
-find_package(GSL REQUIRED)
-set_source_files_properties(test_mvgaussian_redsea_gsl.cpp PROPERTIES LANGUAGE "CUDA")
-add_executable(test_mvgaussian_redsea_gsl test_mvgaussian_redsea_gsl.cpp)
-set_target_properties(test_mvgaussian_redsea_gsl PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-target_link_libraries(test_mvgaussian_redsea_gsl ${VTKm_LIBRARIES} GSL::gsl)
+# there is compiling issues working on cuda for gsl
+#find_package(GSL REQUIRED)
+#set_source_files_properties(test_mvgaussian_redsea_gsl.cpp PROPERTIES LANGUAGE "CUDA")
+#add_executable(test_mvgaussian_redsea_gsl test_mvgaussian_redsea_gsl.cpp)
+#set_target_properties(test_mvgaussian_redsea_gsl PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+#target_link_libraries(test_mvgaussian_redsea_gsl ${VTKm_LIBRARIES} GSL::gsl)
+
+set_source_files_properties(test_mvgaussian_redsea_el.cpp PROPERTIES LANGUAGE "CUDA")
+add_executable(test_mvgaussian_redsea_el test_mvgaussian_redsea_el.cpp)
+set_target_properties(test_mvgaussian_redsea_el PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(test_mvgaussian_redsea_el ${VTKm_LIBRARIES})
 
 #add_executable(test_ucv_matrix ./ucvworklet/linalg/test_ucv_matrix.cpp)
 #target_link_libraries(test_ucv_matrix ${VTKm_LIBRARIES})
@@ -113,6 +119,10 @@ target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 add_executable(test_mvgaussian_redsea_gsl test_mvgaussian_redsea_gsl.cpp)
 target_link_libraries(test_mvgaussian_redsea_gsl GSL::gsl ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
+add_executable(test_mvgaussian_redsea_el test_mvgaussian_redsea_el.cpp)
+target_link_libraries(test_mvgaussian_redsea_el ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
 
 add_executable(test_mvgaussian_redsea_mpi test_mvgaussian_redsea_mpi.cpp)
 target_link_libraries(test_mvgaussian_redsea_mpi ${VTKm_LIBRARIES} MPI::MPI_CXX)

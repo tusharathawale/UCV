@@ -1,16 +1,23 @@
-#ifndef UCV_MULTIVARIANT_GAUSSIAN2D_h
-#define UCV_MULTIVARIANT_GAUSSIAN2D_h
+#ifndef UCV_MULTIVARIANT_GAUSSIAN2D_EL_h
+#define UCV_MULTIVARIANT_GAUSSIAN2D_EL_h
 
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <cmath>
 
-// #include "./linalg/ucv_matrix.h"
-#include "./linalg/ucv_matrix_static_4by4.h"
+#include "./linalg/ucv_liag.h"
 
-class MVGaussianWithEnsemble2DTryLialgEntropy : public vtkm::worklet::WorkletVisitCellsWithPoints
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
+#include <thrust/random/linear_congruential_engine.h>
+#include <thrust/random/normal_distribution.h>
+#else
+// using the std library
+#include <random>
+#endif // VTKM_CUDA
+
+class MVGaussianWithEnsemble2DTryELEntropy : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    MVGaussianWithEnsemble2DTryLialgEntropy(double isovalue, int num_sample)
+    MVGaussianWithEnsemble2DTryELEntropy(double isovalue, int num_sample)
         : m_isovalue(isovalue), m_num_sample(num_sample){};
 
     using ControlSignature = void(CellSetIn,
@@ -33,7 +40,8 @@ public:
         const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
         OutCellFieldType1 &outCellFieldCProb,
         OutCellFieldType2 &outCellFieldNumNonzeroProb,
-        OutCellFieldType3 &outCellFieldEntropy,vtkm::Id workIndex) const
+        OutCellFieldType3 &outCellFieldEntropy,
+        vtkm::Id workIndex) const
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
@@ -57,7 +65,7 @@ public:
         meanArray[2] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(2)]);
         meanArray[3] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(3)]);
 
-        // set the trim options to filter the 0 values
+        // set the trim options to filter out the 0 values
         if (fabs(meanArray[0]) < 0.000001 && fabs(meanArray[1]) < 0.000001 && fabs(meanArray[2]) < 0.000001 && fabs(meanArray[3]) < 0.000001)
         {
             outCellFieldCProb = 0;
@@ -87,18 +95,21 @@ public:
 
         // generate sample
 
-        UCVMATH::vec_t ucvmeanv;
-
+        // UCVMATH::vec_t ucvmeanv;
+        // gsl_vector *ucvmeanv = UCVMATH_CSTM_GSL::cstm_gsl_vector_alloc(4);
+        UCVLIAG::Vec<double, 4> ucvmeanv;
         for (int i = 0; i < 4; i++)
         {
-            ucvmeanv.v[i] = meanArray[i];
+            ucvmeanv[i] = meanArray[i];
         }
 
         vtkm::IdComponent numSamples = m_num_sample;
         // vtkm::Id numCrossings = 0;
         // this can be adapted to 3d case
 
-        UCVMATH::mat_t ucvcov4by4;
+        // UCVMATH::mat_t ucvcov4by4_original;
+        // gsl_matrix *ucvcov4by4 = gsl_matrix_alloc(4, 4);
+        UCVLIAG::Matrix<double, 4, 4> ucvcov4by4;
         int covindex = 0;
         for (int p = 0; p < 4; ++p)
         {
@@ -106,11 +117,12 @@ public:
             {
                 // use the elements at the top half
                 // printf("%f ", cov_matrix[covindex]);
-                ucvcov4by4.v[p][q] = cov_matrix[covindex];
+                ucvcov4by4[p][q] = cov_matrix[covindex];
+
                 if (p != q)
                 {
                     // assign value to another helf
-                    ucvcov4by4.v[q][p] = ucvcov4by4.v[p][q];
+                    ucvcov4by4[q][p] = ucvcov4by4[p][q];
                 }
                 covindex++;
             }
@@ -121,23 +133,29 @@ public:
         //     matrix_show(&ucvcov4by4);
         // }
 
-        double result[4];
-        eigen_solve_eigenvalues(&ucvcov4by4, 0.000001, 50, result);
+        // UCVMATH::mat_t AOriginal = UCVMATH::eigen_vector_decomposition(&ucvcov4by4_original);
+        // gsl_matrix *A = UCVMATH_CSTM_GSL::gsl_eigen_vector_decomposition(ucvcov4by4);
+        UCVLIAG::Matrix<double, 4, 4> A = UCVLIAG::SymmEigenDecomposition(ucvcov4by4, 0.00001, 20);
 
-        UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov4by4);
-
+        // some values are filtered out since it can be in the empty region
+        // with 0 values there
+        
         if (workIndex == 9896)
         {
             printf("index is %d\n",workIndex);
             printf("matrix ucvcov4by4\n");
-            matrix_show(&ucvcov4by4);
+            ucvcov4by4.Show();
             printf("matrix A\n");
-            matrix_show(&A);
+            A.Show();
         }
+        
 
-
-        UCVMATH::vec_t sample_v;
-        UCVMATH::vec_t AUM;
+        // UCVMATH::vec_t sample_v;
+        // UCVMATH::vec_t AUM;
+        // gsl_vector *sample_v = UCVMATH_CSTM_GSL::cstm_gsl_vector_alloc(4);
+        // gsl_vector *AUM = UCVMATH_CSTM_GSL::cstm_gsl_vector_alloc(4);
+        UCVLIAG::Vec<double, 4> sample_v;
+        UCVLIAG::Vec<double, 4> AUM;
 
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
@@ -160,10 +178,13 @@ public:
             for (int i = 0; i < 4; i++)
             {
                 // using other sample mechanism such as thrust as needed
-                sample_v.v[i] = norm(rng);
+                // sample_v.v[i] = norm(rng);
+                // gsl_vector_set(sample_v,i,norm(rng));
+                sample_v[i] = norm(rng);
             }
 
-            AUM = UCVMATH::matrix_mul_vec_add_vec(&A, &sample_v, &ucvmeanv);
+            // Ax+b operation
+            AUM = UCVLIAG::DGEMV(1.0, A, sample_v, 1.0, ucvmeanv);
 
             // compute the specific position
             // map > or < to specific cases
@@ -171,7 +192,7 @@ public:
             for (uint i = 0; i < 4; i++)
             {
                 // setting associated position to 1 if iso larger then specific cases
-                if (m_isovalue >= AUM.v[i])
+                if (m_isovalue >= AUM[i])
                 {
                     caseValue = (1 << i) | caseValue;
                 }

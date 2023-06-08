@@ -579,13 +579,13 @@ namespace UCVMATH_THREE
                 }
             }
 
-            // puts("m_minus_lambda_i");
-            // matrix_show(m_minus_lambda_i);
+            //puts("m_minus_lambda_i");
+            //matrix_show(m_minus_lambda_i);
             //  solve equation bk+1 = m_minus_lambda_i_rev * bk i
             bool invertok = invert3by3matrix(&m_minus_lambda_i, &m_minus_lambda_i_inv);
             assert(invertok == true);
-            // puts("m_minus_lambda_i_inv");
-            // matrix_show(m_minus_lambda_i_inv);
+            //puts("m_minus_lambda_i_inv");
+            //matrix_show(m_minus_lambda_i_inv);
 
             // init as 1
             for (int i = 0; i < len_eigen_vec; i++)
@@ -597,7 +597,8 @@ namespace UCVMATH_THREE
             {
                 // check the diff between curr and prev
                 matrix_mul_vec(&m_minus_lambda_i_inv, &b_prev, &b_curr);
-                // vec_show(&b_curr);
+                //puts("check mmv")
+                //vec_show(&b_curr);
                 //  norm
                 vnorm_self(&b_curr);
 
