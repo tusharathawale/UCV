@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
   vtkm::cont::InitializeResult initResult = vtkm::cont::Initialize(
       argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
   vtkm::cont::Timer timer{initResult.Device};
-  
+
   if (argc != 3)
   {
     std::cout << "<executable> <iso> <num of sample>" << std::endl;
@@ -210,7 +210,12 @@ int main(int argc, char *argv[])
 
   vtkm::cont::ArrayHandle<Vec15> dataArraySOA;
 
+  vtkm::cont::ArrayHandle<vtkm::FloatDefault> ensemble_min;
+  vtkm::cont::ArrayHandle<vtkm::FloatDefault> ensemble_max;
+
   dataArraySOA.Allocate(xdim * ydim);
+  ensemble_min.Allocate(xdim * ydim);
+  ensemble_max.Allocate(xdim * ydim);
 
   for (vtkm::IdComponent i = 0; i < 15; i++)
   {
@@ -246,22 +251,34 @@ int main(int argc, char *argv[])
   for (vtkm::IdComponent i = 0; i < xdim * ydim; i++)
   {
     Vec15 ensemble;
+    vtkm::FloatDefault min = 999999;
+    vtkm::FloatDefault max = -999999;
     // if (i == 0 || i == 1 || i == 240 || i == 241)
     {
       // only insert for specific one for testing
       for (vtkm::IdComponent j = 0; j < 15; j++)
       {
         ensemble[j] = dataArray[j][i];
+        min = vtkm::Min(min, ensemble[j]);
+        max = vtkm::Max(max, ensemble[j]);
       }
       dataArraySOA.WritePortal().Set(index, ensemble);
+      ensemble_min.WritePortal().Set(index, min);
+      ensemble_max.WritePortal().Set(index, max);
+
       index++;
     }
   }
 
   vtkmDataSet.AddPointField("ensembles", dataArraySOA);
+  vtkmDataSet.AddPointField("ensembles_min", ensemble_min);
+  vtkmDataSet.AddPointField("ensembles_max", ensemble_max);
 
   // std::cout << "checking input dataset" << std::endl;
   // vtkmDataSet.PrintSummary(std::cout);
+  //std::string outputFileName = std::string("wind_pressure_200_MinMax.vtk");
+  //vtkm::io::VTKDataSetWriter write(outputFileName);
+  //write.WriteDataSet(vtkmDataSet);
 
   callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
   std::cout << "ok for struc 1" << std::endl;
@@ -273,7 +290,7 @@ int main(int argc, char *argv[])
   // convert the original data to the unstructured grid
   vtkm::filter::clean_grid::CleanGrid clean;
   auto cleanedDataSet = clean.Execute(vtkmDataSet);
-  //cleanedDataSet.PrintSummary(std::cout);
+  // cleanedDataSet.PrintSummary(std::cout);
 
   callWorklet(timer, cleanedDataSet, isovalue, num_samples, "unstru");
   std::cout << "ok for unstru" << std::endl;
@@ -281,7 +298,8 @@ int main(int argc, char *argv[])
   vtkm::filter::geometry_refinement::Triangulate triangulate;
   auto tranDataSet = triangulate.Execute(vtkmDataSet);
 
-  //tranDataSet.PrintSummary(std::cout);
+  // tranDataSet.PrintSummary(std::cout);
   callWorklet(timer, tranDataSet, isovalue, num_samples, "poly");
   std::cout << "ok for poly" << std::endl;
+
 }

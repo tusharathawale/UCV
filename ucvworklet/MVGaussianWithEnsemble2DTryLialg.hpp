@@ -5,7 +5,7 @@
 #include <cmath>
 
 // #include "./linalg/ucv_matrix.h"
-#include "./linalg/ucv_matrix_static_4by4.h"
+#include "./linalg/StaticLinalg/ucv_matrix_static_4by4.h"
 
 // use this as the results checking on cpu
 // #include "./eigenmvn.h"

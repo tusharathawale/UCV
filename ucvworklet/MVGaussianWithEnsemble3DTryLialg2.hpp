@@ -5,7 +5,7 @@
 #include <cmath>
 
 // #include "./linalg/ucv_matrix.h"
-#include "./linalg/ucv_matrix_static_8by8.h"
+#include "./linalg/StaticLinalg/ucv_matrix_static_8by8.h"
 
 class MVGaussianWithEnsemble3DTryLialg2 : public vtkm::worklet::WorkletVisitCellsWithPoints
 {

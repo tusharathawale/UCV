@@ -4,7 +4,7 @@
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <cmath>
 
-#include "./linalg/ucv_liag.h"
+#include "./linalg/EasyLinalg/eigen.h"
 
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
 #include <thrust/random/linear_congruential_engine.h>
@@ -97,7 +97,7 @@ public:
 
         // UCVMATH::vec_t ucvmeanv;
         // gsl_vector *ucvmeanv = UCVMATH_CSTM_GSL::cstm_gsl_vector_alloc(4);
-        UCVLIAG::Vec<double, 4> ucvmeanv;
+        EASYLINALG::Vec<double, 4> ucvmeanv;
         for (int i = 0; i < 4; i++)
         {
             ucvmeanv[i] = meanArray[i];
@@ -109,7 +109,7 @@ public:
 
         // UCVMATH::mat_t ucvcov4by4_original;
         // gsl_matrix *ucvcov4by4 = gsl_matrix_alloc(4, 4);
-        UCVLIAG::Matrix<double, 4, 4> ucvcov4by4;
+        EASYLINALG::Matrix<double, 4, 4> ucvcov4by4;
         int covindex = 0;
         for (int p = 0; p < 4; ++p)
         {
@@ -135,7 +135,7 @@ public:
 
         // UCVMATH::mat_t AOriginal = UCVMATH::eigen_vector_decomposition(&ucvcov4by4_original);
         // gsl_matrix *A = UCVMATH_CSTM_GSL::gsl_eigen_vector_decomposition(ucvcov4by4);
-        UCVLIAG::Matrix<double, 4, 4> A = UCVLIAG::SymmEigenDecomposition(ucvcov4by4, 0.00001, 20);
+        EASYLINALG::Matrix<double, 4, 4> A = EASYLINALG::SymmEigenDecomposition(ucvcov4by4, 0.00001, 20);
 
         // some values are filtered out since it can be in the empty region
         // with 0 values there
@@ -154,8 +154,8 @@ public:
         // UCVMATH::vec_t AUM;
         // gsl_vector *sample_v = UCVMATH_CSTM_GSL::cstm_gsl_vector_alloc(4);
         // gsl_vector *AUM = UCVMATH_CSTM_GSL::cstm_gsl_vector_alloc(4);
-        UCVLIAG::Vec<double, 4> sample_v;
-        UCVLIAG::Vec<double, 4> AUM;
+        EASYLINALG::Vec<double, 4> sample_v;
+        EASYLINALG::Vec<double, 4> AUM;
 
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
@@ -184,7 +184,7 @@ public:
             }
 
             // Ax+b operation
-            AUM = UCVLIAG::DGEMV(1.0, A, sample_v, 1.0, ucvmeanv);
+            AUM = EASYLINALG::DGEMV(1.0, A, sample_v, 1.0, ucvmeanv);
 
             // compute the specific position
             // map > or < to specific cases

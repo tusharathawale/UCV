@@ -111,6 +111,9 @@ target_link_libraries(ucv_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
 add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
 target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
+add_executable(ucv_minmax_extraction ucv_minmax_extraction.cpp)
+target_link_libraries(ucv_minmax_extraction ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
 add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
 target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
@@ -139,19 +142,19 @@ target_link_libraries(test_mvg_supernova ${VTKm_LIBRARIES} MPI::MPI_CXX)
 add_executable(compute_cases compute_cases.cpp)
 target_link_libraries(compute_cases)
 
-add_executable(test_ucv_matrix ./ucvworklet/linalg/test_ucv_matrix.cpp)
+add_executable(test_ucv_matrix ./ucvworklet/linalg/StaticLinalg/test_ucv_matrix.cpp)
 target_link_libraries(test_ucv_matrix ${VTKm_LIBRARIES})
 
 add_executable(uvm_point_neighborhood uvm_point_neighborhood.cpp)
 target_link_libraries(uvm_point_neighborhood ${VTKm_LIBRARIES})
 
-add_executable(test_ucv_matrix_static_3by3 ./ucvworklet/linalg/test_ucv_matrix_static_3by3.cpp)
+add_executable(test_ucv_matrix_static_3by3 ./ucvworklet/linalg/StaticLinalg/test_ucv_matrix_static_3by3.cpp)
 target_link_libraries(test_ucv_matrix_static_3by3 ${VTKm_LIBRARIES})
 
-add_executable(test_ucv_matrix_static_4by4 ./ucvworklet/linalg/test_ucv_matrix_static_4by4.cpp)
+add_executable(test_ucv_matrix_static_4by4 ./ucvworklet/linalg/StaticLinalg/test_ucv_matrix_static_4by4.cpp)
 target_link_libraries(test_ucv_matrix_static_4by4 ${VTKm_LIBRARIES})
 
-add_executable(test_ucv_matrix_static_8by8 ./ucvworklet/linalg/test_ucv_matrix_static_8by8.cpp)
+add_executable(test_ucv_matrix_static_8by8 ./ucvworklet/linalg/StaticLinalg/test_ucv_matrix_static_8by8.cpp)
 target_link_libraries(test_ucv_matrix_static_8by8 ${VTKm_LIBRARIES})
 
 find_package(GSL REQUIRED)

@@ -5,7 +5,7 @@
 #include <cmath>
 
 // #include "./linalg/ucv_matrix.h"
-#include "./linalg/ucv_matrix_static_3by3.h"
+#include "./linalg/StaticLinalg/ucv_matrix_static_3by3.h"
 
 class MVGaussianWithEnsemble2DPolyTryLialgEntropy : public vtkm::worklet::WorkletVisitCellsWithPoints
 {

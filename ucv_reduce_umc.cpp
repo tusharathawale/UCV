@@ -221,20 +221,23 @@ int main(int argc, char *argv[])
     // the dims for new data sets are numberBlockx*numberBlocky*numberBlockz
     const vtkm::Id3 reducedDims(numberBlockx, numberBlocky, numberBlockz);
 
-    //vtkm introduces some redoundant operations here
-    //https://gitlab.kitware.com/vtk/vtk-m/-/merge_requests/3008/pipelines
-    //we just comment out this part temporarily and hard code the value
-    // to make sure the speed up number makes sense
-    // auto bounds = inData.GetCoordinateSystem().GetBounds();
-    
+    // vtkm introduces some redoundant operations here
+    // https://gitlab.kitware.com/vtk/vtk-m/-/merge_requests/3008/pipelines
+    // we just comment out this part temporarily and hard code the value
+    //  to make sure the speed up number makes sense
+    //  auto bounds = inData.GetCoordinateSystem().GetBounds();
+
     // this only works for the beetle data, for the temporary evaluation
     // we need to add things back for other data sets
     // { X:[0..495], Y:[0..831], Z:[0..831] }
-    // another way is to 
-    // get the coordinates as an `ArrayHandleUniformPointCoordinates` 
+    // another way is to
+    // get the coordinates as an `ArrayHandleUniformPointCoordinates`
     // and get the bounds from that
     // this can also avoid the bounds issue
-    vtkm::Bounds bounds(0,495,0,831,0,831);
+    // beetle
+    // vtkm::Bounds bounds(0,495,0,831,0,831);
+    // supernova
+    vtkm::Bounds bounds(-1.02655e+09, 9.42128e+08, -1.02353e+09, 1.00073e+09, -9.16584e+08, 9.32988e+08);
 
     auto reducedOrigin = bounds.MinCorner();
 
@@ -301,22 +304,22 @@ int main(int argc, char *argv[])
         timer.Synchronize();
         timer.Start();
         // generate the new data sets with min and max
-        // reducedDataSet.AddPointField("ensemble_min", minArray);
-        // reducedDataSet.AddPointField("ensemble_max", maxArray);
-        // reducedDataSet.PrintSummary(std::cout);
+        reducedDataSet.AddPointField("ensemble_min", minArray);
+        reducedDataSet.AddPointField("ensemble_max", maxArray);
+        reducedDataSet.PrintSummary(std::cout);
 
         // output the dataset into the vtk file for results checking
-        // std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
-        // std::string outputFileName = fileSuffix + std::string("_ReduceDerived.vtk");
-        // vtkm::io::VTKDataSetWriter write(outputFileName);
-        // write.WriteDataSet(reducedDataSet);
+        std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
+        std::string outputFileName = fileSuffix + "_" + fieldName + std::string("_ReduceMinMax.vtk");
+        vtkm::io::VTKDataSetWriter write(outputFileName);
+        write.WriteDataSet(reducedDataSet);
 
         // uniform distribution
         using WorkletType = EntropyUniform;
         using DispatcherEntropyUniform = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
-        DispatcherEntropyUniform dispatcherEntropyUniform(EntropyUniform{isovalue});
-        dispatcherEntropyUniform.Invoke(reducedDataSet.GetCellSet(), minArray, maxArray, crossProb, numNonZeroProb, entropyResult);
+        // DispatcherEntropyUniform dispatcherEntropyUniform(EntropyUniform{isovalue});
+        // dispatcherEntropyUniform.Invoke(reducedDataSet.GetCellSet(), minArray, maxArray, crossProb, numNonZeroProb, entropyResult);
 
         // TODO make sure the worklet finish
         // TODO timer ok to compute uncertainty

@@ -8,7 +8,9 @@
 
 namespace UCVLIAG
 {
+    // this can be customized in order to run on different devices
     #define LIAG_FUNC_MACRO VTKM_EXEC_CONT
+
     template <typename T, uint Size>
     class Vec
     {
@@ -272,7 +274,7 @@ namespace UCVLIAG
             }
         }
 
-        VTKM_EXEC_CONT void Show()
+        LIAG_FUNC_MACRO void Show()
         {
             for (int i = 0; i < this->NUM_ROWS; i++)
             {
@@ -285,7 +287,7 @@ namespace UCVLIAG
             printf("\n");
         }
 
-        VTKM_EXEC_CONT void Transpose()
+        LIAG_FUNC_MACRO void Transpose()
         {
             for (int i = 0; i < this->NUM_ROWS; i++)
             {
@@ -299,7 +301,7 @@ namespace UCVLIAG
         }
 
         // only works for the symmetric matrix
-        VTKM_EXEC_CONT Matrix GetMinor(uint d)
+        LIAG_FUNC_MACRO Matrix GetMinor(uint d)
         {
             assert(this->NUM_ROWS == this->NUM_COLUMNS);
             Matrix minor;
@@ -323,7 +325,7 @@ namespace UCVLIAG
         }
 
         // take c-th column of matrix, put in vector
-        VTKM_EXEC_CONT Vec<T, NUM_COLUMNS> GetColum(uint c)
+        LIAG_FUNC_MACRO Vec<T, NUM_COLUMNS> GetColum(uint c)
         {
             Vec<T, NUM_COLUMNS> vec;
             for (uint i = 0; i < this->NUM_ROWS; i++)
@@ -334,7 +336,7 @@ namespace UCVLIAG
 
     // m = I - 2* v v^T
     template <typename T, uint Size>
-    VTKM_EXEC_CONT Matrix<T, Size, Size> IMINUSVVT(Vec<T, Size> &v)
+    LIAG_FUNC_MACRO Matrix<T, Size, Size> IMINUSVVT(Vec<T, Size> &v)
     {
         // this member become the static const member?
         Matrix<T, Size, Size> Mat;
@@ -352,7 +354,7 @@ namespace UCVLIAG
               uint NumRow,
               uint NumCol,
               uint NumInternal>
-    VTKM_EXEC_CONT Matrix<T, NumRow, NumCol> MMMultiply(
+    LIAG_FUNC_MACRO Matrix<T, NumRow, NumCol> MMMultiply(
         Matrix<T, NumRow, NumInternal> &leftFactor,
         Matrix<T, NumInternal, NumCol> &rightFactor)
     {
@@ -376,7 +378,7 @@ namespace UCVLIAG
     template <typename T,
               uint NumRow,
               uint NumCol>
-    VTKM_EXEC_CONT Vec<T, NumRow> MMVultiply(const Matrix<T, NumRow, NumCol> &inputM, const Vec<T, NumCol> inputV)
+    LIAG_FUNC_MACRO Vec<T, NumRow> MMVultiply(const Matrix<T, NumRow, NumCol> &inputM, const Vec<T, NumCol> inputV)
     {
         Vec<T, NumRow> result;
         result.InitZero();
@@ -396,7 +398,7 @@ namespace UCVLIAG
     template <typename T,
               uint NumRow,
               uint NumCol>
-    VTKM_EXEC_CONT Vec<T, NumRow> MMVPV(
+    LIAG_FUNC_MACRO Vec<T, NumRow> MMVPV(
         Matrix<T, NumRow, NumCol> &A,
         Vec<T, NumCol> &U,
         Vec<T, NumRow> &M)
@@ -419,7 +421,7 @@ namespace UCVLIAG
 
     // results = a*x + b
     template <typename T, uint Size>
-    VTKM_EXEC_CONT Vec<T, Size> AXPY(double a, Vec<T, Size> &x, Vec<T, Size> &b)
+    LIAG_FUNC_MACRO Vec<T, Size> AXPY(double a, Vec<T, Size> &x, Vec<T, Size> &b)
     {
         Vec<T, Size> result;
         for (uint i = 0; i < Size; i++)
@@ -432,7 +434,7 @@ namespace UCVLIAG
     // A is matrix, x and y are vectors
     //  results =alpha*A*x+beta*y
     template <typename T, uint Row, uint Col>
-    VTKM_EXEC_CONT Vec<T, Row> DGEMV(const T alpha, const Matrix<T, Row, Col> &A, Vec<T, Col> &x, const T beta, const Vec<T, Row> &y)
+    LIAG_FUNC_MACRO Vec<T, Row> DGEMV(const T alpha, const Matrix<T, Row, Col> &A, Vec<T, Col> &x, const T beta, const Vec<T, Row> &y)
     {
         Vec<T, Row> result;
         result.InitZero();
@@ -451,7 +453,7 @@ namespace UCVLIAG
     template <typename T,
               uint NumRow,
               uint NumCol>
-    VTKM_EXEC_CONT void Householder(
+    LIAG_FUNC_MACRO void Householder(
         Matrix<T, NumRow, NumCol> &A,
         Matrix<T, NumRow, NumCol> &Q,
         Matrix<T, NumRow, NumCol> &R)
@@ -549,7 +551,7 @@ namespace UCVLIAG
     }
 
     template <typename T>
-    VTKM_EXEC_CONT bool SymmInvertMatrixInner(const Matrix<T, 3, 3> &m, Matrix<T, 3, 3> &inv_m)
+    LIAG_FUNC_MACRO bool SymmInvertMatrixInner(const Matrix<T, 3, 3> &m, Matrix<T, 3, 3> &inv_m)
     {
         inv_m[0][0] = m[1][1] * m[2][2] - m[1][2] * m[2][1];
 
@@ -592,7 +594,7 @@ namespace UCVLIAG
     }
 
     template <typename T>
-    VTKM_EXEC_CONT bool SymmInvertMatrixInner(const Matrix<T, 4, 4> &m, Matrix<T, 4, 4> &inv_m)
+    LIAG_FUNC_MACRO bool SymmInvertMatrixInner(const Matrix<T, 4, 4> &m, Matrix<T, 4, 4> &inv_m)
     {
         inv_m[0][0] = m[1][1] * m[2][2] * m[3][3] -
                       m[1][1] * m[2][3] * m[3][2] -
@@ -732,7 +734,7 @@ namespace UCVLIAG
     }
 
     template <typename T, uint Size>
-    VTKM_EXEC_CONT bool SymmInvertMatrixInnerGeneral(const Matrix<T, Size, Size> &m, Matrix<T, Size, Size> &inv_m)
+    LIAG_FUNC_MACRO bool SymmInvertMatrixInnerGeneral(const Matrix<T, Size, Size> &m, Matrix<T, Size, Size> &inv_m)
     {
         printf("TODO");
         return true;
@@ -740,7 +742,7 @@ namespace UCVLIAG
 
     template <typename T,
               uint Size>
-    VTKM_EXEC_CONT bool SymmInvertMatrix(const Matrix<T, Size, Size> &A, Matrix<T, Size, Size> &AInv)
+    LIAG_FUNC_MACRO bool SymmInvertMatrix(const Matrix<T, Size, Size> &A, Matrix<T, Size, Size> &AInv)
     {
 
         if (Size == 3)
@@ -762,7 +764,7 @@ namespace UCVLIAG
     }
 
     template <typename T, uint Size>
-    VTKM_EXEC_CONT void SymmEigenValues(const Matrix<T, Size, Size> &A, double tol, int maxIter, Vec<T, Size> &eigenValues)
+    LIAG_FUNC_MACRO void SymmEigenValues(const Matrix<T, Size, Size> &A, double tol, int maxIter, Vec<T, Size> &eigenValues)
     {
         // refer to https://www.andreinc.net/2021/01/25/computing-eigenvalues-and-eigenvectors-using-qr-decomposition
         // mat_t ak = *x;
@@ -807,7 +809,7 @@ namespace UCVLIAG
     // using inverse itertaion to compute the eigen vectors
     // https://en.wikipedia.org/wiki/Inverse_iteration
     template <typename T, uint Size>
-    VTKM_EXEC_CONT Matrix<T, Size, Size> SymmEigenVectors(const Matrix<T, Size, Size> &A, const Vec<T, Size> &eigenValues, int maxIter)
+    LIAG_FUNC_MACRO Matrix<T, Size, Size> SymmEigenVectors(const Matrix<T, Size, Size> &A, const Vec<T, Size> &eigenValues, int maxIter)
     {
 
         Matrix<T, Size, Size> eigenVectors;
@@ -884,7 +886,7 @@ namespace UCVLIAG
     }
 
     template <typename T, uint Size>
-    VTKM_EXEC_CONT Matrix<T, Size, Size> SymmEigenDecomposition(const Matrix<T, Size, Size> &A, double tol, int maxIter)
+    LIAG_FUNC_MACRO Matrix<T, Size, Size> SymmEigenDecomposition(const Matrix<T, Size, Size> &A, double tol, int maxIter)
     {
 
         // solve eigen values
