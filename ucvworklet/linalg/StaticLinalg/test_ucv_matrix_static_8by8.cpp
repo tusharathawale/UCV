@@ -36,6 +36,16 @@ double mat_2[8][8] = {
     {0, 0, 0, 0, 0, 0, -122513.914, 0},
     {0, 0, 0, 0.011, 0, 0, 0, -122513.914}};
 
+double mat_3[8][8] = {
+    {0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000},
+    {0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000},
+    {0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000},
+    {0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000, 0.0000000},
+    {0.0000000, 0.0000000, 0.0000000, 0.0000000, 101105.3750000, -4151.5576172, 3730.3315430, -22321.6738281},
+    {0.0000000, 0.0000000, 0.0000000, 0.0000000, -4151.5576172, 15331.9228516, 3638.2165527, 2688.6047363},
+    {0.0000000, 0.0000000, 0.0000000, 0.0000000, 3730.3315430, 3638.2165527, 33748.2148438, -14399.9931641},
+    {0.0000000, 0.0000000, 0.0000000, 0.0000000, -22321.6738281, 2688.6047363, -14399.9931641, 97228.0156250}};
+
 int equal_double(double a, double b)
 {
     if (fabs(a - b) < 0.0001)
@@ -155,7 +165,6 @@ void test_basic_qr()
 
     assert(equal_matrix(&m, &x) == 1);
 }
-
 
 void test_qr2()
 {
@@ -398,6 +407,29 @@ void test_eigen_vectors_decomposition()
     matrix_show(&rst);
 
     assert(equal_matrix(&rst, &x) == 1);
+
+    mat_t x3;
+    for (int i = 0; i < dim; i++)
+    {
+        for (int j = 0; j < dim; j++)
+        {
+            x3.v[i][j] = mat_3[i][j];
+        }
+    }
+
+    A = eigen_vector_decomposition(&x);
+
+    A_trans = A;
+    matrix_transpose(&A_trans);
+
+    rst = matrix_mul(&A, &A_trans);
+
+    puts("A");
+    matrix_show(&A);
+    puts("rst");
+    matrix_show(&rst);
+
+    assert(equal_matrix(&rst, &x3) == 1);
 }
 
 void test_basic_operations()
@@ -430,14 +462,14 @@ void test_basic_operations()
 
 int main()
 {
-    //test_basic_operations();
-    //test_basic_qr();
-    //test_qr2();
-    //test_invert_8by8matrix();
-    test_invert_8by8matrix_2();
-    //test_eigen_values_8by8();
-    //test_eigen_vectors_8by8();
-    // this can only work for the case where eigen value is >=0
-    // test_eigen_vectors_decomposition();
+    // test_basic_operations();
+    // test_basic_qr();
+    // test_qr2();
+    // test_invert_8by8matrix();
+    // test_invert_8by8matrix_2();
+    // test_eigen_values_8by8();
+    // test_eigen_vectors_8by8();
+    //  this can only work for the case where eigen value is >=0
+    test_eigen_vectors_decomposition();
     return 0;
 }

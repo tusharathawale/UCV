@@ -32,14 +32,14 @@ namespace UCVMATH
         int m = DIM, n = DIM; // m is row, n is column
         double v[DIM][DIM] = {{0}};
     };
-    using mat = mat_t*;
+    using mat = mat_t *;
 
     struct vec_t
     {
         int len = DIM;
         double v[DIM] = {0};
     };
-    using vec = vec_t*;
+    using vec = vec_t *;
 
     VTKM_EXEC inline vec_t vec_new(int len)
     {
@@ -477,6 +477,10 @@ namespace UCVMATH
 
         for (int i = DIM - 1; i >= 0; --i)
         {
+            if (i < 0)
+            {
+                break;
+            }
             // The values x[i+1..n-1] have already been calculated
             double s = 0;
             for (int j = i + 1; j < DIM; ++j)
@@ -674,8 +678,8 @@ namespace UCVMATH
             {
                 if (fabs(result[i]) < 0.0002)
                 {
-                    //make sure all value is >0 and we can compute sqrt for it
-                    //there are some numerical errors for computing the eigen values
+                    // make sure all value is >0 and we can compute sqrt for it
+                    // there are some numerical errors for computing the eigen values
                     result[i] = -result[i];
                 }
                 else

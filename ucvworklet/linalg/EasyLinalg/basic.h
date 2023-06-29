@@ -156,7 +156,7 @@ public:
         {
             sum += this->Components[i] * this->Components[i];
         }
-        assert(fabs(sum - 0.0) > 0.000001);
+        assert(fabs(sum - 0.0) > 0.0);
         for (uint i = 0; i < this->NUM_COMPONENTS; i++)
         {
             this->Components[i] = this->Components[i] / sqrt(sum);
@@ -332,7 +332,7 @@ public:
         }
     }
 
-    LIAG_FUNC_MACRO void Show()
+    LIAG_FUNC_MACRO void Show() const
     {
         for (int i = 0; i < this->NUM_ROWS; i++)
         {

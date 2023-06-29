@@ -111,6 +111,9 @@ target_link_libraries(ucv_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
 add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
 target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
+add_executable(ucv_reduce_umc_el ucv_reduce_umc_el.cpp)
+target_link_libraries(ucv_reduce_umc_el ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
 add_executable(ucv_minmax_extraction ucv_minmax_extraction.cpp)
 target_link_libraries(ucv_minmax_extraction ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
