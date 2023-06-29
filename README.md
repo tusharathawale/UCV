@@ -2,6 +2,10 @@ This repo contains some code that use the vtk-m to implement the uncertainty alg
 
 The original name is the UCV, the updated name might be UVM (uncertianty visualizatio based on vkt-m), which might be more make sense.
 
+Related paper:
+
+Wang, Zhe, Tushar M. Athawale, Kenneth Moreland, Jieyang Chen, Chris R. Johnson, and David Pugmire. "FunMC^ 2: A Filter for Uncertainty Visualization of Marching Cubes on Multi-Core Devices." (2023).
+
 ### Build
 
 install example on ubuntu machine:
