@@ -102,6 +102,9 @@ else()
 add_executable(ucv_extract ucv_extract.cpp)
 target_link_libraries(ucv_extract ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
+add_executable(ucv_extract_two_variables ucv_extract_two_variables.cpp)
+target_link_libraries(ucv_extract_two_variables ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
 add_executable(ucv_extract_reduce ucv_extract_reduce.cpp)
 target_link_libraries(ucv_extract_reduce ${VTKm_LIBRARIES} MPI::MPI_CXX)
 

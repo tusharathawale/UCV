@@ -288,6 +288,7 @@ int main(int argc, char *argv[])
     std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
     std::string outputFileName = fileSuffix + std::string("_ReduceMinMax_Two_Variables.vtk");
     vtkm::io::VTKDataSetWriter write(outputFileName);
+    write.SetFileTypeToBinary();
     write.WriteDataSet(reducedDataSet);
 
     return 0;
