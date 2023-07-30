@@ -298,17 +298,9 @@ namespace EASYLINALG
     LIAG_FUNC_MACRO Vec<T, Size> SymmBackSubstitution(const Matrix<T, Size, Size> &A, const Vec<T, Size> &b)
     {
         Vec<double, Size> x(0.0);
-        //when the iteration numbeer is small
-        //the input A is not strict upper trangular sometime?
-        bool ifUpper = A.IsUpperTriangular(0.0003);
+        bool ifUpper = A.IsUpperTriangular(0.00001);
         // TODO, print sth if the A is not upper triangular
-        if (ifUpper == false)
-        {
-            A.Show();
-            std::cout << "ifUpper is supposed to true" << std::endl;
-            exit(-1);
-        }
-        // assert(ifUpper == true);
+        assert(ifUpper == true);
 
         for (int i = Size - 1; i >= 0; --i)
         {
@@ -414,8 +406,10 @@ namespace EASYLINALG
         Eye.InitEye();
 
         Matrix<T, Size, Size> R, Q;
+        int actualIter=0;
         for (int i = 0; i < maxIter; ++i)
         {
+            actualIter=i;
             // s_k is the last item of the first diagonal
             T s = Ak[Size - 1][Size - 1];
             Matrix<T, Size, Size> smulI = MSCALE(s, Eye);
@@ -428,12 +422,15 @@ namespace EASYLINALG
             // addinng smulI back
             Ak = MMMultiply(R, Q) + smulI;
             QQ = MMMultiply(QQ, Q);
-
+            
+            //Ak.Show();
             if (Ak.IsUpperTriangular(tol))
             {
                 break;
             }
         }
+
+        std::cout << "actual iter is " << actualIter << std::endl;
 
         for (int i = 0; i < Size; i++)
         {
@@ -574,22 +571,24 @@ namespace EASYLINALG
     // is supposed to be a symmetric positive definite matrix with all
     // eigen values larger than 0
     template <typename T, uint Size>
-    LIAG_FUNC_MACRO Matrix<T, Size, Size> SymmEigenDecomposition(const Matrix<T, Size, Size> &A, double tol, int maxIter)
+    LIAG_FUNC_MACRO Matrix<T, Size, Size> SymmEigenDecomposition(const Matrix<T, Size, Size> &A, double tol, int maxIter, bool useShift = false)
     {
-
         // solve eigen values
         Vec<T, Size> eigenValues;
         eigenValues.InitZero();
-        SymmEigenValues(A, tol, maxIter, eigenValues);
-        // SymmEigenValuesShift(A, tol, maxIter, eigenValues);
+        if (useShift)
+        {
+            // the values shift converge faster than the naive eigen values case
+            // but it is error prone for some test cases
+            SymmEigenValuesShift(A, tol, maxIter, eigenValues);
+        }
+        else
+        {
+            SymmEigenValues(A, tol, maxIter, eigenValues);
+        }
 
-        // std::cout << "debug eigen decom" << std::endl;
-        // A.Show();
-        // std::cout << "---end decom---" << std::endl;
-
-        // std::cout << "debug eigen values" << std::endl;
-        // eigenValues.Show();
-        // std::cout << "---end eigen values---" << std::endl;
+        std::cout << "eigen values" << std::endl;
+        eigenValues.Show();
 
         // solve eigen vectors
         Matrix<T, Size, Size> eigenVactors;
