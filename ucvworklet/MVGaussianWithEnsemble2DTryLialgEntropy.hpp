@@ -125,7 +125,8 @@ public:
         eigen_solve_eigenvalues(&ucvcov4by4, 0.000001, 50, result);
 
         UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov4by4);
-
+        
+        /*
         if (workIndex == 9896)
         {
             printf("index is %d\n",workIndex);
@@ -134,6 +135,7 @@ public:
             printf("matrix A\n");
             matrix_show(&A);
         }
+        */
 
 
         UCVMATH::vec_t sample_v;

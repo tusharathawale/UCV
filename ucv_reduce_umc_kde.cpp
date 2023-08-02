@@ -16,6 +16,7 @@
 #include "ucvworklet/CreateNewKey.hpp"
 
 
+#include "ucvworklet/HelperProbKDE.hpp"
 #include "ucvworklet/EntropyKDE.hpp"
 #include "ucvworklet/ExtractingRaw.hpp"
 
@@ -166,7 +167,6 @@ int main(int argc, char *argv[])
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> entropyResult;
 
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> postiveProb;
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> negtiveProb;
 
 
     // Step1 creating new key
@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
         timer.Start();
         // generate the new data sets with min and max
         reducedDataSet.AddPointField("ensemble_raw", SOARawArray);
-        reducedDataSet.PrintSummary(std::cout);
+        // reducedDataSet.PrintSummary(std::cout);
 
         // output the dataset into the vtk file for results checking
         //std::string fileSuffix = fileName.substr(0, fileName.size() - 4);
@@ -227,17 +227,22 @@ int main(int argc, char *argv[])
         //vtkm::io::VTKDataSetWriter write(outputFileName);
         //write.WriteDataSet(reducedDataSet);
 
-        // kde distribution
-        using DispatcherEntropyKDE = vtkm::worklet::DispatcherMapField<EntropyKDE>;
+        // compute kde distribution
+        using DispatcherProbKDE = vtkm::worklet::DispatcherMapField<HelperProbKDE>;
+
+        DispatcherProbKDE dispatcherProbKDE(HelperProbKDE{isovalue});
+        dispatcherProbKDE.Invoke(SOARawArray,postiveProb);
+        
+        // compute entropy things
+        // go through cell by points
+        using DispatcherEntropyKDE = vtkm::worklet::DispatcherMapTopology<EntropyKDE>;
 
         DispatcherEntropyKDE dispatcherEntropyKDE(EntropyKDE{isovalue});
-        dispatcherEntropyKDE.Invoke(SOARawArray,postiveProb,negtiveProb);
+        dispatcherEntropyKDE.Invoke(reducedDataSet.GetCellSet(), postiveProb, crossProb, numNonZeroProb, entropyResult);
 
-        // TODO make sure the worklet finish
-        // TODO timer ok to compute uncertainty
-        // auto timer4 = std::chrono::steady_clock::now();
-        // float EntropyUniformTime =
-        //    std::chrono::duration<float, std::milli>(timer4 - timer3).count();
+        //reducedDataSet.AddPointField("postiveProb", postiveProb);
+        //reducedDataSet.PrintSummary(std::cout);
+
         timer.Synchronize();
         timer.Stop();
         std::cout << "EntropyKDE time: " << timer.GetElapsedTime() * 1000 << std::endl;
@@ -255,7 +260,7 @@ int main(int argc, char *argv[])
     reducedDataSet.AddCellField("num_nonzero_prob", numNonZeroProb);
     reducedDataSet.AddCellField("cross_prob", crossProb);
 
-    // reducedDataSet.PrintSummary(std::cout);
+    reducedDataSet.PrintSummary(std::cout);
     std::stringstream stream;
     stream << std::fixed << std::setprecision(2) << isovalue;
     std::string isostr = stream.str();

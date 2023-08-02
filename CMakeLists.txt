@@ -142,6 +142,10 @@ target_link_libraries(test_mvgaussian_redsea_mpi ${VTKm_LIBRARIES} MPI::MPI_CXX)
 add_executable(test_mvgaussian_redsea_as3d test_mvgaussian_redsea_as3d.cpp)
 target_link_libraries(test_mvgaussian_redsea_as3d ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
+
+add_executable(test_mvgaussian_redsea_entropy_diff test_mvgaussian_redsea_entropy_diff.cpp)
+target_link_libraries(test_mvgaussian_redsea_entropy_diff ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
 #add_executable(test_mvgaussian_3d test_mvgaussian_3d.cpp)
 #target_link_libraries(test_mvgaussian_3d ${VTKm_LIBRARIES} MPI::MPI_CXX Eigen3::Eigen)
 
