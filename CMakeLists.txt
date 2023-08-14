@@ -19,15 +19,21 @@ message ("USE_CUDA is setting as: " ${USE_CUDA})
 message ("USE_HIP is setting as: " ${USE_HIP})
 
 if(USE_CUDA)
-set_source_files_properties(ucv_reduce_umc.cpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/EntropyUniform.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/ExtractingMeanRaw.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/ExtractingMeanStdev.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(ucvworklet/ExtractingMinMax.hpp PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(ucvworklet/MVGaussianWithEnsemble3DTryEL.hpp PROPERTIES LANGUAGE "CUDA")
 
+set_source_files_properties(ucv_reduce_umc.cpp PROPERTIES LANGUAGE "CUDA")
 add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
 set_target_properties(ucv_reduce_umc PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
+set_source_files_properties(ucv_reduce_umc_el.cpp PROPERTIES LANGUAGE "CUDA")
+add_executable(ucv_reduce_umc_el ucv_reduce_umc_el.cpp)
+set_target_properties(ucv_reduce_umc_el PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(ucv_reduce_umc_el ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 set_source_files_properties(test_mvgaussian_wind.cpp PROPERTIES LANGUAGE "CUDA")
 add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
@@ -84,6 +90,10 @@ set_source_files_properties(ucvworklet/ExtractingMinMax.hpp PROPERTIES LANGUAGE 
 set_source_files_properties(ucv_reduce_umc.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
 target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIESNOMPI} MPI::MPI_CXX)
+
+set_source_files_properties(ucv_reduce_umc_el.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(ucv_reduce_umc_el ucv_reduce_umc_el.cpp)
+target_link_libraries(ucv_reduce_umc_el ${VTKm_LIBRARIESNOMPI} MPI::MPI_CXX)
 
 set_source_files_properties(test_mvgaussian_wind.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
