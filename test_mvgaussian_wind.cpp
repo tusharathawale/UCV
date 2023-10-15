@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
   //  std::vector<vtkm::cont::ArrayHandle<vtkm::Float64>> componentArrays;
   std::vector<std::vector<vtkm::Float64>> dataArray;
 
-  using Vec15 = vtkm::Vec<double, 15>;
+  using Vec15 = vtkm::Vec<vtkm::FloatDefault, 15>;
 
   vtkm::cont::ArrayHandle<Vec15> dataArraySOA;
 

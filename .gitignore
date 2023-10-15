@@ -9,3 +9,4 @@ src/
 *.png
 *.pdf
 dataset/
+.DS_Store

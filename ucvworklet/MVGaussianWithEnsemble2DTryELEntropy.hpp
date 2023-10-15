@@ -142,7 +142,7 @@ public:
         
         if (workIndex == 9896)
         {
-            printf("index is %d\n",workIndex);
+            printf("index is %lld\n",workIndex);
             printf("matrix ucvcov4by4\n");
             ucvcov4by4.Show();
             printf("matrix A\n");

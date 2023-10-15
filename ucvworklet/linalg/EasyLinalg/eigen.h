@@ -587,8 +587,8 @@ namespace EASYLINALG
             SymmEigenValues(A, tol, maxIter, eigenValues);
         }
 
-        std::cout << "eigen values" << std::endl;
-        eigenValues.Show();
+        //std::cout << "eigen values" << std::endl;
+        //eigenValues.Show();
 
         // solve eigen vectors
         Matrix<T, Size, Size> eigenVactors;
@@ -619,15 +619,11 @@ namespace EASYLINALG
                     assert(false);
                 }
             }
-
             diag[i][i] = sqrt(eigenValues[i]);
         }
-
         Matrix<T, Size, Size> decompA;
         decompA = MMMultiply(eigenVactors, diag);
         return decompA;
     }
-
 }
-
 #endif

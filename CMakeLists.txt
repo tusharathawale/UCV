@@ -4,8 +4,9 @@ add_compile_options(-std=c++14)
 
 #Find the VTK-m package
 find_package(VTKm REQUIRED QUIET)
-set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::vtkmdiympi vtkm::io)
-set(VTKm_LIBRARIESNOMPI vtkm::cont vtkm::filter vtkm::source vtkm::io)
+#set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::vtkmdiympi vtkm::io)
+#NOMPI version
+set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::io)
 
 #Find MPI
 find_package(MPI REQUIRED)
@@ -187,6 +188,8 @@ target_link_libraries(sample_gsl ${VTKm_LIBRARIES} GSL::gsl)
 add_executable(test_gsl_4by4 ./ucvworklet/linalg/trygsl/test_gsl_4by4.cpp)
 target_link_libraries(test_gsl_4by4 GSL::gsl ${VTKm_LIBRARIES})
 
+add_executable(test_syntheticdata_el test_syntheticdata_el.cpp)
+target_link_libraries(test_syntheticdata_el GSL::gsl ${VTKm_LIBRARIES})
 
 endif()
 
