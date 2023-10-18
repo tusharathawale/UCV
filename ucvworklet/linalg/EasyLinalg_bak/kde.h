@@ -1,5 +1,3 @@
-
-
 #ifndef EASY_LIALG_KDE
 #define EASY_LIALG_KDE
 
@@ -24,7 +22,7 @@ namespace EASYLINALG
     // input: data vector,dedicated point, bandwidth(default parameter)
     // output kde results at the dedicated point
     template <typename T, uint Size>
-    LIAG_FUNC_MACRO double KDE1D(const Vec<T, Size> &inputSample, float dedicatedPoint)
+    LIAG_FUNC_MACRO double KDE1D(const Vec<T, Size> &inputSample, float dedicatedPoint, float bandWidth = 0.0)
     {
         // choose the bandWidth according to input if it uses default value
         float h = BandWidthScott(inputSample);
@@ -46,12 +44,12 @@ namespace EASYLINALG
     // pdf
     // f(x) = 1/nh sum K( (x-x_i)/h )
     // cdf t= (x-x_i)/h
-    // F(t<X) = F( (x-x_i)/h<X )
+    // F(t<X) = F( (x-x_i)/h<X )ccbdgnlkvhujhdeefnbtuuervgkffighiivivcufi
 
     // the input value X means
     // that we want to caculate the function where F(x<X)
     template <typename T, uint Size>
-    LIAG_FUNC_MACRO double KDECDF1D(const Vec<T, Size> &inputSample, float X)
+    LIAG_FUNC_MACRO double KDECDF1D(const Vec<T, Size> &inputSample, float X, float bandWidth = 0.0)
     {
         float h = BandWidthScott(inputSample);
         //float h = 1.0;

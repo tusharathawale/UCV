@@ -17,7 +17,7 @@
 
 
 #include "ucvworklet/HelperProbKDE.hpp"
-#include "ucvworklet/EntropyKDE.hpp"
+#include "ucvworklet/KDEEntropy.hpp"
 #include "ucvworklet/ExtractingRaw.hpp"
 
 #include <sstream>
@@ -228,16 +228,16 @@ int main(int argc, char *argv[])
         //write.WriteDataSet(reducedDataSet);
 
         // compute kde distribution
-        using DispatcherProbKDE = vtkm::worklet::DispatcherMapField<HelperProbKDE>;
+        using DispatcherProbKDE = vtkm::worklet::DispatcherMapField<HelperProbKDE<4*4*4>>;
 
-        DispatcherProbKDE dispatcherProbKDE(HelperProbKDE{isovalue});
+        DispatcherProbKDE dispatcherProbKDE(HelperProbKDE<4*4*4>{isovalue});
         dispatcherProbKDE.Invoke(SOARawArray,postiveProb);
         
         // compute entropy things
         // go through cell by points
-        using DispatcherEntropyKDE = vtkm::worklet::DispatcherMapTopology<EntropyKDE>;
+        using DispatcherEntropyKDE = vtkm::worklet::DispatcherMapTopology<KDEEntropy<8,256>>;
 
-        DispatcherEntropyKDE dispatcherEntropyKDE(EntropyKDE{isovalue});
+        DispatcherEntropyKDE dispatcherEntropyKDE(KDEEntropy<8,256>{isovalue});
         dispatcherEntropyKDE.Invoke(reducedDataSet.GetCellSet(), postiveProb, crossProb, numNonZeroProb, entropyResult);
 
         //reducedDataSet.AddPointField("postiveProb", postiveProb);
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 
         timer.Synchronize();
         timer.Stop();
-        std::cout << "EntropyKDE time: " << timer.GetElapsedTime() * 1000 << std::endl;
+        std::cout << "KDEEntropy3D time: " << timer.GetElapsedTime() * 1000 << std::endl;
     }
     else
     {

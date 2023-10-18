@@ -1,11 +1,12 @@
-#ifndef UCV_ENTROPY_KDE_h
-#define UCV_ENTROPY_KDE_h
+#ifndef UCV_KDE_ENTROPY_h
+#define UCV_KDE_ENTROPY_h
 
 #include <vtkm/worklet/WorkletMapTopology.h>
-class EntropyKDE : public vtkm::worklet::WorkletVisitCellsWithPoints
+template <int NumVertecies, int NumCases>
+class KDEEntropy : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    EntropyKDE(double isovalue)
+    KDEEntropy(double isovalue)
         : m_isovalue(isovalue){};
 
     using ControlSignature = void(CellSetIn,
@@ -29,11 +30,10 @@ public:
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numPoints = inPointFieldPostiveProbVec.GetNumberOfComponents();
-        // there are 8 points for each cell
 
-        if (numPoints != 8)
+        if (numPoints != NumVertecies)
         {
-            printf("this is the 3d version for 8 vertecies\n");
+            printf("2d version has 4 vertecies 16(2^4) cases, 3d version has 8 vertecies 256(2^8) cases\n");
             return;
         }
 
@@ -46,16 +46,16 @@ public:
 
         // position 0 is negative
         // position 1 is positive
-        vtkm::Vec<vtkm::Vec2f, 8> ProbList;
+        vtkm::Vec<vtkm::Vec2f, NumVertecies> ProbList;
 
         // there are 2^n total cases
         // int totalNumCases = static_cast<int>(vtkm::Pow(2.0, static_cast<vtkm::FloatDefault>(numPoints)));
-        int totalNumCases = 256;
+        int totalNumCases = NumCases;
         // std::vector<vtkm::FloatDefault> probHistogram;
         // probHistogram.resize(totalNumCases);
         //  std::cout << "debug totalNumCases " << totalNumCases << std::endl;
 
-        vtkm::Vec<vtkm::FloatDefault, 256> probHistogram;
+        vtkm::Vec<vtkm::FloatDefault, NumCases> probHistogram;
 
         for (vtkm::IdComponent pointIndex = 0; pointIndex < numPoints; ++pointIndex)
         {
@@ -118,18 +118,17 @@ public:
         //}
         // printf("debug cuda, ok entropy\n");
     }
-
-    VTKM_EXEC inline void traverseBit(vtkm::Vec<vtkm::Vec2f, 8> &ProbList,
-                                      vtkm::Vec<vtkm::FloatDefault, 256> &probHistogram) const
+    VTKM_EXEC inline void traverseBit(vtkm::Vec<vtkm::Vec2f, NumVertecies> &ProbList,
+                                      vtkm::Vec<vtkm::FloatDefault, NumCases> &probHistogram) const
     {
 
         // go through each option in the case table
         // 1 is positive 0 is negative
         // from case to the cross probability
-        for (vtkm::UInt16 i = 0; i < 256; i++)
+        for (vtkm::UInt16 i = 0; i < NumCases; i++)
         {
             vtkm::FloatDefault currProb = 1.0;
-            for (vtkm::UInt8 j = 0; j < 8; j++)
+            for (vtkm::UInt8 j = 0; j < NumVertecies; j++)
             {
                 if (i & (1 << j))
                 {
@@ -149,8 +148,8 @@ public:
     // using recursive call to go through all possibilities
     // there are some cuda memory issue with recursive call here
     VTKM_EXEC inline void traverse(vtkm::FloatDefault currentProb, int depth, int id, const int numPoints,
-                                   vtkm::Vec<vtkm::Vec2f, 8> &ProbList,
-                                   vtkm::Vec<vtkm::FloatDefault, 256> &probHistogram) const
+                                   vtkm::Vec<vtkm::Vec2f, NumVertecies> &ProbList,
+                                   vtkm::Vec<vtkm::FloatDefault, NumCases> &probHistogram) const
     {
         // TODO, make this as a private variable
         // how to set it as a private variable of the worklet

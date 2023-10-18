@@ -5,393 +5,11 @@
 
 #include "./basic.h"
 #include "./blas.h"
+#include "./qr.h"
+#include "./matrixinv.h"
 
 namespace EASYLINALG
 {
-
-    template <typename T,
-              uint NumRow,
-              uint NumCol>
-    LIAG_FUNC_MACRO void Householder(
-        const Matrix<T, NumRow, NumCol> &A,
-        Matrix<T, NumRow, NumCol> &Q,
-        Matrix<T, NumRow, NumCol> &R)
-    {
-        // current code only works for the symetry matrix
-        assert(NumRow == NumCol);
-        const int msize = NumRow;
-        // Matrix<T, NumRow, NumCol> MList[msize];
-        Matrix<T, NumRow, NumCol> MTemp;
-
-        // operator both for const and non-const
-        // MList[0] = A;
-        MTemp = A;
-
-        R = A;
-        double ANorm;
-
-        Vec<T, msize> Ve;
-        Ve.InitZero();
-        Vec<T, msize> Va;
-        Va.InitZero();
-
-        for (uint k = 1; k < msize; k++)
-        {
-            auto HInit = R.GetMinor(k - 1);
-            // printf("hhd iter%d\n", k);
-            // HInit.Show();
-
-            Va = HInit.GetColum(k - 1);
-
-            // puts("a colum");
-            // Va.Show();
-
-            ANorm = Va.GetNorm();
-
-            // printf("a norm %f\n", ANorm);
-
-            if (A[k - 1][k - 1] > 0)
-                ANorm = -ANorm;
-
-            for (uint i = 0; i < msize; i++)
-                Ve[i] = (i == (k - 1)) ? 1 : 0;
-
-            // puts("ve is");
-            // Ve.Show();
-            // puts("va is");
-            // Va.Show();
-
-            // Ve = ANorm*Ve+Va
-            Ve = AXPY(ANorm, Ve, Va);
-            // puts("after vmadd v vec");
-            // Ve.Show();
-
-            // TODO, only do this when norm is not zero
-            if (Ve.GetNorm() > 0.00001)
-            {
-                Ve.Div(Ve.GetNorm());
-            }
-
-            // puts("after vdiv v vec");
-            // Ve.Show();
-
-            // I-v*v
-            // MList[k] = IMINUSVVT(Ve);
-            MTemp = IMINUSVVT(Ve);
-            // puts("mat_list[k] H is");
-            // MTemp.Show();
-
-            // update Q
-            if (k == 1)
-            {
-                // Q = MList[k];
-                Q = MTemp;
-            }
-            else
-            {
-                // Q = MatrixMultiply(Q, MList[k]);
-                Q = MMMultiply(Q, MTemp);
-            }
-
-            // update R
-            // puts("before updating R");
-            // puts("MList[k]");
-            // MTemp.Show();
-
-            // puts("R");
-            // R.Show();
-
-            // R = MatrixMultiply(MList[k], R);
-            R = MMMultiply(MTemp, R);
-
-            // puts("update R is");
-            // R.Show();
-        }
-    }
-
-    template <typename T>
-    LIAG_FUNC_MACRO bool SymmInvertMatrixInner(const Matrix<T, 3, 3> &m, Matrix<T, 3, 3> &inv_m)
-    {
-        inv_m[0][0] = m[1][1] * m[2][2] - m[1][2] * m[2][1];
-
-        inv_m[1][0] = m[1][2] * m[2][0] - m[1][0] * m[2][2];
-
-        inv_m[2][0] = m[1][0] * m[2][1] - m[1][1] * m[2][0];
-
-        inv_m[0][1] = m[0][2] * m[2][1] - m[0][1] * m[2][2];
-
-        inv_m[1][1] = m[0][0] * m[2][2] - m[0][2] * m[2][0];
-
-        inv_m[2][1] = m[0][1] * m[2][0] - m[0][0] * m[2][1];
-
-        inv_m[0][2] = m[0][1] * m[1][2] - m[0][2] * m[1][1];
-
-        inv_m[1][2] = m[0][2] * m[1][0] - m[0][0] * m[1][2];
-
-        inv_m[2][2] = m[0][0] * m[1][1] - m[0][1] * m[1][0];
-
-        double det = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
-
-        if (det == 0)
-        {
-            printf("singular matrix\n");
-            // matrix_show(m);
-            return false;
-        }
-
-        det = 1.0 / det;
-
-        for (int i = 0; i < 3; i++)
-        {
-            for (int j = 0; j < 3; j++)
-            {
-                inv_m[i][j] = inv_m[i][j] * det;
-            }
-        }
-
-        return true;
-    }
-
-    template <typename T>
-    LIAG_FUNC_MACRO bool SymmInvertMatrixInner(const Matrix<T, 4, 4> &m, Matrix<T, 4, 4> &inv_m)
-    {
-        inv_m[0][0] = m[1][1] * m[2][2] * m[3][3] -
-                      m[1][1] * m[2][3] * m[3][2] -
-                      m[2][1] * m[1][2] * m[3][3] +
-                      m[2][1] * m[1][3] * m[3][2] +
-                      m[3][1] * m[1][2] * m[2][3] -
-                      m[3][1] * m[1][3] * m[2][2];
-
-        inv_m[1][0] = -m[1][0] * m[2][2] * m[3][3] +
-                      m[1][0] * m[2][3] * m[3][2] +
-                      m[2][0] * m[1][2] * m[3][3] -
-                      m[2][0] * m[1][3] * m[3][2] -
-                      m[3][0] * m[1][2] * m[2][3] +
-                      m[3][0] * m[1][3] * m[2][2];
-
-        inv_m[2][0] = m[1][0] * m[2][1] * m[3][3] -
-                      m[1][0] * m[2][3] * m[3][1] -
-                      m[2][0] * m[1][1] * m[3][3] +
-                      m[2][0] * m[1][3] * m[3][1] +
-                      m[3][0] * m[1][1] * m[2][3] -
-                      m[3][0] * m[1][3] * m[2][1];
-
-        inv_m[3][0] = -m[1][0] * m[2][1] * m[3][2] +
-                      m[1][0] * m[2][2] * m[3][1] +
-                      m[2][0] * m[1][1] * m[3][2] -
-                      m[2][0] * m[1][2] * m[3][1] -
-                      m[3][0] * m[1][1] * m[2][2] +
-                      m[3][0] * m[1][2] * m[2][1];
-
-        inv_m[0][1] = -m[0][1] * m[2][2] * m[3][3] +
-                      m[0][1] * m[2][3] * m[3][2] +
-                      m[2][1] * m[0][2] * m[3][3] -
-                      m[2][1] * m[0][3] * m[3][2] -
-                      m[3][1] * m[0][2] * m[2][3] +
-                      m[3][1] * m[0][3] * m[2][2];
-
-        inv_m[1][1] = m[0][0] * m[2][2] * m[3][3] -
-                      m[0][0] * m[2][3] * m[3][2] -
-                      m[2][0] * m[0][2] * m[3][3] +
-                      m[2][0] * m[0][3] * m[3][2] +
-                      m[3][0] * m[0][2] * m[2][3] -
-                      m[3][0] * m[0][3] * m[2][2];
-
-        inv_m[2][1] = -m[0][0] * m[2][1] * m[3][3] +
-                      m[0][0] * m[2][3] * m[3][1] +
-                      m[2][0] * m[0][1] * m[3][3] -
-                      m[2][0] * m[0][3] * m[3][1] -
-                      m[3][0] * m[0][1] * m[2][3] +
-                      m[3][0] * m[0][3] * m[2][1];
-
-        inv_m[3][1] = m[0][0] * m[2][1] * m[3][2] -
-                      m[0][0] * m[2][2] * m[3][1] -
-                      m[2][0] * m[0][1] * m[3][2] +
-                      m[2][0] * m[0][2] * m[3][1] +
-                      m[3][0] * m[0][1] * m[2][2] -
-                      m[3][0] * m[0][2] * m[2][1];
-
-        inv_m[0][2] = m[0][1] * m[1][2] * m[3][3] -
-                      m[0][1] * m[1][3] * m[3][2] -
-                      m[1][1] * m[0][2] * m[3][3] +
-                      m[1][1] * m[0][3] * m[3][2] +
-                      m[3][1] * m[0][2] * m[1][3] -
-                      m[3][1] * m[0][3] * m[1][2];
-
-        inv_m[1][2] = -m[0][0] * m[1][2] * m[3][3] +
-                      m[0][0] * m[1][3] * m[3][2] +
-                      m[1][0] * m[0][2] * m[3][3] -
-                      m[1][0] * m[0][3] * m[3][2] -
-                      m[3][0] * m[0][2] * m[1][3] +
-                      m[3][0] * m[0][3] * m[1][2];
-
-        inv_m[2][2] = m[0][0] * m[1][1] * m[3][3] -
-                      m[0][0] * m[1][3] * m[3][1] -
-                      m[1][0] * m[0][1] * m[3][3] +
-                      m[1][0] * m[0][3] * m[3][1] +
-                      m[3][0] * m[0][1] * m[1][3] -
-                      m[3][0] * m[0][3] * m[1][1];
-
-        inv_m[3][2] = -m[0][0] * m[1][1] * m[3][2] +
-                      m[0][0] * m[1][2] * m[3][1] +
-                      m[1][0] * m[0][1] * m[3][2] -
-                      m[1][0] * m[0][2] * m[3][1] -
-                      m[3][0] * m[0][1] * m[1][2] +
-                      m[3][0] * m[0][2] * m[1][1];
-
-        inv_m[0][3] = -m[0][1] * m[1][2] * m[2][3] +
-                      m[0][1] * m[1][3] * m[2][2] +
-                      m[1][1] * m[0][2] * m[2][3] -
-                      m[1][1] * m[0][3] * m[2][2] -
-                      m[2][1] * m[0][2] * m[1][3] +
-                      m[2][1] * m[0][3] * m[1][2];
-
-        inv_m[1][3] = m[0][0] * m[1][2] * m[2][3] -
-                      m[0][0] * m[1][3] * m[2][2] -
-                      m[1][0] * m[0][2] * m[2][3] +
-                      m[1][0] * m[0][3] * m[2][2] +
-                      m[2][0] * m[0][2] * m[1][3] -
-                      m[2][0] * m[0][3] * m[1][2];
-
-        inv_m[2][3] = -m[0][0] * m[1][1] * m[2][3] +
-                      m[0][0] * m[1][3] * m[2][1] +
-                      m[1][0] * m[0][1] * m[2][3] -
-                      m[1][0] * m[0][3] * m[2][1] -
-                      m[2][0] * m[0][1] * m[1][3] +
-                      m[2][0] * m[0][3] * m[1][1];
-
-        inv_m[3][3] = m[0][0] * m[1][1] * m[2][2] -
-                      m[0][0] * m[1][2] * m[2][1] -
-                      m[1][0] * m[0][1] * m[2][2] +
-                      m[1][0] * m[0][2] * m[2][1] +
-                      m[2][0] * m[0][1] * m[1][2] -
-                      m[2][0] * m[0][2] * m[1][1];
-
-        double det = m[0][0] * inv_m[0][0] +
-                     m[0][1] * inv_m[1][0] +
-                     m[0][2] * inv_m[2][0] +
-                     m[0][3] * inv_m[3][0];
-
-        if (det == 0)
-        {
-            printf("singular matrix for 4by4\n");
-            // matrix_show(m);
-            return false;
-        }
-
-        det = 1.0 / det;
-
-        for (int i = 0; i < 4; i++)
-        {
-            for (int j = 0; j < 4; j++)
-            {
-                inv_m[i][j] = inv_m[i][j] * det;
-            }
-        }
-
-        return true;
-    }
-
-    // refer to
-    // https://www.cs.upc.edu/~jordicf/Teaching/programming/pdf4/MATH03_Gaussian-4slides.pdf
-    template <typename T, uint Size>
-    LIAG_FUNC_MACRO Vec<T, Size> SymmBackSubstitution(const Matrix<T, Size, Size> &A, const Vec<T, Size> &b)
-    {
-        Vec<double, Size> x(0.0);
-        bool ifUpper = A.IsUpperTriangular(0.00001);
-        // TODO, print sth if the A is not upper triangular
-        assert(ifUpper == true);
-
-        for (int i = Size - 1; i >= 0; --i)
-        {
-            // be careful about the last iteration here
-            // it might hit the case where i =-1
-            // in that case, there is error
-            if (i < 0)
-            {
-                break;
-            }
-            double s = 0;
-            // start with one element after i
-            // end with the last element
-
-            for (uint j = (i + 1); j < Size; ++j)
-            {
-                s = s + A[i][j] * x[j];
-            }
-
-            // at the last iteration, i is goes to -1
-            x[i] = (b[i] - s) / A[i][i];
-        }
-        return x;
-    }
-
-    // for small matrix, we use the direact inverse to solve the linear equation
-    // for large matrix, we need to use other method such as qr things to solve
-
-    // TODO, checking singularity for inverting the matrix
-    // refer to https://inst.eecs.berkeley.edu/~ee127/sp21/livebook/l_lineqs_solving.html
-    // computing the A_inv by solving A*A_inv=I computing each colum of A_inv each time
-    template <typename T, uint Size>
-    LIAG_FUNC_MACRO bool SymmInvertMatrixInner(const Matrix<T, Size, Size> &m, Matrix<T, Size, Size> &inv_m)
-    {
-        // TODO return false for singular matrix
-
-        // QR decomposition of matrix
-        Matrix<T, Size, Size> Q;
-        Matrix<T, Size, Size> R;
-        Householder(m, Q, R);
-
-        // puts("inv q r");
-        // Q.Show();
-        // R.Show();
-
-        // Q*R*x=b
-        // R*x = Q_t*b
-        // b is each colum of the I matrix
-        for (uint j = 0; j < Size; j++)
-        {
-            Vec<double, Size> b(0.0);
-            b[j] = 1.0;
-
-            // compute the transpose of Q
-            Matrix<T, Size, Size> Q_t = Q;
-            Q_t.Transpose();
-
-            // puts("Q_t");
-            // Q_t.Show();
-
-            // compute Qt*b
-            Vec<T, Size> Q_tb = MMVultiply(Q_t, b);
-            // puts("Q_tb");
-            // Q_t.Show();
-
-            // using back substition to solve R*x=Q_t*b
-            Vec<T, Size> x = SymmBackSubstitution(R, Q_tb);
-            // printf("colm %d \n for x\n", j);
-            // x.Show();
-
-            // putting associating colum into the jth colum of inv_m matrix
-            for (uint i = 0; i < Size; i++)
-            {
-                inv_m[i][j] = x[i];
-            }
-        }
-        // inv_m.Show();
-        return true;
-    }
-
-    template <typename T,
-              uint Size>
-    LIAG_FUNC_MACRO bool SymmInvertMatrix(const Matrix<T, Size, Size> &A, Matrix<T, Size, Size> &AInv)
-    {
-
-        // it seems there is issue
-        // if we implement different function according to the value of Size
-        SymmInvertMatrixInner(A, AInv);
-        return true;
-    }
-
     template <typename T, uint Size>
     LIAG_FUNC_MACRO void SymmEigenValuesShift(const Matrix<T, Size, Size> &A, double tol, int maxIter, Vec<T, Size> &eigenValues)
     {
@@ -432,7 +50,7 @@ namespace EASYLINALG
 
         std::cout << "actual iter is " << actualIter << std::endl;
 
-        for (int i = 0; i < Size; i++)
+        for (uint i = 0; i < Size; i++)
         {
             if (fabs(Ak[i][i] - 0) < tol)
             {
@@ -475,7 +93,7 @@ namespace EASYLINALG
             }
         }
 
-        for (int i = 0; i < Size; i++)
+        for (uint i = 0; i < Size; i++)
         {
             if (fabs(Ak[i][i] - 0) < tol)
             {
@@ -491,7 +109,7 @@ namespace EASYLINALG
     // using inverse itertaion to compute the eigen vectors
     // https://en.wikipedia.org/wiki/Inverse_iteration
     template <typename T, uint Size>
-    LIAG_FUNC_MACRO Matrix<T, Size, Size> SymmEigenVectors(const Matrix<T, Size, Size> &A, const Vec<T, Size> &eigenValues, int maxIter)
+    LIAG_FUNC_MACRO Matrix<T, Size, Size> SymmEigenVectors(const Matrix<T, Size, Size> &A, const Vec<T, Size> &eigenValues, uint maxIter)
     {
 
         Matrix<T, Size, Size> eigenVectors;
@@ -534,14 +152,14 @@ namespace EASYLINALG
             Vec<T, Size> bPrev;
             Vec<T, Size> bCurr;
             // init as 1
-            for (int i = 0; i < Size; i++)
+            for (uint i = 0; i < Size; i++)
             {
                 bPrev[i] = 1.0;
             }
             uint iterNum = 0;
             while (iterNum < maxIter)
             {
-                bCurr = MMVultiply(A_minus_lambda_inv, bPrev);
+                bCurr = MVMultiply(A_minus_lambda_inv, bPrev);
                 // puts("check mmv");
                 // bCurr.Show();
 
@@ -587,8 +205,8 @@ namespace EASYLINALG
             SymmEigenValues(A, tol, maxIter, eigenValues);
         }
 
-        //std::cout << "eigen values" << std::endl;
-        //eigenValues.Show();
+        // std::cout << "eigen values" << std::endl;
+        // eigenValues.Show();
 
         // solve eigen vectors
         Matrix<T, Size, Size> eigenVactors;
@@ -611,19 +229,22 @@ namespace EASYLINALG
                 {
                     // debug use
                     printf("eigen values are\n");
-                    for (int i = 0; i < Size; i++)
+                    for (uint j = 0; j < Size; j++)
                     {
-                        printf(" %f ", eigenValues[i]);
+                        printf(" %f ", eigenValues[j]);
                     }
                     printf("the eigen value is supposed to be >=0\n");
                     assert(false);
                 }
             }
+
             diag[i][i] = sqrt(eigenValues[i]);
         }
+
         Matrix<T, Size, Size> decompA;
         decompA = MMMultiply(eigenVactors, diag);
         return decompA;
     }
 }
+
 #endif

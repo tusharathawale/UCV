@@ -65,35 +65,16 @@ LIAG_FUNC_MACRO Matrix<T, NumRow, NumCol> MMMultiply(
     return result;
 }
 
-//assuming vector is 1*row, and the matrix is row*column
 template <typename T,
           uint NumRow,
           uint NumCol>
-LIAG_FUNC_MACRO Vec<T, NumCol> VMMultiply(const Vec<T, NumRow> inputV,const Matrix<T, NumRow, NumCol> &inputM)
-{
-    Vec<T, NumCol> result;
-    result.InitZero();
-    for (uint i = 0; i < NumCol; i++)
-    {
-        for (uint j = 0; j < NumRow; j++)
-        {
-            // for each row
-            result[i] += inputV[j]*inputM[j][i];
-        }
-    }
-    return result;
-}
-
-template <typename T,
-          uint NumRow,
-          uint NumCol>
-LIAG_FUNC_MACRO Vec<T, NumRow> MVMultiply(const Matrix<T, NumRow, NumCol> &inputM, const Vec<T, NumCol> inputV)
+LIAG_FUNC_MACRO Vec<T, NumRow> MMVultiply(const Matrix<T, NumRow, NumCol> &inputM, const Vec<T, NumCol> inputV)
 {
     Vec<T, NumRow> result;
     result.InitZero();
-    for (uint i = 0; i < NumRow; i++)
+    for (int i = 0; i < NumRow; i++)
     {
-        for (uint j = 0; j < NumCol; j++)
+        for (int j = 0; j < NumCol; j++)
         {
             // for each row
             result[i] += inputM[i][j] * inputV[j];
@@ -115,10 +96,10 @@ LIAG_FUNC_MACRO Vec<T, NumRow> MMVPV(
     Vec<T, NumRow> AUM;
     AUM.InitZero();
     // Be careful about it, init the vector to zero
-    for (uint i = 0; i < NumRow; i++)
+    for (int i = 0; i < NumRow; i++)
     {
         // adding vector into the matrix
-        for (uint j = 0; j < NumCol; j++)
+        for (int j = 0; j < NumCol; j++)
         {
             AUM[i] = AUM[i] + (A[i][j] * U[j]);
         }

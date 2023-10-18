@@ -5,6 +5,7 @@
 #include <cmath>
 #include "./linalg/EasyLinalg/kde.h"
 
+template <int NumEnsembles>
 class HelperProbKDE : public vtkm::worklet::WorkletMapField
 {
 public:
@@ -28,10 +29,9 @@ public:
         // for each vertex how to process the case where there are multiple variables
         vtkm::IdComponent numPoints = inPointFieldVecEnsemble.GetNumberOfComponents();
         // std::cout<<"the number of points associated with each vertex is "<< numPoints << std::endl;
-        // the numPoints has 64 values
         
         // traverse the inputPointFieldIntoTheEasyLinalg and change it into the dedicated format
-        EASYLINALG::Vec<float, 4 * 4 * 4> ensembles;
+        EASYLINALG::Vec<float, NumEnsembles> ensembles;
         for (vtkm::IdComponent pointIndex = 0; pointIndex < numPoints; ++pointIndex)
         {
             ensembles[pointIndex] = inPointFieldVecEnsemble[pointIndex];

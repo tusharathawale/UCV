@@ -26,7 +26,7 @@ public:
                                   FieldOutCell,
                                   FieldOutCell);
 
-    using ExecutionSignature = void(_2, _3, _4, _5, WorkIndex);
+    using ExecutionSignature = void(_2, _3, _4, _5);
 
     // the first parameter is binded with the worklet
     using InputDomain = _1;
@@ -40,8 +40,7 @@ public:
         const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
         OutCellFieldType1 &outCellFieldCProb,
         OutCellFieldType2 &outCellFieldNumNonzeroProb,
-        OutCellFieldType3 &outCellFieldEntropy,
-        vtkm::Id workIndex) const
+        OutCellFieldType3 &outCellFieldEntropy) const
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
@@ -140,14 +139,14 @@ public:
         // some values are filtered out since it can be in the empty region
         // with 0 values there
         
-        if (workIndex == 9896)
-        {
-            printf("index is %lld\n",workIndex);
-            printf("matrix ucvcov4by4\n");
-            ucvcov4by4.Show();
-            printf("matrix A\n");
-            A.Show();
-        }
+        // if (workIndex == 9896)
+        // {
+        //     printf("index is %lld\n",workIndex);
+        //     printf("matrix ucvcov4by4\n");
+        //     ucvcov4by4.Show();
+        //     printf("matrix A\n");
+        //     A.Show();
+        // }
         
 
         // UCVMATH::vec_t sample_v;

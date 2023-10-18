@@ -7,11 +7,15 @@
 #include <vtkm/cont/ArrayHandleSOA.h>
 #include <vtkm/cont/ArrayCopy.h>
 #include <vtkm/cont/Initialize.h>
-#include <vtkm/filter/clean_grid/CleanGrid.h>
-#include <vtkm/filter/geometry_refinement/Triangulate.h>
 
 #include "ucvworklet/CreateNewKey.hpp"
 #include "ucvworklet/MVGaussianWithEnsemble2DTryELEntropy.hpp"
+
+#include "ucvworklet/HelperProbKDE.hpp"
+#include "ucvworklet/KDEEntropy.hpp"
+
+#include "ucvworklet/ExtractingMeanStdev.hpp"
+#include "ucvworklet/EntropyIndependentGaussian.hpp"
 
 #include <vtkm/cont/Timer.h>
 
@@ -22,9 +26,10 @@
 #include <sstream>
 #include <iomanip>
 
-using SupportedTypesVec = vtkm::List<vtkm::Vec<double, 20>>;
+constexpr int NumEnsembles = 20;
+using SupportedTypesVec = vtkm::List<vtkm::Vec<double, NumEnsembles>>;
 
-void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet,double iso, int numSamples, std::string datatype)
+void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, double iso, int numSamples, std::string strategy)
 {
   timer.Start();
 
@@ -32,24 +37,64 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet,doubl
   vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
   vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
 
-  if (datatype == "poly")
+  // executing the uncertianty thing
+  std::cout << "--strategy is " << strategy << "---" << std::endl;
+
+  auto resolveType = [&](const auto &concrete)
   {
-    std::cout << "poly is not suppoted yet" << std::endl;
-  }
-  else
-  {
-    // executing the uncertianty thing
-    std::cout << "--Test using easy liag library---" << std::endl;
-    using WorkletType = MVGaussianWithEnsemble2DTryELEntropy;
-    using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
-    auto resolveType = [&](const auto &concrete)
+    if (strategy == "ig")
     {
+      // extracting mean and stdev
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> stdevArray;
+
+      using DispatcherType = vtkm::worklet::DispatcherMapField<ExtractingMeanStdevEnsembles>;
+      DispatcherType dispatcher;
+      dispatcher.Invoke(concrete, meanArray, stdevArray);
+
+      using WorkletType = EntropyIndependentGaussian<4, 16>;
+      using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
+
+      DispatcherEntropyIG dispatcherEntropyIG(EntropyIndependentGaussian<4, 16>{iso});
+      dispatcherEntropyIG.Invoke(vtkmDataSet.GetCellSet(), meanArray, stdevArray, crossProbability, numNonZeroProb, entropy);
+    }
+    else if (strategy == "mvg")
+    {
+      using WorkletType = MVGaussianWithEnsemble2DTryELEntropy;
+      using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
       DispatcherType dispatcher(MVGaussianWithEnsemble2DTryELEntropy{iso, numSamples});
       dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability, numNonZeroProb, entropy);
-    };
+    }
+    else if (strategy == "kde")
+    {
 
-    vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
-  }
+      // compute kde distribution
+      using DispatcherProbKDE = vtkm::worklet::DispatcherMapField<HelperProbKDE<NumEnsembles>>;
+
+      DispatcherProbKDE dispatcherProbKDE(HelperProbKDE<NumEnsembles>{iso});
+      vtkm::cont::ArrayHandle<vtkm::FloatDefault> postiveProb;
+
+      dispatcherProbKDE.Invoke(concrete, postiveProb);
+
+      // compute entropy things
+      // go through cell by points
+      using DispatcherEntropyKDE = vtkm::worklet::DispatcherMapTopology<KDEEntropy<4, 16>>;
+
+      DispatcherEntropyKDE dispatcherEntropyKDE(KDEEntropy<4, 16>{iso});
+      dispatcherEntropyKDE.Invoke(vtkmDataSet.GetCellSet(), postiveProb, crossProbability, numNonZeroProb, entropy);
+    }
+    else if (strategy == "mvkde")
+    {
+      // TODO
+      
+    }
+    else
+    {
+      std::cout << "unsupported strategy" << std::endl;
+    }
+  };
+
+  vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
 
   timer.Stop();
 
@@ -67,7 +112,7 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet,doubl
   outputDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
   outputDataSet.AddCellField("entropy" + isostr, entropy);
 
-  std::string outputFileName = "./test_syntheticdata_el_" + datatype + "_" + isostr + ".vtk";
+  std::string outputFileName = "./test_syntheticdata_el_" + strategy + "_" + isostr + ".vtk";
   vtkm::io::VTKDataSetWriter writeCross(outputFileName);
   writeCross.WriteDataSet(outputDataSet);
 }
@@ -96,8 +141,6 @@ int main(int argc, char *argv[])
 
   std::cout << "iso value is: " << isovalue << " num_samples is: " << num_samples << std::endl;
 
-  const int numEnsembles = 20;
-
   vtkm::Id xdim = dim;
   vtkm::Id ydim = dim;
   vtkm::Id zdim = 1;
@@ -105,7 +148,7 @@ int main(int argc, char *argv[])
   const vtkm::Id3 dims(xdim, ydim, zdim);
   vtkm::cont::DataSetBuilderUniform dataSetBuilder;
   vtkm::cont::DataSet vtkmDataSet = dataSetBuilder.Create(dims);
-  using Vec20 = vtkm::Vec<double, numEnsembles>;
+  using Vec20 = vtkm::Vec<double, NumEnsembles>;
   vtkm::cont::ArrayHandle<Vec20> dataArraySOA;
   dataArraySOA.Allocate(dim * dim);
   // this is the original data
@@ -113,7 +156,7 @@ int main(int argc, char *argv[])
   // second dim represent each version of ensemble for all data points
   std::vector<vtkm::cont::ArrayHandle<vtkm::Float64>> dataArray;
 
-  for (int ensId = 0; ensId < numEnsembles; ensId++)
+  for (int ensId = 0; ensId < NumEnsembles; ensId++)
   {
     // load each ensemble data
     std::string fileName = dataPathSuffix + "_" + std::to_string(ensId) + ".vtk";
@@ -137,7 +180,7 @@ int main(int argc, char *argv[])
 
       // each entry has 20 ensembles
       Vec20 ensembles;
-      for (int ensId = 1; ensId <= numEnsembles; ensId++)
+      for (int ensId = 1; ensId <= NumEnsembles; ensId++)
       {
         ensembles[ensId - 1] = dataArray[ensId - 1].ReadPortal().Get(index);
       }
@@ -154,30 +197,12 @@ int main(int argc, char *argv[])
   // vtkm::io::VTKDataSetWriter writeEnsembles(outputFileName);
   // writeEnsembles.WriteDataSet(vtkmDataSet);
 
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
+  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "mvg");
 
-  /*
+  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "ig");
 
-  std::cout << "ok for struc 1" << std::endl;
+  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "kde");
 
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "stru");
-  std::cout << "ok for struc 2" << std::endl;
-
-  // test unstructred grid
-  // convert the original data to the unstructured grid
-  vtkm::filter::clean_grid::CleanGrid clean;
-  auto cleanedDataSet = clean.Execute(vtkmDataSet);
-  cleanedDataSet.PrintSummary(std::cout);
-
-  callWorklet(timer, cleanedDataSet, isovalue, num_samples, "unstru");
-  std::cout << "ok for unstru" << std::endl;
-
-  vtkm::filter::geometry_refinement::Triangulate triangulate;
-  auto tranDataSet = triangulate.Execute(vtkmDataSet);
-  tranDataSet.PrintSummary(std::cout);
-
-  callWorklet(timer, tranDataSet, isovalue, num_samples, "poly");
-  std::cout << "ok for poly" << std::endl;
-  */
+  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "mvkde");
   return 0;
 }

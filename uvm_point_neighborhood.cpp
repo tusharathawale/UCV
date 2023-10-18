@@ -264,10 +264,10 @@ int main(int argc, char *argv[])
         std::cout << "sampling mean and stdev time " << timer.GetElapsedTime() * 1000 << std::endl;
         timer.Synchronize();
         timer.Start();
-        using WorkletType = EntropyIndependentGaussian;
+        using WorkletType = EntropyIndependentGaussian<8,256>;
         using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
-        DispatcherEntropyIG dispatcherEntropyIG(EntropyIndependentGaussian{isovalue});
+        DispatcherEntropyIG dispatcherEntropyIG(EntropyIndependentGaussian<8,256>{isovalue});
         dispatcherEntropyIG.Invoke(reducedDataSet.GetCellSet(), meanArray, stdevArray, crossProb, numNonZeroProb, entropyResult);
         timer.Synchronize();
         timer.Stop();

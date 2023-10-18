@@ -315,9 +315,8 @@ int main(int argc, char *argv[])
         // write.WriteDataSet(reducedDataSet);
 
         // uniform distribution
-        using WorkletType = EntropyUniform;
-        using DispatcherEntropyUniform = vtkm::worklet::DispatcherMapTopology<WorkletType>;
-
+        // using WorkletType = EntropyUniform;
+        // using DispatcherEntropyUniform = vtkm::worklet::DispatcherMapTopology<WorkletType>;
         // DispatcherEntropyUniform dispatcherEntropyUniform(EntropyUniform{isovalue});
         // dispatcherEntropyUniform.Invoke(reducedDataSet.GetCellSet(), minArray, maxArray, crossProb, numNonZeroProb, entropyResult);
 
@@ -359,10 +358,10 @@ int main(int argc, char *argv[])
         std::cout << "ExtractingMeanStdev time: " << timer.GetElapsedTime() * 1000 << std::endl;
         timer.Synchronize();
         timer.Start();
-        using WorkletType = EntropyIndependentGaussian;
+        using WorkletType = EntropyIndependentGaussian<8,256>;
         using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
-        DispatcherEntropyIG dispatcherEntropyIG(EntropyIndependentGaussian{isovalue});
+        DispatcherEntropyIG dispatcherEntropyIG(EntropyIndependentGaussian<8,256>{isovalue});
         dispatcherEntropyIG.Invoke(reducedDataSet.GetCellSet(), meanArray, stdevArray, crossProb, numNonZeroProb, entropyResult);
 
         // TODO timer ok to compute uncertianty

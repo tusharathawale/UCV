@@ -12,8 +12,8 @@ struct ExtractingRaw : public vtkm::worklet::WorkletReduceByKey
     VTKM_EXEC void operator()(
         const OriginalValuesType &originalValues, OutputVecType &rawVec) const
     {
-        vtkm::FloatDefault boxSum = 0;
-        vtkm::Id NumComponents = originalValues.GetNumberOfComponents();
+        //vtkm::FloatDefault boxSum = 0;
+        //vtkm::Id NumComponents = originalValues.GetNumberOfComponents();
 
         for (vtkm::IdComponent index = 0;
              index < originalValues.GetNumberOfComponents(); index++)

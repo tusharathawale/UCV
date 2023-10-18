@@ -1,70 +1,71 @@
-#ifndef UCV_ENTROPY_INDEPEDENT_GAUSSIAN_h
-#define UCV_ENTROPY_INDEPEDENT_GAUSSIAN_h
+// this is a back up version for reference
+// use the KDEEntropy one as the templated version for both 2d and 3d
+#ifndef UCV_KDE_ENTROPY_3D_h
+#define UCV_KDE_ENTROPY_3D_h
 
 #include <vtkm/worklet/WorkletMapTopology.h>
-#include <cmath>
-// compute the entropy and other assocaited uncertainty values *per cell*
-template <int NumVertecies, int NumCases>
-class EntropyIndependentGaussian : public vtkm::worklet::WorkletVisitCellsWithPoints
+class KDEEntropy3D : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    EntropyIndependentGaussian(double isovalue)
+    KDEEntropy3D(double isovalue)
         : m_isovalue(isovalue){};
 
     using ControlSignature = void(CellSetIn,
-                                  FieldInPoint,
                                   FieldInPoint,
                                   FieldOutCell,
                                   FieldOutCell,
                                   FieldOutCell);
 
-    using ExecutionSignature = void(_2, _3, _4, _5, _6);
+    using ExecutionSignature = void(_2, _3, _4, _5);
 
     // the first parameter is binded with the worklet
     using InputDomain = _1;
     // InPointFieldType should be a vector
-    template <typename InPointFieldMeanType, typename InPointFieldStdevType, typename OutCellFieldType1, typename OutCellFieldType2, typename OutCellFieldType3>
+    template <typename InPointFieldType, typename OutCellFieldType1, typename OutCellFieldType2, typename OutCellFieldType3>
 
     VTKM_EXEC void operator()(
-        const InPointFieldMeanType &inPointFieldVecMean,
-        const InPointFieldStdevType &inPointFieldVecStdev,
+        const InPointFieldType &inPointFieldPostiveProbVec,
         OutCellFieldType1 &outCellFieldCProb,
         OutCellFieldType2 &outCellFieldNumNonzeroProb,
         OutCellFieldType3 &outCellFieldEntropy) const
     {
         // how to process the case where there are multiple variables
-        vtkm::IdComponent numPoints = inPointFieldVecMean.GetNumberOfComponents();
-        if (numPoints != NumVertecies)
+        vtkm::IdComponent numPoints = inPointFieldPostiveProbVec.GetNumberOfComponents();
+        // there are 8 points for each cell
+
+        if (numPoints != 8)
         {
-            printf("2d version has 4 vertecies 16(2^4) cases, 3d version has 8 vertecies 256(2^8) cases\n");
+            printf("this is the 3d version for 8 vertecies\n");
             return;
         }
+
         vtkm::FloatDefault allPositiveProb = 1.0;
         vtkm::FloatDefault allNegativeProb = 1.0;
         vtkm::FloatDefault allCrossProb = 0.0;
 
-        vtkm::FloatDefault positiveProb = 0.0;
-        vtkm::FloatDefault negativeProb = 0.0;
+        vtkm::FloatDefault positiveProb;
+        vtkm::FloatDefault negativeProb;
 
-        vtkm::Vec<vtkm::Vec2f, NumVertecies> ProbList;
+        // position 0 is negative
+        // position 1 is positive
+        vtkm::Vec<vtkm::Vec2f, 8> ProbList;
 
         // there are 2^n total cases
         // int totalNumCases = static_cast<int>(vtkm::Pow(2.0, static_cast<vtkm::FloatDefault>(numPoints)));
-        int totalNumCases = NumCases;
-        vtkm::Vec<vtkm::FloatDefault, NumCases> probHistogram;
+        int totalNumCases = 256;
+        // std::vector<vtkm::FloatDefault> probHistogram;
+        // probHistogram.resize(totalNumCases);
+        //  std::cout << "debug totalNumCases " << totalNumCases << std::endl;
+
+        vtkm::Vec<vtkm::FloatDefault, 256> probHistogram;
 
         for (vtkm::IdComponent pointIndex = 0; pointIndex < numPoints; ++pointIndex)
         {
-            vtkm::FloatDefault mean = inPointFieldVecMean[pointIndex];
-            vtkm::FloatDefault stdev = inPointFieldVecStdev[pointIndex];
+            positiveProb = inPointFieldPostiveProbVec[pointIndex];
+            negativeProb = 1.0 - positiveProb;
 
-            // assuming we use the indepedent gaussian distribution
-            // this is the error function to compute Pr[X<=L(m_iso)] for gaussian distribution
-            negativeProb = 0.5 * (1 + std::erf((m_isovalue - mean) / (std::sqrt(2) * stdev)));
-            positiveProb = 1.0 - negativeProb;
-
-            allPositiveProb *= positiveProb;
             allNegativeProb *= negativeProb;
+            allPositiveProb *= positiveProb;
 
             ProbList[pointIndex][0] = negativeProb;
             ProbList[pointIndex][1] = positiveProb;
@@ -73,18 +74,23 @@ public:
         allCrossProb = 1 - allPositiveProb - allNegativeProb;
         outCellFieldCProb = allCrossProb;
 
-        // TODO, use the number of vertesies as another parameter
-        // traverseRec(1.0, 0, 0, numPoints, ProbList, probHistogram);
-        traverseBit(ProbList, probHistogram);
-        // go through each option in the case table
-        // 1 is positive 0 is negative
-        // extracting the entropy or other values based on probHistogram
+        // printf("debug cuda, ok allCrossProb\n");
 
+        // TODO, use the number of vertesies as another parameter
+        // there is recursion call and the nvlink might give warning
+        // such as the stack size can not be determined statically
+        // traverse(1.0, 0, 0, numPoints, ProbList, probHistogram);
+
+        traverseBit(ProbList, probHistogram);
+
+        // extracting the entropy or other values based on probHistogram
         vtkm::FloatDefault entropyValue = 0;
         vtkm::Id nonzeroCases = 0;
         vtkm::FloatDefault templog = 0;
 
-        // use this to check the reuslts as needed
+        // printf("debug cuda, ok probHistogram\n");
+
+        // test
         // vtkm::FloatDefault totalnonzeroProb = 0;
 
         for (int i = 0; i < totalNumCases; i++)
@@ -94,47 +100,48 @@ public:
             {
                 nonzeroCases++;
                 templog = vtkm::Log2(probHistogram[i]);
-                //if (i != 0 && i != totalNumCases - 1)
+                // if (i != 0 && i != totalNumCases - 1)
                 //{
-                //    totalnonzeroProb += probHistogram[i];
-                //}
+                //     totalnonzeroProb += probHistogram[i];
+                // }
             }
             entropyValue = entropyValue + (-probHistogram[i]) * templog;
         }
+
         outCellFieldNumNonzeroProb = nonzeroCases;
         outCellFieldEntropy = entropyValue;
 
-        //if (allCrossProb != 0 || totalnonzeroProb != 0)
+        // if (allCrossProb != 0 || totalnonzeroProb != 0)
         //{
-            // this is for correctness checking
-            //if (fabs(allCrossProb - totalnonzeroProb) > 0.001)
-            //{
-                //std::cout << "bad value " << allCrossProb << " " << totalnonzeroProb << std::endl;
-            //}
+        //     if (fabs(allCrossProb - totalnonzeroProb) > 0.001)
+        //     {
+        // std::cout << "bad value " << allCrossProb << " " << totalnonzeroProb << std::endl;
+        //    }
         //}
-
+        // printf("debug cuda, ok entropy\n");
     }
 
-    VTKM_EXEC inline void traverseBit(vtkm::Vec<vtkm::Vec2f, NumVertecies> &ProbList,
-                                      vtkm::Vec<vtkm::FloatDefault, NumCases> &probHistogram) const
+    VTKM_EXEC inline void traverseBit(vtkm::Vec<vtkm::Vec2f, 8> &ProbList,
+                                      vtkm::Vec<vtkm::FloatDefault, 256> &probHistogram) const
     {
 
         // go through each option in the case table
         // 1 is positive 0 is negative
-        for (uint i = 0; i < NumCases; i++)
+        // from case to the cross probability
+        for (vtkm::UInt16 i = 0; i < 256; i++)
         {
             vtkm::FloatDefault currProb = 1.0;
-            for (uint j = 0; j < NumVertecies; j++)
+            for (vtkm::UInt8 j = 0; j < 8; j++)
             {
                 if (i & (1 << j))
                 {
                     // positive case
-                    currProb = currProb * ProbList[j][1];
+                    currProb *= ProbList[j][1];
                 }
                 else
                 {
                     // negative case
-                    currProb = currProb * ProbList[j][0];
+                    currProb *= ProbList[j][0];
                 }
             }
             probHistogram[i] = currProb;
@@ -142,9 +149,10 @@ public:
     }
 
     // using recursive call to go through all possibilities
-    void traverseRec(vtkm::FloatDefault currentProb, int depth, int id, const int numPoints,
-                     vtkm::Vec<vtkm::Vec2f, NumVertecies> &ProbList,
-                     vtkm::Vec<vtkm::FloatDefault, NumCases> &probHistogram) const
+    // there are some cuda memory issue with recursive call here
+    VTKM_EXEC inline void traverse(vtkm::FloatDefault currentProb, int depth, int id, const int numPoints,
+                                   vtkm::Vec<vtkm::Vec2f, 8> &ProbList,
+                                   vtkm::Vec<vtkm::FloatDefault, 256> &probHistogram) const
     {
         // TODO, make this as a private variable
         // how to set it as a private variable of the worklet
@@ -161,8 +169,8 @@ public:
         vtkm::FloatDefault nextPosProb = currentProb * ProbList[depth][1];
         vtkm::FloatDefault nextNegProb = currentProb * ProbList[depth][0];
 
-        traverseRec(nextPosProb, depth + 1, 1 + (id << 1), numPoints, ProbList, probHistogram);
-        traverseRec(nextNegProb, depth + 1, id << 1, numPoints, ProbList, probHistogram);
+        traverse(nextPosProb, depth + 1, 1 + (id << 1), numPoints, ProbList, probHistogram);
+        traverse(nextNegProb, depth + 1, id << 1, numPoints, ProbList, probHistogram);
         return;
     }
 
@@ -170,4 +178,4 @@ private:
     double m_isovalue;
 };
 
-#endif // UCV_ENTROPY_INDEPEDENT_GAUSSIAN_h
+#endif // EntropyKDE

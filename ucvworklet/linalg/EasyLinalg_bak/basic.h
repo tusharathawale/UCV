@@ -13,7 +13,7 @@ namespace EASYLINALG
 
 // set as necessary header as needed
 // such as one using on GPU
-#define LIAG_FUNC_MACRO __attribute__((visibility("default")))
+#define LIAG_FUNC_MACRO VTKM_EXEC_CONT
 
     template <typename T, uint Size>
     class Vec
@@ -32,43 +32,9 @@ namespace EASYLINALG
             }
         }
 
-        LIAG_FUNC_MACRO Vec(const Vec &src)
-        {
-            assert(this->NUM_COMPONENTS == src.NUM_COMPONENTS);
-            for (uint i = 0; i < Size; ++i)
-            {
-                this->Components[i] = src[i];
-            }
-        }
-
-        // TODO
-        // the += operator should use the original vector
-        // the single + or - should just allocate a new vector
-        LIAG_FUNC_MACRO Vec<T, Size> operator+(const Vec &t) const
-        {
-            assert(this->NUM_COMPONENTS == t.NUM_COMPONENTS);
-            Vec<T, Size> result;
-            for (uint i = 0; i < this->NUM_COMPONENTS; i++)
-            {
-                result[i] = this->Components[i] + t.Components[i];
-            }
-            return result;
-        }
-
-        LIAG_FUNC_MACRO Vec<T, Size> operator-(const Vec &t) const
-        {
-            assert(this->NUM_COMPONENTS == t.NUM_COMPONENTS);
-            Vec<T, Size> result;
-            for (uint i = 0; i < this->NUM_COMPONENTS; i++)
-            {
-                result[i] = this->Components[i] - t.Components[i];
-            }
-            return result;
-        }
-
         // getting element by [] operator
         // return a reference, so the value can be updated further
-        LIAG_FUNC_MACRO T &operator[](int index)
+        LIAG_FUNC_MACRO T &operator[](uint index)
         {
             assert(index >= 0);
             assert(index < this->NUM_COMPONENTS);
@@ -97,14 +63,14 @@ namespace EASYLINALG
 
         still curious about results here, some cases, the object that call the [] is a const object
         */
-        LIAG_FUNC_MACRO const T &operator[](int index) const
+        LIAG_FUNC_MACRO const T &operator[](uint index) const
         {
             assert(index >= 0);
             assert(index < this->NUM_COMPONENTS);
             return this->Components[index];
         }
 
-        LIAG_FUNC_MACRO Vec<T, Size> &operator=(const Vec<T, Size> &t)
+        LIAG_FUNC_MACRO Vec &operator=(const Vec &t)
         {
             assert(this->NUM_COMPONENTS == t.NUM_COMPONENTS);
             for (uint i = 0; i < this->NUM_COMPONENTS; i++)
@@ -114,7 +80,7 @@ namespace EASYLINALG
             return *this;
         }
 
-        LIAG_FUNC_MACRO Vec<T, Size> &operator=(Vec<T, Size> &t)
+        LIAG_FUNC_MACRO Vec &operator=(Vec &t)
         {
             assert(this->NUM_COMPONENTS == t.NUM_COMPONENTS);
             for (uint i = 0; i < this->NUM_COMPONENTS; i++)
@@ -170,9 +136,8 @@ namespace EASYLINALG
                 standardDeviation += pow(this->Components[i] - mean, 2);
             }
 
-            if (sampleStdev)
-            {
-                return sqrt(standardDeviation / (this->NUM_COMPONENTS - 1));
+            if(sampleStdev){
+                return sqrt(standardDeviation / (this->NUM_COMPONENTS-1));
             }
 
             return sqrt(standardDeviation / this->NUM_COMPONENTS);
@@ -242,20 +207,6 @@ namespace EASYLINALG
                     }
                 }
             }
-        }
-
-        // dot product of another vector
-        // assuming vector is
-        LIAG_FUNC_MACRO T dotp(const Vec &t)
-        {
-            T productV = 0;
-            assert(this->NUM_COMPONENTS == t.NUM_COMPONENTS);
-
-            for (uint i = 0; i < this->NUM_COMPONENTS; i++)
-            {
-                productV += this->Components[i] * t.Components[i];
-            }
-            return productV;
         }
     };
 
@@ -348,20 +299,6 @@ namespace EASYLINALG
             return *this;
         }
 
-        LIAG_FUNC_MACRO Matrix (const Matrix &src)
-        {
-            assert(this->NUM_ROWS == src.NUM_ROWS);
-            assert(this->NUM_COLUMNS == src.NUM_COLUMNS);
-
-            for (uint i = 0; i < this->NUM_ROWS; i++)
-            {
-                for (uint j = 0; j < this->NUM_COLUMNS; j++)
-                {
-                    this->Components[i][j] = src.Components[i][j];
-                }
-            }
-        }
-        
         LIAG_FUNC_MACRO Matrix &operator+(Matrix &t)
         {
             assert(this->NUM_ROWS == t.NUM_ROWS);
@@ -377,7 +314,7 @@ namespace EASYLINALG
             return *this;
         }
 
-        LIAG_FUNC_MACRO Matrix<T, RowSize, ColSize> &operator=(Matrix<T, RowSize, ColSize> &t)
+        LIAG_FUNC_MACRO Matrix &operator=(Matrix &t)
         {
             assert(this->NUM_ROWS == t.NUM_ROWS);
             assert(this->NUM_COLUMNS == t.NUM_COLUMNS);
@@ -392,7 +329,7 @@ namespace EASYLINALG
             return *this;
         }
 
-        LIAG_FUNC_MACRO Matrix<T, RowSize, ColSize> &operator=(const Matrix<T, RowSize, ColSize> &t)
+        LIAG_FUNC_MACRO Matrix &operator=(const Matrix &t)
         {
             assert(this->NUM_ROWS == t.NUM_ROWS);
             assert(this->NUM_COLUMNS == t.NUM_COLUMNS);
