@@ -191,6 +191,11 @@ target_link_libraries(test_gsl_4by4 GSL::gsl ${VTKm_LIBRARIES})
 add_executable(test_syntheticdata_el test_syntheticdata_el.cpp)
 target_link_libraries(test_syntheticdata_el GSL::gsl ${VTKm_LIBRARIES})
 
+add_executable(test_syntheticdata_el_sequence test_syntheticdata_el_sequence.cpp)
+target_link_libraries(test_syntheticdata_el_sequence ${VTKm_LIBRARIES})
+
+add_executable(test_vtkm_runvec test_vtkm_runvec.cpp)
+target_link_libraries(test_vtkm_runvec ${VTKm_LIBRARIES})
 endif()
 
 

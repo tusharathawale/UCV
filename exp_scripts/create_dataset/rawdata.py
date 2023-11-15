@@ -15,8 +15,8 @@ def writeStructuredDs(fname, ds):
     writer.Write() 
 
 
-xdim=500
-ydim=500
+xdim=300
+ydim=300
 zdim=1
 
 x,y = np.meshgrid(np.linspace(-1.0,1.0,xdim), np.linspace(-1.0,1.0,ydim))

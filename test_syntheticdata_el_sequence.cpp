@@ -26,7 +26,7 @@
 #include <sstream>
 #include <iomanip>
 
-constexpr int NumEnsembles = 80;
+constexpr int NumEnsembles = 7;
 using SupportedTypesVec = vtkm::List<vtkm::Vec<double, NumEnsembles>>;
 
 void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, double iso, int numSamples, std::string strategy)
@@ -116,7 +116,7 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   outputDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
   outputDataSet.AddCellField("entropy" + isostr, entropy);
 
-  std::string outputFileName = "./test_syntheticdata_el_" + strategy + "_" + isostr + ".vtk";
+  std::string outputFileName = "./test_syntheticdata_el_sequence_" + strategy + "_ens" +  std::to_string(NumEnsembles) + "_iso" + isostr + ".vtk";
   vtkm::io::VTKDataSetWriter writeCross(outputFileName);
   writeCross.WriteDataSet(outputDataSet);
 }
@@ -130,6 +130,7 @@ int main(int argc, char *argv[])
 
   if (argc != 6)
   {
+    //./test_syntheticdata_el_sequence /Users/zw1/Documents/cworkspace/src/UCV/exp_scripts/create_dataset/RawdataPointScalar TestField 300 0.8 1000
     std::cout << "<executable> <SyntheticDataSuffix> <FieldName> <Dim> <iso> <num of sample>" << std::endl;
     exit(0);
   }
@@ -152,8 +153,8 @@ int main(int argc, char *argv[])
   const vtkm::Id3 dims(xdim, ydim, zdim);
   vtkm::cont::DataSetBuilderUniform dataSetBuilder;
   vtkm::cont::DataSet vtkmDataSet = dataSetBuilder.Create(dims);
-  using Vec20 = vtkm::Vec<double, NumEnsembles>;
-  vtkm::cont::ArrayHandle<Vec20> dataArraySOA;
+  using VecCustomize = vtkm::Vec<double, NumEnsembles>;
+  vtkm::cont::ArrayHandle<VecCustomize> dataArraySOA;
   dataArraySOA.Allocate(dim * dim);
   // this is the original data
   // first dim represent number of ensembles
@@ -183,7 +184,7 @@ int main(int argc, char *argv[])
       int index = j * dim + i;
 
       // each entry has 20 ensembles
-      Vec20 ensembles;
+      VecCustomize ensembles;
       for (int ensId = 1; ensId <= NumEnsembles; ensId++)
       {
         ensembles[ensId - 1] = dataArray[ensId - 1].ReadPortal().Get(index);
@@ -201,12 +202,7 @@ int main(int argc, char *argv[])
   // vtkm::io::VTKDataSetWriter writeEnsembles(outputFileName);
   // writeEnsembles.WriteDataSet(vtkmDataSet);
 
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "mvg");
-
   callWorklet(timer, vtkmDataSet, isovalue, num_samples, "ig");
 
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "kde");
-
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "mvkde");
   return 0;
 }
