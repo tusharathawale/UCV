@@ -39,7 +39,6 @@ struct CheckEnsemblesWorklet : vtkm::worklet::WorkletMapField
 
 int main(int argc, char *argv[])
 {
-
     vtkm::cont::InitializeResult initResult = vtkm::cont::Initialize(
         argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
 
@@ -90,8 +89,9 @@ int main(int argc, char *argv[])
     invoke(CheckEnsemblesWorklet{},
            vtkmDataSet.GetField("ensembles").GetData().ExtractArrayFromComponents<ComponentType>());
 
-    // using CastAndCallWithExtractedArray
-    std::cout << "---Try concreteArray " << std::endl;
+    // Using CastAndCallWithExtractedArray (get RecombineVec as the return results) 
+    // and make_ArrayHandleView
+    std::cout << "---Try CastAndCallWithExtractedArray " << std::endl;
     auto resolveType = [&](auto &concreteArray)
     {
         printSummary_ArrayHandle(concreteArray, std::cout);
@@ -108,7 +108,6 @@ int main(int argc, char *argv[])
             }
             std::cout << std::endl;
         }
-        
     };
     vtkmDataSet.GetField("ensembles")
         .GetData()

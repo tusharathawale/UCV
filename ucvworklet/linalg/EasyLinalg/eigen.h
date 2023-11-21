@@ -24,10 +24,10 @@ namespace EASYLINALG
         Eye.InitEye();
 
         Matrix<T, Size, Size> R, Q;
-        int actualIter=0;
+        int actualIter = 0;
         for (int i = 0; i < maxIter; ++i)
         {
-            actualIter=i;
+            actualIter = i;
             // s_k is the last item of the first diagonal
             T s = Ak[Size - 1][Size - 1];
             Matrix<T, Size, Size> smulI = MSCALE(s, Eye);
@@ -40,8 +40,8 @@ namespace EASYLINALG
             // addinng smulI back
             Ak = MMMultiply(R, Q) + smulI;
             QQ = MMMultiply(QQ, Q);
-            
-            //Ak.Show();
+
+            // Ak.Show();
             if (Ak.IsUpperTriangular(tol))
             {
                 break;
@@ -104,6 +104,71 @@ namespace EASYLINALG
                 eigenValues[i] = Ak[i][i];
             }
         }
+    }
+
+    // given an matrix and associated eigen value and then compute associated eigen vectors
+    // the size represent the length of associated eigen vector
+    template <typename T, uint Size>
+    LIAG_FUNC_MACRO Vec<T, Size> ComputeEigenVectors(const Matrix<T, Size, Size> &A, const T &eigenValue, uint maxIter)
+    {
+        Vec<T, Size> eigenVectors(0);
+        Matrix<T, Size, Size> A_minus_lambda_i;
+        Matrix<T, Size, Size> A_minus_lambda_inv;
+        if (fabs(eigenValue - 0.0) < 0.00001)
+        {
+            // the associated eigen vector is all zero
+            return eigenVectors;
+        }
+        // do the inverse iteration
+        double lambda = eigenValue + 0.000001;
+        for (uint ii = 0; ii < Size; ii++)
+        {
+            for (uint jj = 0; jj < Size; jj++)
+            {
+                if (ii == jj)
+                {
+                    A_minus_lambda_i[ii][jj] = A[ii][jj] - lambda;
+                }
+                else
+                {
+                    A_minus_lambda_i[ii][jj] = A[ii][jj];
+                }
+            }
+        }
+
+        bool invertok = SymmInvertMatrix(A_minus_lambda_i, A_minus_lambda_inv);
+        assert(invertok == true);
+
+        Vec<T, Size> bPrev;
+        Vec<T, Size> bCurr;
+        // init as 1
+        for (uint i = 0; i < Size; i++)
+        {
+            bPrev[i] = 1.0;
+        }
+        uint iterNum = 0;
+        while (iterNum < maxIter)
+        {
+            bCurr = MVMultiply(A_minus_lambda_inv, bPrev);
+            // puts("check mmv");
+            // bCurr.Show();
+            bCurr.Normalize();
+            // puts("check norm");
+            // bCurr.Show();
+            if (bCurr.Equal(bPrev))
+            {
+                // results convert
+                break;
+            }
+            bPrev = bCurr;
+            iterNum++;
+        }
+        // assign results to eigen vectors
+        for (uint i = 0; i < Size; i++)
+        {
+            eigenVectors[i] = bCurr[i];
+        }
+        return eigenVectors;
     }
 
     // using inverse itertaion to compute the eigen vectors

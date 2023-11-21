@@ -10,3 +10,7 @@ VTKM_VERSION=vtkm_ucv
 #using binary file
 KOKKOS_REPO=https://github.com/kokkos/kokkos.git
 KOKKOS_VERSION=3.7.01
+
+#EasyLinalg repo
+EASY_LINALG_REPO=https://github.com/wangzhezhe/EasyLinalg.git
+EASY_LINALG_VERSION=main

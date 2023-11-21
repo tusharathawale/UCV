@@ -5,6 +5,13 @@
 
 #include "./basic.h"
 #include "./blas.h"
+
+//reference 
+//https://billc.io/2023/01/kde-from-scratch/
+//https://aakinshin.net/posts/kde-bw/
+//https://medium.com/@BillChen2k/kernel-density-estimation-with-python-from-scratch-c200b187b6c4
+//https://github.com/billchen2k/KDEBandwidth (it seems that Silverman is more accurate)
+
 namespace EASYLINALG
 {
     template <typename T, uint Size>
