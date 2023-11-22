@@ -59,10 +59,10 @@ public:
         // the VecType specifies the number of ensembles
         using VecType = decltype(inPointFieldVecEnsemble[0]);
 
-        meanArray[0] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(0)]);
-        meanArray[1] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(1)]);
-        meanArray[2] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(2)]);
-        meanArray[3] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(3)]);
+        meanArray[0] = find_mean<VecType>(inPointFieldVecEnsemble[0]);
+        meanArray[1] = find_mean<VecType>(inPointFieldVecEnsemble[1]);
+        meanArray[2] = find_mean<VecType>(inPointFieldVecEnsemble[2]);
+        meanArray[3] = find_mean<VecType>(inPointFieldVecEnsemble[3]);
 
         // set the trim options to filter out the 0 values
         if (fabs(meanArray[0]) < 0.000001 && fabs(meanArray[1]) < 0.000001 && fabs(meanArray[2]) < 0.000001 && fabs(meanArray[3]) < 0.000001)
@@ -70,7 +70,6 @@ public:
             outCellFieldCProb = 0;
             return;
         }
-
         // if (workIndex == 0)
         //{
         //     std::cout << meanArray[0] << " " << meanArray[1] << " " << meanArray[2] << " " << meanArray[3] << std::endl;
@@ -100,8 +99,6 @@ public:
         }
 
         vtkm::IdComponent numSamples = m_num_sample;
-        // vtkm::Id numCrossings = 0;
-        // this can be adapted to 3d case
 
         EASYLINALG::Matrix<double, 4, 4> ucvcov4by4;
         int covindex = 0;
@@ -122,51 +119,63 @@ public:
             }
         }
 
-        EASYLINALG::Matrix<double, 4, 4> A = EASYLINALG::SymmEigenDecomposition(ucvcov4by4, 0.00001, 20);
+        // EASYLINALG::Matrix<double, 4, 4> A = EASYLINALG::SymmEigenDecomposition(ucvcov4by4, 0.00001, 20);
+        // Transform the iso value
+        EASYLINALG::Vec<double, 4> transformIso(0);
+        for (int i = 0; i < 4; i++)
+        {
+            transformIso[i] = this->m_isovalue - ucvmeanv[i];
+        }
 
-
-        EASYLINALG::Vec<double, 4> sample_v;
-        EASYLINALG::Vec<double, 4> AUM;
+        // Only compute eigen vector for the largest eigen value
+        EASYLINALG::Vec<double, 4> eigenValues;
+        EASYLINALG::SymmEigenValues(ucvcov4by4, 0.00001, 1000, eigenValues);
+        double largestEigen = 0;
+        for (int i = 0; i < 4; i++)
+        {
+            largestEigen = vtkm::Max(largestEigen, eigenValues[i]);
+        }
+        // LIAG_FUNC_MACRO Vec<T, Size> ComputeEigenVectors(const Matrix<T, Size, Size> &A, const T &eigenValue, uint maxIter)
+        EASYLINALG::Vec<double, 4> eigenVectors = EASYLINALG::ComputeEigenVectors(ucvcov4by4, largestEigen, 20);
+        double sample_v;
 
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
-        thrust::random::normal_distribution<double> norm;
+        thrust::random::normal_distribution<double> norm(0,1);
 #else
         std::mt19937 rng;
         rng.seed(std::mt19937::default_seed);
-        std::normal_distribution<double> norm;
+        std::normal_distribution<double> norm(0,1);
 #endif // VTKM_CUDA
-
+        
         vtkm::Vec<vtkm::FloatDefault, 16> probHistogram;
         for (int i = 0; i < 16; i++)
         {
             probHistogram[i] = 0.0;
         }
-
+        
         for (vtkm::Id n = 0; n < numSamples; ++n)
         {
             // get sample vector
-            for (int i = 0; i < 4; i++)
-            {
-                sample_v[i] = norm(rng);
-            }
-
-            // Ax+b operation
-            AUM = EASYLINALG::DGEMV(1.0, A, sample_v, 1.0, ucvmeanv);
-
+            // only use the largest eigen value currently
+            // refer this for detailed ideas:
+            // https://stephens999.github.io/fiveMinuteStats/mvnorm_eigen.html
+            // only need to sample it one time
+            sample_v = largestEigen*norm(rng);
+        
             // compute the specific position
             // map > or < to specific cases
             uint caseValue = 0;
             for (uint i = 0; i < 4; i++)
             {
                 // setting associated position to 1 if iso larger then specific cases
-                if (m_isovalue >= AUM[i])
+                if (transformIso[i] >= (eigenVectors[i]*sample_v))
                 {
                     caseValue = (1 << i) | caseValue;
                 }
+                // the associated pos is 0 otherwise
             }
-
-            // the associated pos is 0 otherwise
+            
             probHistogram[caseValue] = probHistogram[caseValue] + 1.0;
         }
 

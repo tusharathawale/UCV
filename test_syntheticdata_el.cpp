@@ -10,6 +10,7 @@
 
 #include "ucvworklet/CreateNewKey.hpp"
 #include "ucvworklet/MVGaussianWithEnsemble2DTryELEntropy.hpp"
+#include "ucvworklet/MVGaussianWithEnsemble2DTryELEntropyLessEigens.hpp"
 
 #include "ucvworklet/HelperProbKDE.hpp"
 #include "ucvworklet/KDEEntropy.hpp"
@@ -26,7 +27,7 @@
 #include <sstream>
 #include <iomanip>
 
-constexpr int NumEnsembles = 80;
+constexpr int NumEnsembles = 20;
 using SupportedTypesVec = vtkm::List<vtkm::Vec<double, NumEnsembles>>;
 
 void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, double iso, int numSamples, std::string strategy)
@@ -65,6 +66,13 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
       DispatcherType dispatcher(MVGaussianWithEnsemble2DTryELEntropy{iso, numSamples});
       dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability, numNonZeroProb, entropy);
     }
+    else if (strategy == "mvg_less")
+    {
+      using WorkletType = MVGaussianWithEnsemble2DTryELEntropyLessEigens;
+      using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
+      DispatcherType dispatcher(MVGaussianWithEnsemble2DTryELEntropyLessEigens{iso, numSamples});
+      dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability, numNonZeroProb, entropy);
+    }
     else if (strategy == "kde")
     {
 
@@ -90,7 +98,6 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
       // adjust the positive probabilty based on density value
       // ? How to decide the positiv value, 1d case has the elf function
       // should we also do the sampling for this case?
-
     }
     else
     {
@@ -184,9 +191,9 @@ int main(int argc, char *argv[])
 
       // each entry has 20 ensembles
       Vec20 ensembles;
-      for (int ensId = 1; ensId <= NumEnsembles; ensId++)
+      for (int ensId = 0; ensId < NumEnsembles; ensId++)
       {
-        ensembles[ensId - 1] = dataArray[ensId - 1].ReadPortal().Get(index);
+        ensembles[ensId] = dataArray[ensId].ReadPortal().Get(index);
       }
 
       dataArraySOA.WritePortal().Set(index, ensembles);
@@ -203,10 +210,12 @@ int main(int argc, char *argv[])
 
   callWorklet(timer, vtkmDataSet, isovalue, num_samples, "mvg");
 
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "ig");
+  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "mvg_less");
 
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "kde");
+  // callWorklet(timer, vtkmDataSet, isovalue, num_samples, "ig");
 
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "mvkde");
+  // callWorklet(timer, vtkmDataSet, isovalue, num_samples, "kde");
+
+  // callWorklet(timer, vtkmDataSet, isovalue, num_samples, "mvkde");
   return 0;
 }
