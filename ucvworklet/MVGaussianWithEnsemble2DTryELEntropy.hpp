@@ -59,13 +59,26 @@ public:
         // the VecType specifies the number of ensembles
         using VecType = decltype(inPointFieldVecEnsemble[0]);
 
-        meanArray[0] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(0)]);
-        meanArray[1] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(1)]);
-        meanArray[2] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(2)]);
-        meanArray[3] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(3)]);
+        meanArray[0] = find_mean<VecType>(inPointFieldVecEnsemble[(0)]);
+        meanArray[1] = find_mean<VecType>(inPointFieldVecEnsemble[(1)]);
+        meanArray[2] = find_mean<VecType>(inPointFieldVecEnsemble[(2)]);
+        meanArray[3] = find_mean<VecType>(inPointFieldVecEnsemble[(3)]);
 
         // set the trim options to filter out the 0 values
-        if (fabs(meanArray[0]) < 0.000001 && fabs(meanArray[1]) < 0.000001 && fabs(meanArray[2]) < 0.000001 && fabs(meanArray[3]) < 0.000001)
+        // if (fabs(meanArray[0]) < 0.000001 && fabs(meanArray[1]) < 0.000001 && fabs(meanArray[2]) < 0.000001 && fabs(meanArray[3]) < 0.000001)
+        // {
+        //     outCellFieldCProb = 0;
+        //     return;
+        // }
+
+        double cellMin = vtkm::Infinity64();
+        double cellMax = vtkm::NegativeInfinity64();
+        for (int i = 0; i < 4; i++)
+        {
+            find_min_max<VecType>(inPointFieldVecEnsemble[i], cellMin, cellMax);
+        }
+
+        if (this->m_isovalue < cellMin || this->m_isovalue > cellMax)
         {
             outCellFieldCProb = 0;
             return;
@@ -134,7 +147,7 @@ public:
 
         // UCVMATH::mat_t AOriginal = UCVMATH::eigen_vector_decomposition(&ucvcov4by4_original);
         // gsl_matrix *A = UCVMATH_CSTM_GSL::gsl_eigen_vector_decomposition(ucvcov4by4);
-        EASYLINALG::Matrix<double, 4, 4> A = EASYLINALG::SymmEigenDecomposition(ucvcov4by4, 0.00001, 20);
+        EASYLINALG::Matrix<double, 4, 4> A = EASYLINALG::SymmEigenDecomposition(ucvcov4by4, 0.00001, 200);
 
         // some values are filtered out since it can be in the empty region
         // with 0 values there
@@ -258,6 +271,18 @@ public:
         printf("error, failed to compute updateIndex4\n");
 
         return 0;
+    }
+
+        template <typename VecType>
+    VTKM_EXEC void find_min_max(const VecType &arr, vtkm::Float64 &min, vtkm::Float64 &max) const
+    {
+        vtkm::Id num = arr.GetNumberOfComponents();
+        for (vtkm::Id i = 0; i < arr.GetNumberOfComponents(); i++)
+        {
+            min = vtkm::Min(min, arr[i]);
+            max = vtkm::Max(max, arr[i]);
+        }
+        return;
     }
 
     template <typename VecType>

@@ -26,7 +26,7 @@ public:
                                   FieldOutCell,
                                   FieldOutCell);
 
-    using ExecutionSignature = void(_2, _3, _4, _5);
+    using ExecutionSignature = void(_2, _3, _4, _5, WorkIndex);
 
     // the first parameter is binded with the worklet
     using InputDomain = _1;
@@ -40,7 +40,7 @@ public:
         const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
         OutCellFieldType1 &outCellFieldCProb,
         OutCellFieldType2 &outCellFieldNumNonzeroProb,
-        OutCellFieldType3 &outCellFieldEntropy) const
+        OutCellFieldType3 &outCellFieldEntropy, vtkm::Id workIndex) const
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
@@ -64,12 +64,32 @@ public:
         meanArray[2] = find_mean<VecType>(inPointFieldVecEnsemble[2]);
         meanArray[3] = find_mean<VecType>(inPointFieldVecEnsemble[3]);
 
-        // set the trim options to filter out the 0 values
-        if (fabs(meanArray[0]) < 0.000001 && fabs(meanArray[1]) < 0.000001 && fabs(meanArray[2]) < 0.000001 && fabs(meanArray[3]) < 0.000001)
+        // if (fabs(meanArray[0]) < 0.000001 && fabs(meanArray[1]) < 0.000001 && fabs(meanArray[2]) < 0.000001 && fabs(meanArray[3]) < 0.000001)
+        //{
+        //     outCellFieldCProb = 0;
+        //     return;
+        // }
+
+        // set the trim options to filter out values that does not contain the iso value
+        // there is no cross prob for this values
+        // find min and cell for all cell values
+        double cellMin = vtkm::Infinity64();
+        double cellMax = vtkm::NegativeInfinity64();
+        for (int i = 0; i < 4; i++)
+        {
+            find_min_max<VecType>(inPointFieldVecEnsemble[i], cellMin, cellMax);
+        }
+
+        //printf("---debug workindex %d\n min %lf max %lf\n",workIndex,cellMin,cellMax);
+
+        if (this->m_isovalue < cellMin || this->m_isovalue > cellMax)
         {
             outCellFieldCProb = 0;
             return;
         }
+
+
+
         // if (workIndex == 0)
         //{
         //     std::cout << meanArray[0] << " " << meanArray[1] << " " << meanArray[2] << " " << meanArray[3] << std::endl;
@@ -119,6 +139,11 @@ public:
             }
         }
 
+        if(workIndex==910 || workIndex==977){
+            printf("---debug cov matrix index %d\n",workIndex);
+            ucvcov4by4.Show();
+        }
+
         // EASYLINALG::Matrix<double, 4, 4> A = EASYLINALG::SymmEigenDecomposition(ucvcov4by4, 0.00001, 20);
         // Transform the iso value
         EASYLINALG::Vec<double, 4> transformIso(0);
@@ -129,31 +154,45 @@ public:
 
         // Only compute eigen vector for the largest eigen value
         EASYLINALG::Vec<double, 4> eigenValues;
-        EASYLINALG::SymmEigenValues(ucvcov4by4, 0.00001, 1000, eigenValues);
-        double largestEigen = 0;
+        EASYLINALG::SymmEigenValues(ucvcov4by4, 0.00001, 200, eigenValues);
+        if(workIndex==910 || workIndex==977){
+            printf("---debug eigen values\n");
+            eigenValues.Show();
+        }
+        double largestEigen = vtkm::NegativeInfinity64();
         for (int i = 0; i < 4; i++)
         {
-            largestEigen = vtkm::Max(largestEigen, eigenValues[i]);
+            if (eigenValues[i] > largestEigen)
+            {
+                largestEigen = eigenValues[i];
+            }
         }
         // LIAG_FUNC_MACRO Vec<T, Size> ComputeEigenVectors(const Matrix<T, Size, Size> &A, const T &eigenValue, uint maxIter)
-        EASYLINALG::Vec<double, 4> eigenVectors = EASYLINALG::ComputeEigenVectors(ucvcov4by4, largestEigen, 20);
+        EASYLINALG::Vec<double, 4> eigenVectors = EASYLINALG::ComputeEigenVectors(ucvcov4by4, largestEigen, 200);
+                if(workIndex==910 || workIndex==977){
+            printf("---debug eigen eigenVectors\n");
+            eigenVectors.Show();
+        }
         double sample_v;
 
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
-        thrust::random::normal_distribution<double> norm(0,1);
+        thrust::random::normal_distribution<double> norm(0, 1);
 #else
         std::mt19937 rng;
         rng.seed(std::mt19937::default_seed);
-        std::normal_distribution<double> norm(0,1);
+        //rng.seed(10);
+        std::normal_distribution<double> norm(0, 1);
 #endif // VTKM_CUDA
-        
+
         vtkm::Vec<vtkm::FloatDefault, 16> probHistogram;
         for (int i = 0; i < 16; i++)
         {
             probHistogram[i] = 0.0;
         }
-        
+
+        double sqrtEigen = vtkm::Sqrt(largestEigen);
+
         for (vtkm::Id n = 0; n < numSamples; ++n)
         {
             // get sample vector
@@ -161,21 +200,21 @@ public:
             // refer this for detailed ideas:
             // https://stephens999.github.io/fiveMinuteStats/mvnorm_eigen.html
             // only need to sample it one time
-            sample_v = largestEigen*norm(rng);
-        
+            sample_v = sqrtEigen * norm(rng);
+
             // compute the specific position
             // map > or < to specific cases
             uint caseValue = 0;
             for (uint i = 0; i < 4; i++)
             {
-                // setting associated position to 1 if iso larger then specific cases
-                if (transformIso[i] >= (eigenVectors[i]*sample_v))
+                // setting associated position to 1 if iso is larger than specific cases
+                if (transformIso[i] >= (eigenVectors[i] * sample_v))
                 {
                     caseValue = (1 << i) | caseValue;
                 }
                 // the associated pos is 0 otherwise
             }
-            
+
             probHistogram[caseValue] = probHistogram[caseValue] + 1.0;
         }
 
@@ -236,6 +275,18 @@ public:
         printf("error, failed to compute updateIndex4\n");
 
         return 0;
+    }
+
+    template <typename VecType>
+    VTKM_EXEC void find_min_max(const VecType &arr, vtkm::Float64 &min, vtkm::Float64 &max) const
+    {
+        vtkm::Id num = arr.GetNumberOfComponents();
+        for (vtkm::Id i = 0; i < arr.GetNumberOfComponents(); i++)
+        {
+            min = vtkm::Min(min, arr[i]);
+            max = vtkm::Max(max, arr[i]);
+        }
+        return;
     }
 
     template <typename VecType>

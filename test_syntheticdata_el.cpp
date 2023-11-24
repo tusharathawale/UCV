@@ -27,10 +27,10 @@
 #include <sstream>
 #include <iomanip>
 
-constexpr int NumEnsembles = 20;
+constexpr int NumEnsembles = 15;
 using SupportedTypesVec = vtkm::List<vtkm::Vec<double, NumEnsembles>>;
 
-void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, double iso, int numSamples, std::string strategy)
+void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, double iso, int numSamples, std::string dataPathSuffix, std::string strategy)
 {
   timer.Start();
 
@@ -39,10 +39,12 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
 
   // executing the uncertianty thing
-  std::cout << "--strategy is " << strategy << "---" << std::endl;
-
+  //std::cout << "--strategy is " << strategy << "---" << std::endl;
+  //std::cout << "---checking output data 1" << std::endl;
+  //vtkmDataSet.PrintSummary(std::cout);
   auto resolveType = [&](const auto &concrete)
   {
+
     if (strategy == "ig")
     {
       // extracting mean and stdev
@@ -106,6 +108,9 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   };
 
   vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
+  
+  // std::cout << "---checking output data 2" << std::endl;
+  // vtkmDataSet.PrintSummary(std::cout);
 
   timer.Stop();
 
@@ -123,8 +128,12 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   outputDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
   outputDataSet.AddCellField("entropy" + isostr, entropy);
 
-  std::string outputFileName = "./test_syntheticdata_el_" + strategy + "_" + isostr + ".vtk";
+  // std::cout << "---checking output data 3" << std::endl;
+  // outputDataSet.PrintSummary(std::cout);
+
+  std::string outputFileName = "./test_syntheticdata_el_" + dataPathSuffix + "_" + strategy + "_" + isostr + ".vtk";
   vtkm::io::VTKDataSetWriter writeCross(outputFileName);
+  writeCross.SetFileTypeToAscii();
   writeCross.WriteDataSet(outputDataSet);
 }
 
@@ -178,41 +187,50 @@ int main(int argc, char *argv[])
     // store the ensemble slice by slice
     vtkm::cont::ArrayHandle<vtkm::Float64> fieldDataArray;
     vtkm::cont::ArrayCopyShallowIfPossible(inData.GetField(fieldName).GetData(), fieldDataArray);
-
     dataArray.push_back(fieldDataArray);
+    if(ensId==2){
+      std::cout << "debug fileName " << fileName << std::endl;
+      std::cout << "debug value " << fieldDataArray.ReadPortal().Get(0) << std::endl;
+    }
   }
 
-  // do through the data array and put them into the dataArraySOA
-  for (int j = 0; j < dim; j++)
+  // go through the data array and put them into the dataArraySOA
+  for (int i = 0; i < dim; i++)
   {
-    for (int i = 0; i < dim; i++)
+    for (int j = 0; j < dim; j++)
     {
+      //using another direaction, column first (the same operation with previous python data)
       int index = j * dim + i;
 
       // each entry has 20 ensembles
       Vec20 ensembles;
       for (int ensId = 0; ensId < NumEnsembles; ensId++)
       {
-        ensembles[ensId] = dataArray[ensId].ReadPortal().Get(index);
-      }
 
+        ensembles[ensId] = dataArray[ensId].ReadPortal().Get(index);
+          if(index==0){
+          std::cout << "debug index ensId" << ensId << " " << ensembles[ensId] << std::endl;
+        }
+      }
       dataArraySOA.WritePortal().Set(index, ensembles);
     }
   }
 
-  vtkmDataSet.AddPointField("ensembles", dataArraySOA);
-  std::cout << "checking input dataset" << std::endl;
-  vtkmDataSet.PrintSummary(std::cout);
+  // vtkmDataSet.AddPointField("ensembles", dataArraySOA);
+  // std::cout << "checking input dataset" << std::endl;
+  // vtkmDataSet.PrintSummary(std::cout);
 
   // std::string outputFileName = "./red_sea_ens_slice_" + std::to_string(sliceId) + ".vtk";
   // vtkm::io::VTKDataSetWriter writeEnsembles(outputFileName);
   // writeEnsembles.WriteDataSet(vtkmDataSet);
 
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "mvg");
+  callWorklet(timer, vtkmDataSet, isovalue, num_samples, fieldName, "mvg");
+  
+  //checking reuslts
 
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "mvg_less");
+  callWorklet(timer, vtkmDataSet, isovalue, num_samples, fieldName, "mvg_less");
 
-  // callWorklet(timer, vtkmDataSet, isovalue, num_samples, "ig");
+  callWorklet(timer, vtkmDataSet, isovalue, num_samples, fieldName, "ig");
 
   // callWorklet(timer, vtkmDataSet, isovalue, num_samples, "kde");
 

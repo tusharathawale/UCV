@@ -56,7 +56,7 @@ if __name__ == "__main__":
     for p in pointArrayNp:
         # mu is current point, sigma is 1
         mu=p
-        sigma=0.05
+        sigma=0.02
         # TODO, use multimodal distribution to add noise
         ensembles_each_point = np.random.normal(mu, sigma, numEnsembleMem)
         ensemble_all.append(ensembles_each_point)
