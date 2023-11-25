@@ -11,6 +11,7 @@
 #include "ucvworklet/CreateNewKey.hpp"
 #include "ucvworklet/MVGaussianWithEnsemble2DTryELEntropy.hpp"
 #include "ucvworklet/MVGaussianWithEnsemble2DTryELEntropyLessEigens.hpp"
+#include "ucvworklet/MVGaussianWithEnsemble2DTryELEntropyLessEigensSanity.hpp"
 
 #include "ucvworklet/HelperProbKDE.hpp"
 #include "ucvworklet/KDEEntropy.hpp"
@@ -39,12 +40,11 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
 
   // executing the uncertianty thing
-  //std::cout << "--strategy is " << strategy << "---" << std::endl;
-  //std::cout << "---checking output data 1" << std::endl;
-  //vtkmDataSet.PrintSummary(std::cout);
+  // std::cout << "--strategy is " << strategy << "---" << std::endl;
+  // std::cout << "---checking output data 1" << std::endl;
+  // vtkmDataSet.PrintSummary(std::cout);
   auto resolveType = [&](const auto &concrete)
   {
-
     if (strategy == "ig")
     {
       // extracting mean and stdev
@@ -73,6 +73,13 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
       using WorkletType = MVGaussianWithEnsemble2DTryELEntropyLessEigens;
       using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
       DispatcherType dispatcher(MVGaussianWithEnsemble2DTryELEntropyLessEigens{iso, numSamples});
+      dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability, numNonZeroProb, entropy);
+    }
+    else if (strategy == "mvg_sanity")
+    {
+      using WorkletType = MVGaussianWithEnsemble2DTryELEntropyLessEigensSanity;
+      using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
+      DispatcherType dispatcher(MVGaussianWithEnsemble2DTryELEntropyLessEigensSanity{iso, numSamples});
       dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability, numNonZeroProb, entropy);
     }
     else if (strategy == "kde")
@@ -108,7 +115,7 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   };
 
   vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
-  
+
   // std::cout << "---checking output data 2" << std::endl;
   // vtkmDataSet.PrintSummary(std::cout);
 
@@ -188,7 +195,8 @@ int main(int argc, char *argv[])
     vtkm::cont::ArrayHandle<vtkm::Float64> fieldDataArray;
     vtkm::cont::ArrayCopyShallowIfPossible(inData.GetField(fieldName).GetData(), fieldDataArray);
     dataArray.push_back(fieldDataArray);
-    if(ensId==2){
+    if (ensId == 2)
+    {
       std::cout << "debug fileName " << fileName << std::endl;
       std::cout << "debug value " << fieldDataArray.ReadPortal().Get(0) << std::endl;
     }
@@ -199,7 +207,7 @@ int main(int argc, char *argv[])
   {
     for (int j = 0; j < dim; j++)
     {
-      //using another direaction, column first (the same operation with previous python data)
+      // using another direaction, column first (the same operation with previous python data)
       int index = j * dim + i;
 
       // each entry has 20 ensembles
@@ -208,7 +216,8 @@ int main(int argc, char *argv[])
       {
 
         ensembles[ensId] = dataArray[ensId].ReadPortal().Get(index);
-          if(index==0){
+        if (index == 0)
+        {
           std::cout << "debug index ensId" << ensId << " " << ensembles[ensId] << std::endl;
         }
       }
@@ -216,7 +225,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  // vtkmDataSet.AddPointField("ensembles", dataArraySOA);
+  vtkmDataSet.AddPointField("ensembles", dataArraySOA);
   // std::cout << "checking input dataset" << std::endl;
   // vtkmDataSet.PrintSummary(std::cout);
 
@@ -225,10 +234,12 @@ int main(int argc, char *argv[])
   // writeEnsembles.WriteDataSet(vtkmDataSet);
 
   callWorklet(timer, vtkmDataSet, isovalue, num_samples, fieldName, "mvg");
-  
-  //checking reuslts
+
+  // checking reuslts
 
   callWorklet(timer, vtkmDataSet, isovalue, num_samples, fieldName, "mvg_less");
+
+  callWorklet(timer, vtkmDataSet, isovalue, num_samples, fieldName, "mvg_sanity");
 
   callWorklet(timer, vtkmDataSet, isovalue, num_samples, fieldName, "ig");
 

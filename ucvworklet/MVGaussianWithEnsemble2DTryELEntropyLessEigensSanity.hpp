@@ -1,5 +1,5 @@
-#ifndef UCV_MULTIVARIANT_GAUSSIAN2D_EL_h
-#define UCV_MULTIVARIANT_GAUSSIAN2D_EL_h
+#ifndef UCV_MULTIVARIANT_GAUSSIAN2D_EL_LESS_EIGENS_SANITY_h
+#define UCV_MULTIVARIANT_GAUSSIAN2D_EL_LESS_EIGENS_SANITY_h
 
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <cmath>
@@ -14,10 +14,10 @@
 #include <random>
 #endif // VTKM_CUDA
 
-class MVGaussianWithEnsemble2DTryELEntropy : public vtkm::worklet::WorkletVisitCellsWithPoints
+class MVGaussianWithEnsemble2DTryELEntropyLessEigensSanity : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    MVGaussianWithEnsemble2DTryELEntropy(double isovalue, int num_sample)
+    MVGaussianWithEnsemble2DTryELEntropyLessEigensSanity(double isovalue, int num_sample)
         : m_isovalue(isovalue), m_num_sample(num_sample){};
 
     using ControlSignature = void(CellSetIn,
@@ -26,7 +26,7 @@ public:
                                   FieldOutCell,
                                   FieldOutCell);
 
-    using ExecutionSignature = void(_2, _3, _4, _5);
+    using ExecutionSignature = void(_2, _3, _4, _5, WorkIndex);
 
     // the first parameter is binded with the worklet
     using InputDomain = _1;
@@ -40,7 +40,7 @@ public:
         const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
         OutCellFieldType1 &outCellFieldCProb,
         OutCellFieldType2 &outCellFieldNumNonzeroProb,
-        OutCellFieldType3 &outCellFieldEntropy) const
+        OutCellFieldType3 &outCellFieldEntropy, vtkm::Id workIndex) const
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
@@ -64,18 +64,38 @@ public:
         meanArray[2] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(2)]);
         meanArray[3] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(3)]);
 
-        // set the trim options to filter out the 0 values
+        // debug input
+        if (workIndex == 50)
+        {
+            std::cout << "debug input" << std::endl;
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 15; j++)
+                {
+                    std::cout << inPointFieldVecEnsemble[i][j] << ",";
+                }
+                std::cout << std::endl;
+            }
+        }
+
         // if (fabs(meanArray[0]) < 0.000001 && fabs(meanArray[1]) < 0.000001 && fabs(meanArray[2]) < 0.000001 && fabs(meanArray[3]) < 0.000001)
-        // {
+        //{
         //     outCellFieldCProb = 0;
         //     return;
         // }
 
+        // set the trim options to filter out values that does not contain the iso value
+        // there is no cross prob for this values
+        // find min and cell for all cell values
         double cellMin = vtkm::Infinity64();
         double cellMax = vtkm::NegativeInfinity64();
         for (int i = 0; i < 4; i++)
         {
             find_min_max<VecType>(inPointFieldVecEnsemble[i], cellMin, cellMax);
+        }
+        if (workIndex == 50)
+        {
+            printf("---debug min %lf max %lf\n", cellMin, cellMax);
         }
 
         if (this->m_isovalue < cellMin || this->m_isovalue > cellMax)
@@ -106,9 +126,6 @@ public:
         }
 
         // generate sample
-
-        // UCVMATH::vec_t ucvmeanv;
-        // gsl_vector *ucvmeanv = UCVMATH_CSTM_GSL::cstm_gsl_vector_alloc(4);
         EASYLINALG::Vec<double, 4> ucvmeanv;
         for (int i = 0; i < 4; i++)
         {
@@ -116,11 +133,7 @@ public:
         }
 
         vtkm::IdComponent numSamples = m_num_sample;
-        // vtkm::Id numCrossings = 0;
-        // this can be adapted to 3d case
 
-        // UCVMATH::mat_t ucvcov4by4_original;
-        // gsl_matrix *ucvcov4by4 = gsl_matrix_alloc(4, 4);
         EASYLINALG::Matrix<double, 4, 4> ucvcov4by4;
         int covindex = 0;
         for (int p = 0; p < 4; ++p)
@@ -130,7 +143,6 @@ public:
                 // use the elements at the top half
                 // printf("%f ", cov_matrix[covindex]);
                 ucvcov4by4[p][q] = cov_matrix[covindex];
-
                 if (p != q)
                 {
                     // assign value to another helf
@@ -140,42 +152,49 @@ public:
             }
         }
 
-        // if (workIndex ==15822)
-        //{
-        //     matrix_show(&ucvcov4by4);
-        // }
+        if (workIndex == 50)
+        {
+            std::cout << "debug ucvcov4by4" << std::endl;
+            ucvcov4by4.Show();
+        }
 
-        // UCVMATH::mat_t AOriginal = UCVMATH::eigen_vector_decomposition(&ucvcov4by4_original);
-        // gsl_matrix *A = UCVMATH_CSTM_GSL::gsl_eigen_vector_decomposition(ucvcov4by4);
-        EASYLINALG::Matrix<double, 4, 4> A = EASYLINALG::SymmEigenDecomposition(ucvcov4by4, 0.00001, 200);
+        // EASYLINALG::Matrix<double, 4, 4> A = EASYLINALG::SymmEigenDecomposition(ucvcov4by4, 0.00001, 20);
+        // Transform the iso value
+        EASYLINALG::Vec<double, 4> transformIso(0);
+        for (int i = 0; i < 4; i++)
+        {
+            transformIso[i] = this->m_isovalue - ucvmeanv[i];
+        }
+        if (workIndex == 50)
+        {
+            std::cout << "debug transformIso " << std::endl;
+            transformIso.Show();
+        }
+        // Only compute eigen vector for the largest eigen value
+        EASYLINALG::Vec<double, 4> eigenValues;
+        EASYLINALG::SymmEigenValues(ucvcov4by4, 0.00001, 500, eigenValues);
 
-        // some values are filtered out since it can be in the empty region
-        // with 0 values there
-        
-        // if (workIndex == 9896)
-        // {
-        //     printf("index is %lld\n",workIndex);
-        //     printf("matrix ucvcov4by4\n");
-        //     ucvcov4by4.Show();
-        //     printf("matrix A\n");
-        //     A.Show();
-        // }
-        
-
-        // UCVMATH::vec_t sample_v;
-        // UCVMATH::vec_t AUM;
-        // gsl_vector *sample_v = UCVMATH_CSTM_GSL::cstm_gsl_vector_alloc(4);
-        // gsl_vector *AUM = UCVMATH_CSTM_GSL::cstm_gsl_vector_alloc(4);
-        EASYLINALG::Vec<double, 4> sample_v;
-        EASYLINALG::Vec<double, 4> AUM;
+        // the first index stores which it corresponds to
+        // the second index stores the inner position of eigen value
+        EASYLINALG::Vec<EASYLINALG::Vec<double, 4>, 4> eigenVectors;
+        for (int i = 0; i < 4; i++)
+        {
+            eigenVectors[i] = EASYLINALG::ComputeEigenVectors(ucvcov4by4, eigenValues[i], 500);
+            if (workIndex == 50)
+            {
+                std::cout << "debug eigen values " << eigenValues[i] << std::endl;
+                eigenVectors[i].Show();
+            }
+        }
+        // LIAG_FUNC_MACRO Vec<T, Size> ComputeEigenVectors(const Matrix<T, Size, Size> &A, const T &eigenValue, uint maxIter)
 
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
-        thrust::random::normal_distribution<double> norm;
+        thrust::random::normal_distribution<double> norm(0, 1);
 #else
         std::mt19937 rng;
         rng.seed(std::mt19937::default_seed);
-        std::normal_distribution<double> norm;
+        std::normal_distribution<double> norm(0, 1);
 #endif // VTKM_CUDA
 
         vtkm::Vec<vtkm::FloatDefault, 16> probHistogram;
@@ -184,33 +203,54 @@ public:
             probHistogram[i] = 0.0;
         }
 
+        EASYLINALG::Vec<double, 4> sample_v;
+
         for (vtkm::Id n = 0; n < numSamples; ++n)
         {
+            //clear it sample results each time
+            EASYLINALG::Vec<double, 4> sampleResults(0);
             // get sample vector
+            // only use the largest eigen value currently
+            // refer this for detailed ideas:
+            // https://stephens999.github.io/fiveMinuteStats/mvnorm_eigen.html
+            // only need to sample it one time
             for (int i = 0; i < 4; i++)
             {
-                // using other sample mechanism such as thrust as needed
-                // sample_v.v[i] = norm(rng);
-                // gsl_vector_set(sample_v,i,norm(rng));
+                // sample_v[i]=vtkm::Sqrt(eigenValues[i])*norm(rng);
+                std::normal_distribution<double> norm(0, vtkm::Sqrt(eigenValues[i]));
                 sample_v[i] = norm(rng);
             }
 
-            // Ax+b operation
-            AUM = EASYLINALG::DGEMV(1.0, A, sample_v, 1.0, ucvmeanv);
+            // compute sampled results
+            // for each sampled results
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    // be careful, each row in matrix is a eigen vector
+                    sampleResults[i] += eigenVectors[j][i] * sample_v[j];
+                    // sampleResults[i] += eigenVectors[j][i];
+                }
+            }
+
+            if (workIndex == 50 && n == 10)
+            {
+                std::cout << "debug sampleResults " << std::endl;
+                sampleResults.Show();
+            }
 
             // compute the specific position
             // map > or < to specific cases
             uint caseValue = 0;
             for (uint i = 0; i < 4; i++)
             {
-                // setting associated position to 1 if iso larger then specific cases
-                if (m_isovalue >= AUM[i])
+                // setting associated position to 1 if iso is larger than specific cases
+                if (transformIso[i] >= sampleResults[i])
                 {
                     caseValue = (1 << i) | caseValue;
                 }
+                // the associated pos is 0 otherwise
             }
-
-            // the associated pos is 0 otherwise
             probHistogram[caseValue] = probHistogram[caseValue] + 1.0;
         }
 
@@ -273,7 +313,7 @@ public:
         return 0;
     }
 
-        template <typename VecType>
+    template <typename VecType>
     VTKM_EXEC void find_min_max(const VecType &arr, vtkm::Float64 &min, vtkm::Float64 &max) const
     {
         vtkm::Id num = arr.GetNumberOfComponents();

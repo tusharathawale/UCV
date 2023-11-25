@@ -59,10 +59,10 @@ public:
         // the VecType specifies the number of ensembles
         using VecType = decltype(inPointFieldVecEnsemble[0]);
 
-        meanArray[0] = find_mean<VecType>(inPointFieldVecEnsemble[0]);
-        meanArray[1] = find_mean<VecType>(inPointFieldVecEnsemble[1]);
-        meanArray[2] = find_mean<VecType>(inPointFieldVecEnsemble[2]);
-        meanArray[3] = find_mean<VecType>(inPointFieldVecEnsemble[3]);
+        meanArray[0] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(0)]);
+        meanArray[1] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(1)]);
+        meanArray[2] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(2)]);
+        meanArray[3] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(3)]);
 
         // if (fabs(meanArray[0]) < 0.000001 && fabs(meanArray[1]) < 0.000001 && fabs(meanArray[2]) < 0.000001 && fabs(meanArray[3]) < 0.000001)
         //{
@@ -80,15 +80,13 @@ public:
             find_min_max<VecType>(inPointFieldVecEnsemble[i], cellMin, cellMax);
         }
 
-        //printf("---debug workindex %d\n min %lf max %lf\n",workIndex,cellMin,cellMax);
+        // printf("---debug workindex %d\n min %lf max %lf\n",workIndex,cellMin,cellMax);
 
         if (this->m_isovalue < cellMin || this->m_isovalue > cellMax)
         {
             outCellFieldCProb = 0;
             return;
         }
-
-
 
         // if (workIndex == 0)
         //{
@@ -139,8 +137,9 @@ public:
             }
         }
 
-        if(workIndex==910 || workIndex==977){
-            printf("---debug cov matrix index %d\n",workIndex);
+        if (workIndex == 910 || workIndex == 977)
+        {
+            printf("---debug cov matrix index %d\n", workIndex);
             ucvcov4by4.Show();
         }
 
@@ -155,10 +154,12 @@ public:
         // Only compute eigen vector for the largest eigen value
         EASYLINALG::Vec<double, 4> eigenValues;
         EASYLINALG::SymmEigenValues(ucvcov4by4, 0.00001, 200, eigenValues);
-        if(workIndex==910 || workIndex==977){
+        if (workIndex == 910 || workIndex == 977)
+        {
             printf("---debug eigen values\n");
             eigenValues.Show();
         }
+        int k = 1;
         double largestEigen = vtkm::NegativeInfinity64();
         for (int i = 0; i < 4; i++)
         {
@@ -169,7 +170,8 @@ public:
         }
         // LIAG_FUNC_MACRO Vec<T, Size> ComputeEigenVectors(const Matrix<T, Size, Size> &A, const T &eigenValue, uint maxIter)
         EASYLINALG::Vec<double, 4> eigenVectors = EASYLINALG::ComputeEigenVectors(ucvcov4by4, largestEigen, 200);
-                if(workIndex==910 || workIndex==977){
+        if (workIndex == 910 || workIndex == 977)
+        {
             printf("---debug eigen eigenVectors\n");
             eigenVectors.Show();
         }
@@ -181,7 +183,7 @@ public:
 #else
         std::mt19937 rng;
         rng.seed(std::mt19937::default_seed);
-        //rng.seed(10);
+        // rng.seed(10);
         std::normal_distribution<double> norm(0, 1);
 #endif // VTKM_CUDA
 
