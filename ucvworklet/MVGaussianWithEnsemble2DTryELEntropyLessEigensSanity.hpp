@@ -25,9 +25,11 @@ public:
                                   FieldOutCell,
                                   FieldOutCell,
                                   FieldOutCell);
-
+#ifdef DEBUG_WORKLET
     using ExecutionSignature = void(_2, _3, _4, _5, WorkIndex);
-
+#else
+    using ExecutionSignature = void(_2, _3, _4, _5);
+#endif
     // the first parameter is binded with the worklet
     using InputDomain = _1;
     // InPointFieldType should be a vector
@@ -36,11 +38,19 @@ public:
               typename OutCellFieldType2,
               typename OutCellFieldType3>
 
+#ifdef DEBUG_WORKLET
     VTKM_EXEC void operator()(
         const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
         OutCellFieldType1 &outCellFieldCProb,
         OutCellFieldType2 &outCellFieldNumNonzeroProb,
         OutCellFieldType3 &outCellFieldEntropy, vtkm::Id workIndex) const
+#else
+    VTKM_EXEC void operator()(
+        const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
+        OutCellFieldType1 &outCellFieldCProb,
+        OutCellFieldType2 &outCellFieldNumNonzeroProb,
+        OutCellFieldType3 &outCellFieldEntropy) const
+#endif
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
@@ -65,6 +75,7 @@ public:
         meanArray[3] = find_mean<VecType>(inPointFieldVecEnsemble[updateIndex4(3)]);
 
         // debug input
+#ifdef DEBUG_WORKLET
         if (workIndex == 50)
         {
             std::cout << "debug input" << std::endl;
@@ -77,6 +88,7 @@ public:
                 std::cout << std::endl;
             }
         }
+#endif
 
         // if (fabs(meanArray[0]) < 0.000001 && fabs(meanArray[1]) < 0.000001 && fabs(meanArray[2]) < 0.000001 && fabs(meanArray[3]) < 0.000001)
         //{
@@ -93,21 +105,18 @@ public:
         {
             find_min_max<VecType>(inPointFieldVecEnsemble[i], cellMin, cellMax);
         }
+#ifdef DEBUG_WORKLET
         if (workIndex == 50)
         {
             printf("---debug min %lf max %lf\n", cellMin, cellMax);
         }
+#endif
 
         if (this->m_isovalue < cellMin || this->m_isovalue > cellMax)
         {
             outCellFieldCProb = 0;
             return;
         }
-
-        // if (workIndex == 0)
-        //{
-        //     std::cout << meanArray[0] << " " << meanArray[1] << " " << meanArray[2] << " " << meanArray[3] << std::endl;
-        // }
 
         // std::vector<double> cov_matrix;
         // for 4*4 matrix, there are 10 numbers at upper conner
@@ -151,13 +160,13 @@ public:
                 covindex++;
             }
         }
-
+#ifdef DEBUG_WORKLET
         if (workIndex == 50)
         {
             std::cout << "debug ucvcov4by4" << std::endl;
             ucvcov4by4.Show();
         }
-
+#endif
         // EASYLINALG::Matrix<double, 4, 4> A = EASYLINALG::SymmEigenDecomposition(ucvcov4by4, 0.00001, 20);
         // Transform the iso value
         EASYLINALG::Vec<double, 4> transformIso(0);
@@ -165,26 +174,30 @@ public:
         {
             transformIso[i] = this->m_isovalue - ucvmeanv[i];
         }
+#ifdef DEBUG_WORKLET
         if (workIndex == 50)
         {
             std::cout << "debug transformIso " << std::endl;
             transformIso.Show();
         }
+#endif
         // Only compute eigen vector for the largest eigen value
         EASYLINALG::Vec<double, 4> eigenValues;
-        EASYLINALG::SymmEigenValues(ucvcov4by4, 0.00001, 500, eigenValues);
+        EASYLINALG::SymmEigenValues(ucvcov4by4, this->m_tolerance, this->m_iterations, eigenValues);
 
         // the first index stores which it corresponds to
         // the second index stores the inner position of eigen value
         EASYLINALG::Vec<EASYLINALG::Vec<double, 4>, 4> eigenVectors;
         for (int i = 0; i < 4; i++)
         {
-            eigenVectors[i] = EASYLINALG::ComputeEigenVectors(ucvcov4by4, eigenValues[i], 500);
+            eigenVectors[i] = EASYLINALG::ComputeEigenVectors(ucvcov4by4, eigenValues[i], this->m_iterations);
+#ifdef DEBUG_WORKLET
             if (workIndex == 50)
             {
                 std::cout << "debug eigen values " << eigenValues[i] << std::endl;
                 eigenVectors[i].Show();
             }
+#endif
         }
         // LIAG_FUNC_MACRO Vec<T, Size> ComputeEigenVectors(const Matrix<T, Size, Size> &A, const T &eigenValue, uint maxIter)
 
@@ -207,7 +220,7 @@ public:
 
         for (vtkm::Id n = 0; n < numSamples; ++n)
         {
-            //clear it sample results each time
+            // clear it sample results each time
             EASYLINALG::Vec<double, 4> sampleResults(0);
             // get sample vector
             // only use the largest eigen value currently
@@ -232,13 +245,13 @@ public:
                     // sampleResults[i] += eigenVectors[j][i];
                 }
             }
-
+#ifdef DEBUG_WORKLET
             if (workIndex == 50 && n == 10)
             {
                 std::cout << "debug sampleResults " << std::endl;
                 sampleResults.Show();
             }
-
+#endif
             // compute the specific position
             // map > or < to specific cases
             uint caseValue = 0;
@@ -357,6 +370,8 @@ public:
 private:
     double m_isovalue;
     int m_num_sample = 1000;
+    int m_iterations = 200;
+    double m_tolerance = 0.00001;
 };
 
 #endif // UCV_MULTIVARIANT_GAUSSIAN2D_h

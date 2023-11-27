@@ -147,11 +147,11 @@ public:
 
         // UCVMATH::mat_t AOriginal = UCVMATH::eigen_vector_decomposition(&ucvcov4by4_original);
         // gsl_matrix *A = UCVMATH_CSTM_GSL::gsl_eigen_vector_decomposition(ucvcov4by4);
-        EASYLINALG::Matrix<double, 4, 4> A = EASYLINALG::SymmEigenDecomposition(ucvcov4by4, 0.00001, 200);
+        EASYLINALG::Matrix<double, 4, 4> A = EASYLINALG::SymmEigenDecomposition(ucvcov4by4, this->m_tolerance, this->m_iterations);
 
         // some values are filtered out since it can be in the empty region
         // with 0 values there
-        
+
         // if (workIndex == 9896)
         // {
         //     printf("index is %lld\n",workIndex);
@@ -160,7 +160,6 @@ public:
         //     printf("matrix A\n");
         //     A.Show();
         // }
-        
 
         // UCVMATH::vec_t sample_v;
         // UCVMATH::vec_t AUM;
@@ -273,7 +272,7 @@ public:
         return 0;
     }
 
-        template <typename VecType>
+    template <typename VecType>
     VTKM_EXEC void find_min_max(const VecType &arr, vtkm::Float64 &min, vtkm::Float64 &max) const
     {
         vtkm::Id num = arr.GetNumberOfComponents();
@@ -317,6 +316,8 @@ public:
 private:
     double m_isovalue;
     int m_num_sample = 1000;
+    int m_iterations = 200;
+    double m_tolerance = 0.00001;
 };
 
 #endif // UCV_MULTIVARIANT_GAUSSIAN2D_h

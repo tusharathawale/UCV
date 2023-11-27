@@ -25,9 +25,11 @@ public:
                                   FieldOutCell,
                                   FieldOutCell,
                                   FieldOutCell);
-
+#ifdef DEBUG_WORKLET
     using ExecutionSignature = void(_2, _3, _4, _5, WorkIndex);
-
+#else
+    using ExecutionSignature = void(_2, _3, _4, _5);
+#endif
     // the first parameter is binded with the worklet
     using InputDomain = _1;
     // InPointFieldType should be a vector
@@ -36,11 +38,20 @@ public:
               typename OutCellFieldType2,
               typename OutCellFieldType3>
 
+#ifdef DEBUG_WORKLET
     VTKM_EXEC void operator()(
         const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
         OutCellFieldType1 &outCellFieldCProb,
         OutCellFieldType2 &outCellFieldNumNonzeroProb,
         OutCellFieldType3 &outCellFieldEntropy, vtkm::Id workIndex) const
+#else
+    VTKM_EXEC void operator()(
+        const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
+        OutCellFieldType1 &outCellFieldCProb,
+        OutCellFieldType2 &outCellFieldNumNonzeroProb,
+        OutCellFieldType3 &outCellFieldEntropy) const
+#endif
+
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
@@ -136,13 +147,13 @@ public:
                 covindex++;
             }
         }
-
+#ifdef DEBUG_WORKLET
         if (workIndex == 910 || workIndex == 977)
         {
             printf("---debug cov matrix index %d\n", workIndex);
             ucvcov4by4.Show();
         }
-
+#endif
         // EASYLINALG::Matrix<double, 4, 4> A = EASYLINALG::SymmEigenDecomposition(ucvcov4by4, 0.00001, 20);
         // Transform the iso value
         EASYLINALG::Vec<double, 4> transformIso(0);
@@ -153,12 +164,14 @@ public:
 
         // Only compute eigen vector for the largest eigen value
         EASYLINALG::Vec<double, 4> eigenValues;
-        EASYLINALG::SymmEigenValues(ucvcov4by4, 0.00001, 200, eigenValues);
+        EASYLINALG::SymmEigenValues(ucvcov4by4, this->m_tolerance, this->m_iterations, eigenValues);
+#ifdef DEBUG_WORKLET
         if (workIndex == 910 || workIndex == 977)
         {
             printf("---debug eigen values\n");
             eigenValues.Show();
         }
+#endif
         int k = 1;
         double largestEigen = vtkm::NegativeInfinity64();
         for (int i = 0; i < 4; i++)
@@ -169,12 +182,14 @@ public:
             }
         }
         // LIAG_FUNC_MACRO Vec<T, Size> ComputeEigenVectors(const Matrix<T, Size, Size> &A, const T &eigenValue, uint maxIter)
-        EASYLINALG::Vec<double, 4> eigenVectors = EASYLINALG::ComputeEigenVectors(ucvcov4by4, largestEigen, 200);
+        EASYLINALG::Vec<double, 4> eigenVectors = EASYLINALG::ComputeEigenVectors(ucvcov4by4, largestEigen, this->m_iterations);
+#ifdef DEBUG_WORKLET
         if (workIndex == 910 || workIndex == 977)
         {
             printf("---debug eigen eigenVectors\n");
             eigenVectors.Show();
         }
+#endif
         double sample_v;
 
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
@@ -323,6 +338,8 @@ public:
 private:
     double m_isovalue;
     int m_num_sample = 1000;
+    int m_iterations = 200;
+    double m_tolerance = 0.00001;
 };
 
 #endif // UCV_MULTIVARIANT_GAUSSIAN2D_h

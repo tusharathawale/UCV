@@ -40,7 +40,7 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
 
   // executing the uncertianty thing
-  // std::cout << "--strategy is " << strategy << "---" << std::endl;
+  std::cout << "--strategy is " << strategy << "---" << std::endl;
   // std::cout << "---checking output data 1" << std::endl;
   // vtkmDataSet.PrintSummary(std::cout);
   auto resolveType = [&](const auto &concrete)
@@ -216,10 +216,10 @@ int main(int argc, char *argv[])
       {
 
         ensembles[ensId] = dataArray[ensId].ReadPortal().Get(index);
-        if (index == 0)
-        {
-          std::cout << "debug index ensId" << ensId << " " << ensembles[ensId] << std::endl;
-        }
+        // if (index == 0)
+        // {
+        //   std::cout << "debug index ensId" << ensId << " " << ensembles[ensId] << std::endl;
+        // }
       }
       dataArraySOA.WritePortal().Set(index, ensembles);
     }
@@ -248,3 +248,7 @@ int main(int argc, char *argv[])
   // callWorklet(timer, vtkmDataSet, isovalue, num_samples, "mvkde");
   return 0;
 }
+
+//TODO list
+//Try to work on the 3d case
+//double check the results to see if it can converge before running it on summit
