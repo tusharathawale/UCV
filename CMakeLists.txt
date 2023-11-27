@@ -196,6 +196,9 @@ target_link_libraries(test_syntheticdata_el_sequence ${VTKm_LIBRARIES})
 
 add_executable(test_vtkm_runvec test_vtkm_runvec.cpp)
 target_link_libraries(test_vtkm_runvec ${VTKm_LIBRARIES})
+
+add_executable(test_3D_el test_3D_el.cpp)
+target_link_libraries(test_3D_el ${VTKm_LIBRARIES})
 endif()
 
 

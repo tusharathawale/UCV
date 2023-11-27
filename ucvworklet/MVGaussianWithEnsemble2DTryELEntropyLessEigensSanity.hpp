@@ -181,7 +181,7 @@ public:
             transformIso.Show();
         }
 #endif
-        // Only compute eigen vector for the largest eigen value
+        // compute eigen values
         EASYLINALG::Vec<double, 4> eigenValues;
         EASYLINALG::SymmEigenValues(ucvcov4by4, this->m_tolerance, this->m_iterations, eigenValues);
 

@@ -1,5 +1,5 @@
-#ifndef UCV_MULTIVARIANT_GAUSSIAN3D_EL_h
-#define UCV_MULTIVARIANT_GAUSSIAN3D_EL_h
+#ifndef UCV_MULTIVARIANT_GAUSSIAN3D_EL_LESS_EIGEN_h
+#define UCV_MULTIVARIANT_GAUSSIAN3D_EL_LESS_EIGEN_h
 
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <cmath>
@@ -13,11 +13,11 @@
 #include <random>
 #endif // VTKM_CUDA
 
-class MVGaussianWithEnsemble3DTryEL : public vtkm::worklet::WorkletVisitCellsWithPoints
+class MVGaussianWithEnsemble3DTryELLessEigen : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    MVGaussianWithEnsemble3DTryEL(double isovalue, int numSamples)
-        : m_isovalue(isovalue), m_numSamples(numSamples){};
+    MVGaussianWithEnsemble3DTryELLessEigen(double isovalue, int numSamples, int numEigens)
+        : m_isovalue(isovalue), m_numSamples(numSamples), m_num_eigens(numEigens){};
 
     using ControlSignature = void(CellSetIn,
                                   FieldInPoint,
@@ -67,12 +67,31 @@ public:
             return;
         }
 
+        // set the trim options to filter out values that does not contain the iso value
+        // there is no cross prob for this values
+        // find min and cell for all cell values
+        using VecType = decltype(inPointFieldVecEnsemble[0]);
+        double cellMin = vtkm::Infinity64();
+        double cellMax = vtkm::NegativeInfinity64();
+        for (int i = 0; i < numVertex3d; i++)
+        {
+            find_min_max<VecType>(inPointFieldVecEnsemble[i], cellMin, cellMax);
+        }
+
+        // printf("---debug workindex %d\n min %lf max %lf\n",workIndex,cellMin,cellMax);
+
+        if (this->m_isovalue < cellMin || this->m_isovalue > cellMax)
+        {
+            outCellFieldCProb = 0;
+            return;
+        }
+
         // std::vector<double> cov_matrix;
         vtkm::Vec<vtkm::FloatDefault, 36> cov_matrix;
         vtkm::IdComponent index = 0;
-        for (int p = 0; p < numVertexies; ++p)
+        for (int p = 0; p < numVertex3d; ++p)
         {
-            for (int q = p; q < numVertexies; ++q)
+            for (int q = p; q < numVertex3d; ++q)
             {
                 float cov = find_covariance(inPointFieldVecEnsemble[p], inPointFieldVecEnsemble[q], inMeanArray[p], inMeanArray[q]);
                 cov_matrix[index] = cov;
@@ -112,11 +131,25 @@ public:
 
         vtkm::IdComponent numSamples = this->m_numSamples;
 
-        // UCVMATH::mat_t A = UCVMATH::eigen_vector_decomposition(&ucvcov8by8);
-        EASYLINALG::Matrix<double, numVertex3d, numVertex3d> A = EASYLINALG::SymmEigenDecomposition(ucvcov8by8, this->m_tolerance, this->m_iterations);
+        // EASYLINALG::Matrix<double, numVertex3d, numVertex3d> A = EASYLINALG::SymmEigenDecomposition(ucvcov8by8, this->m_tolerance, this->m_iterations);
+        //  Transform the iso value
+        EASYLINALG::Vec<double, numVertex3d> transformIso(0);
+        for (int i = 0; i < numVertex3d; i++)
+        {
+            transformIso[i] = this->m_isovalue - ucvmeanv[i];
+        }
 
-        EASYLINALG::Vec<double, numVertex3d> sample_v;
-        EASYLINALG::Vec<double, numVertex3d> AUM;
+        // Compute eigen values
+        EASYLINALG::Vec<double, numVertex3d> eigenValues;
+        EASYLINALG::SymmEigenValues(ucvcov8by8, this->m_tolerance, this->m_iterations, eigenValues);
+
+        // Compute eigen vectors
+        EASYLINALG::Vec<EASYLINALG::Vec<double, numVertex3d>, numVertex3d> eigenVectors;
+        // how many eigen vector we want to use
+        for (int i = 0; i < this->m_num_eigens; i++)
+        {
+            eigenVectors[i] = EASYLINALG::ComputeEigenVectors(ucvcov8by8, eigenValues[i], this->m_iterations);
+        }
 
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
@@ -129,6 +162,8 @@ public:
 
         vtkm::Vec<vtkm::FloatDefault, 256> probHistogram;
 
+        EASYLINALG::Vec<double, numVertex3d> sample_v;
+
         // init to 0
         for (int i = 0; i < 256; i++)
         {
@@ -137,39 +172,31 @@ public:
 
         for (vtkm::Id n = 0; n < numSamples; ++n)
         {
-            // std::cout << R.coeff(n, 0) << " " << R.coeff(n, 1) << " " << R.coeff(n, 2) << " " << R.coeff(n, 3) << std::endl;
-            // get sample vector
-            for (int i = 0; i < numVertex3d; i++)
+            EASYLINALG::Vec<double, numVertex3d> sampleResults(0);
+
+            for (int i = 0; i < this->m_num_eigens; i++)
             {
-                // using other sample mechanism such as thrust as needed
+                // sample_v[i]=vtkm::Sqrt(eigenValues[i])*norm(rng);
+                std::normal_distribution<double> norm(0, vtkm::Sqrt(eigenValues[i]));
                 sample_v[i] = norm(rng);
             }
 
-            //AUM = UCVMATH::matrix_mul_vec_add_vec(&A, &sample_v, &ucvmeanv);
-            AUM = EASYLINALG::DGEMV(1.0, A, sample_v, 1.0, ucvmeanv);
-
-            /*
-            if ((m_isovalue <= AUM.v[0]) && (m_isovalue <= AUM.v[1]) && (m_isovalue <= AUM.v[2]) && (m_isovalue <= AUM.v[3]) && (m_isovalue <= AUM.v[4]) && (m_isovalue <= AUM.v[5]) && (m_isovalue <= AUM.v[6]) && (m_isovalue <= AUM.v[7]))
+            // compute sampled results
+            // for each sampled results
+            for (int i = 0; i < numVertex3d; i++)
             {
-                numCrossings = numCrossings + 0;
+                for (int j = 0; j < this->m_num_eigens; j++)
+                {
+                    sampleResults[i] += eigenVectors[j][i] * sample_v[j];
+                }
             }
-            else if ((m_isovalue >= AUM.v[0]) && (m_isovalue >= AUM.v[1]) && (m_isovalue >= AUM.v[2]) && (m_isovalue >= AUM.v[3]) && (m_isovalue >= AUM.v[4]) && (m_isovalue >= AUM.v[5]) && (m_isovalue >= AUM.v[6]) && (m_isovalue >= AUM.v[7]))
-            {
-                numCrossings = numCrossings + 0;
-            }
-            else
-            {
-                //there are 254 total cases here 256 - all 0 cases - all 1 cases
-                numCrossings = numCrossings + 1;
-            }
-            */
 
             // go through 8 cases
             uint caseValue = 0;
-            for (uint i = 0; i < 8; i++)
+            for (uint i = 0; i < numVertex3d; i++)
             {
                 // setting associated position to 1 if iso larger then specific cases
-                if (m_isovalue >= AUM[i])
+                if (transformIso[i] >= sampleResults[i])
                 {
                     caseValue = (1 << i) | caseValue;
                 }
@@ -214,6 +241,18 @@ public:
         outCellFieldEntropy = entropyValue;
     }
 
+    template <typename VecType>
+    VTKM_EXEC void find_min_max(const VecType &arr, vtkm::Float64 &min, vtkm::Float64 &max) const
+    {
+        vtkm::Id num = arr.GetNumberOfComponents();
+        for (vtkm::Id i = 0; i < arr.GetNumberOfComponents(); i++)
+        {
+            min = vtkm::Min(min, arr[i]);
+            max = vtkm::Max(max, arr[i]);
+        }
+        return;
+    }
+
     // how to get this vtkm::Vec<double, 64> in an more efficient way
     vtkm::FloatDefault find_mean(const vtkm::Vec<double, 64> &arr) const
     {
@@ -247,6 +286,7 @@ private:
     int m_numSamples;
     int m_iterations = 200;
     double m_tolerance = 0.00001;
+    int m_num_eigens = 8;
 };
 
 #endif // UCV_MULTIVARIANT_GAUSSIAN3D_h
