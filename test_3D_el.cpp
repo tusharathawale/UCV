@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
     using WorkletTypeMVG = MVGaussianWithEnsemble3DTryELLessEigen;
     using DispatcherTypeMVG = vtkm::worklet::DispatcherMapTopology<WorkletTypeMVG>;
 
-    DispatcherTypeMVG dispatcherMVG(WorkletTypeMVG{isovalue, numSamples, 8});
+    DispatcherTypeMVG dispatcherMVG(WorkletTypeMVG{isovalue, numSamples, true});
     dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb, numNonZeroProb, entropyResult);
 
     timer.Synchronize();
@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
     using WorkletTypeMVG = MVGaussianWithEnsemble3DTryELLessEigen;
     using DispatcherTypeMVG = vtkm::worklet::DispatcherMapTopology<WorkletTypeMVG>;
 
-    DispatcherTypeMVG dispatcherMVG(WorkletTypeMVG{isovalue, numSamples, 1});
+    DispatcherTypeMVG dispatcherMVG(WorkletTypeMVG{isovalue, numSamples, false});
     dispatcherMVG.Invoke(reducedDataSet.GetCellSet(), SOARawArray, meanArray, crossProb, numNonZeroProb, entropyResult);
 
     timer.Synchronize();

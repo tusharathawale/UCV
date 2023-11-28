@@ -16,8 +16,8 @@
 class MVGaussianWithEnsemble3DTryELLessEigen : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    MVGaussianWithEnsemble3DTryELLessEigen(double isovalue, int numSamples, int numEigens)
-        : m_isovalue(isovalue), m_numSamples(numSamples), m_num_eigens(numEigens){};
+    MVGaussianWithEnsemble3DTryELLessEigen(double isovalue, int numSamples, bool use_all_eigen, double eigen_threshold = 0.2)
+        : m_isovalue(isovalue), m_numSamples(numSamples), m_use_all_eigen(use_all_eigen), m_eigen_threshold(eigen_threshold){};
 
     using ControlSignature = void(CellSetIn,
                                   FieldInPoint,
@@ -143,12 +143,38 @@ public:
         EASYLINALG::Vec<double, numVertex3d> eigenValues;
         EASYLINALG::SymmEigenValues(ucvcov8by8, this->m_tolerance, this->m_iterations, eigenValues);
 
+        // check if eigen value is large to small
+        // filter out the eigen values that is less then a specific threshold
+
+        EASYLINALG::Vec<double, numVertex3d> eigenValuesFiltered(0);
+        // use all eigen values when the use_all_eigen is true
+        int filteredEigenCount = numVertex3d;
+        if (this->m_use_all_eigen == true)
+        {
+            eigenValuesFiltered = eigenValues;
+        }
+        else
+        {
+            filteredEigenCount = 0;
+            // filter out eigen values when it is less then the threshold
+            // and not all eigen value are used
+            for (int i = 0; i < numVertex3d; i++)
+            {
+                if (eigenValues[i] > this->m_eigen_threshold)
+                {
+                    eigenValuesFiltered[filteredEigenCount] = eigenValues[i];
+                    filteredEigenCount++;
+                }
+            }
+        }
+        
         // Compute eigen vectors
         EASYLINALG::Vec<EASYLINALG::Vec<double, numVertex3d>, numVertex3d> eigenVectors;
         // how many eigen vector we want to use
-        for (int i = 0; i < this->m_num_eigens; i++)
+
+        for (int i = 0; i < filteredEigenCount; i++)
         {
-            eigenVectors[i] = EASYLINALG::ComputeEigenVectors(ucvcov8by8, eigenValues[i], this->m_iterations);
+            eigenVectors[i] = EASYLINALG::ComputeEigenVectors(ucvcov8by8, eigenValuesFiltered[i], this->m_iterations);
         }
 
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
@@ -174,10 +200,10 @@ public:
         {
             EASYLINALG::Vec<double, numVertex3d> sampleResults(0);
 
-            for (int i = 0; i < this->m_num_eigens; i++)
+            for (int i = 0; i < filteredEigenCount; i++)
             {
                 // sample_v[i]=vtkm::Sqrt(eigenValues[i])*norm(rng);
-                std::normal_distribution<double> norm(0, vtkm::Sqrt(eigenValues[i]));
+                std::normal_distribution<double> norm(0, vtkm::Sqrt(eigenValuesFiltered[i]));
                 sample_v[i] = norm(rng);
             }
 
@@ -185,7 +211,7 @@ public:
             // for each sampled results
             for (int i = 0; i < numVertex3d; i++)
             {
-                for (int j = 0; j < this->m_num_eigens; j++)
+                for (int j = 0; j < filteredEigenCount; j++)
                 {
                     sampleResults[i] += eigenVectors[j][i] * sample_v[j];
                 }
@@ -286,7 +312,8 @@ private:
     int m_numSamples;
     int m_iterations = 200;
     double m_tolerance = 0.00001;
-    int m_num_eigens = 8;
+    bool m_use_all_eigen = true;
+    double m_eigen_threshold = 0.2;
 };
 
 #endif // UCV_MULTIVARIANT_GAUSSIAN3D_h
