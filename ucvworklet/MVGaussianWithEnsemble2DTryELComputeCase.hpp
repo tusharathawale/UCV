@@ -1,5 +1,5 @@
-#ifndef UCV_MULTIVARIANT_GAUSSIAN2D_EL_h
-#define UCV_MULTIVARIANT_GAUSSIAN2D_EL_h
+#ifndef UCV_MULTIVARIANT_GAUSSIAN2D_EL_COMPUTECASE_h
+#define UCV_MULTIVARIANT_GAUSSIAN2D_EL_COMPUTECASE_h
 
 #include <vtkm/worklet/WorkletMapTopology.h>
 #include <cmath>
@@ -14,10 +14,10 @@
 #include <random>
 #endif // VTKM_CUDA
 
-class MVGaussianWithEnsemble2DTryELEntropy : public vtkm::worklet::WorkletVisitCellsWithPoints
+class MVGaussianWithEnsemble2DTryELComputeCase : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    MVGaussianWithEnsemble2DTryELEntropy(double isovalue, int num_sample)
+    MVGaussianWithEnsemble2DTryELComputeCase(double isovalue, int num_sample)
         : m_isovalue(isovalue), m_num_sample(num_sample){};
 
     using ControlSignature = void(CellSetIn,
@@ -26,7 +26,7 @@ public:
                                   FieldOutCell,
                                   FieldOutCell);
 
-    using ExecutionSignature = void(_2, _3, _4, _5, WorkIndex);
+    using ExecutionSignature = void(_2, _3, _4, _5);
 
     // the first parameter is binded with the worklet
     using InputDomain = _1;
@@ -40,7 +40,7 @@ public:
         const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
         OutCellFieldType1 &outCellFieldCProb,
         OutCellFieldType2 &outCellFieldNumNonzeroProb,
-        OutCellFieldType3 &outCellFieldEntropy, vtkm::Id workIndex) const
+        OutCellFieldType3 &outCellFieldEntropy) const
     {
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
@@ -148,9 +148,7 @@ public:
         // UCVMATH::mat_t AOriginal = UCVMATH::eigen_vector_decomposition(&ucvcov4by4_original);
         // gsl_matrix *A = UCVMATH_CSTM_GSL::gsl_eigen_vector_decomposition(ucvcov4by4);
         EASYLINALG::Matrix<double, 4, 4> A = EASYLINALG::SymmEigenDecomposition(ucvcov4by4, this->m_tolerance, this->m_iterations);
-        printf("debug thread id %d\n",workIndex);
-        A.Show();
-        ucvmeanv.Show();
+
         // some values are filtered out since it can be in the empty region
         // with 0 values there
 
@@ -194,15 +192,10 @@ public:
                 // sample_v.v[i] = norm(rng);
                 // gsl_vector_set(sample_v,i,norm(rng));
                 sample_v[i] = norm(rng);
-                // for debug 
-                // sample_v[i] = 0.1;
             }
 
             // Ax+b operation
             AUM = EASYLINALG::DGEMV(1.0, A, sample_v, 1.0, ucvmeanv);
-            
-            printf("debug AUM sample %d\n",n);
-            AUM.Show();
 
             // compute the specific position
             // map > or < to specific cases
@@ -215,8 +208,6 @@ public:
                     caseValue = (1 << i) | caseValue;
                 }
             }
-
-            printf("case value %d\n",caseValue);
 
             // the associated pos is 0 otherwise
             probHistogram[caseValue] = probHistogram[caseValue] + 1.0;

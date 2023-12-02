@@ -19,15 +19,29 @@ def readDS(fname) :
     return ds
 
 if __name__ == "__main__":
-    file_dir = "/Users/zw1/Documents/cworkspace/src/UCV/install_scripts/mac/install/UCV"
-    num_ensemble=10
+    #file_dir = "/Users/zw1/Documents/cworkspace/src/UCV/install_scripts/mac/install/UCV"
+    num_ensemble=20
     acc_diff=[]
     prev_array=[]
+
+    if(len(sys.argv)!=3):
+        print("<executable> <fieldSuffix> <iso>")
+        exit(0)
+        
+    fieldSuffix = str(sys.argv[1])
+    isovalue = str(sys.argv[2])
+   
     for i in range(1,num_ensemble+1,1):
-        file_name = file_dir+"/"+"test_syntheticdata_el_sequence_ig_ens"+str(i)+"_iso0.80.vtk"
+        #file_name = file_dir+"/"+"test_syntheticdata_el_sequence_ig_ens"+str(i)+"_iso0.80.vtk"
+        #file_name = file_dir+"/"+"test_2ddata_el_using_ens_"+str(i)+"_iso0.80.vtk"
+        
+        #file_name = file_dir+"/"+"test_2ddata_el_velocityMagnitude_using_ens_"+str(i)+"_iso0.10.vtk"
+        file_name = fieldSuffix+"_"+str(i)+"_iso"+isovalue+".vtk"
         #print("process file", file_name)
         #load data
-        field_name= "entropy0.80"
+        #field_name= "entropy0.80"
+        #for red sea
+        field_name= "entropy"+isovalue
         ds = readDS(file_name)
         # convert the data into the numpy format
         pointArray = ds.GetCellData().GetArray(field_name)

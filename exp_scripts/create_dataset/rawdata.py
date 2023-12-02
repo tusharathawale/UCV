@@ -15,15 +15,15 @@ def writeStructuredDs(fname, ds):
     writer.Write() 
 
 
-xdim=300
-ydim=300
+xdim=5
+ydim=5
 zdim=1
 
 x,y = np.meshgrid(np.linspace(-1.0,1.0,xdim), np.linspace(-1.0,1.0,ydim))
 d=np.sqrt(x*x+y*y)
 sigma, mu = 1.0, 0.0
 
-g=np.exp(-(( d-mu)**2/(2.0*sigma**2)))
+g=np.exp(-((d-mu)**2/(2.0*sigma**2)))
 #print("2D gaussian like array")
 #print(g)
 #plt.matshow(g)
@@ -40,6 +40,6 @@ vtkArray.SetName("TestField")
 structured_dataset.GetPointData().AddArray(vtkArray)
 structured_dataset.GetPointData().SetActiveScalars("TestField")
 
-writeStructuredDs("RawdataPointScalar.vtk",structured_dataset)
+writeStructuredDs("RawdataPointScalar5By5.vtk",structured_dataset)
 
 #print(structured_dataset)

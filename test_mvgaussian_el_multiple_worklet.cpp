@@ -7,9 +7,14 @@
 #include <vtkm/cont/ArrayHandleSOA.h>
 #include <vtkm/cont/ArrayCopy.h>
 #include <vtkm/cont/Initialize.h>
+#include <vtkm/Matrix.h>
 
 #include "ucvworklet/CreateNewKey.hpp"
 #include "ucvworklet/MVGaussianWithEnsemble2DTryELEntropy.hpp"
+#include "ucvworklet/MVGaussianWithEnsemble2DTryELEigenDecomp.hpp"
+#include "ucvworklet/MVGaussianWithEnsemble2DSampling.hpp"
+#include "ucvworklet/MVGaussianWithEnsemble2DComputeCases.hpp"
+#include "ucvworklet/MVGaussianWithEnsemble2DComputeEntropy.hpp"
 
 #include "ucvworklet/HelperProbKDE.hpp"
 #include "ucvworklet/KDEEntropy.hpp"
@@ -26,7 +31,8 @@
 #include <sstream>
 #include <iomanip>
 
-constexpr int NumEnsembles = 7;
+// change this value is number of ensembles changes
+constexpr int NumEnsembles = 20;
 using SupportedTypesVec = vtkm::List<vtkm::Vec<double, NumEnsembles>>;
 
 void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, double iso, int numSamples, std::string strategy)
@@ -42,55 +48,47 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
 
   auto resolveType = [&](const auto &concrete)
   {
-    if (strategy == "ig")
+    if (strategy == "mvg_multi_worklet")
     {
-      // extracting mean and stdev
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> stdevArray;
+      vtkm::cont::Invoker invoker;
 
-      using DispatcherType = vtkm::worklet::DispatcherMapField<ExtractingMeanStdevEnsembles>;
-      DispatcherType dispatcher;
-      dispatcher.Invoke(concrete, meanArray, stdevArray);
+      // Step 1 compute the eigen decomposition matrix and mean value per cell
+      vtkm::cont::ArrayHandle<vtkm::Matrix<vtkm::FloatDefault, 4, 4>> eigenDecomposeMatrix;
+      vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::FloatDefault, 4>> meanArray;
+      invoker(MVGaussianWithEnsemble2DTryELEigenDecomp{numSamples}, vtkmDataSet.GetCellSet(), concrete, eigenDecomposeMatrix, meanArray);
 
-      using WorkletType = EntropyIndependentGaussian<4, 16>;
-      using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
+      std::cout << "step 1 out" << std::endl;
+      vtkm::cont::printSummary_ArrayHandle(eigenDecomposeMatrix, std::cout);
+      vtkm::cont::printSummary_ArrayHandle(meanArray, std::cout);
 
-      DispatcherEntropyIG dispatcherEntropyIG(EntropyIndependentGaussian<4, 16>{iso});
-      dispatcherEntropyIG.Invoke(vtkmDataSet.GetCellSet(), meanArray, stdevArray, crossProbability, numNonZeroProb, entropy);
-    }
-    else if (strategy == "mvg")
-    {
-      using WorkletType = MVGaussianWithEnsemble2DTryELEntropy;
-      using DispatcherType = vtkm::worklet::DispatcherMapTopology<WorkletType>;
-      DispatcherType dispatcher(MVGaussianWithEnsemble2DTryELEntropy{iso, numSamples});
-      dispatcher.Invoke(vtkmDataSet.GetCellSet(), concrete, crossProbability, numNonZeroProb, entropy);
-    }
-    else if (strategy == "kde")
-    {
+      // Step 2 compute sampling array
+      vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::FloatDefault, 4>> samplingArray;
+      samplingArray.Allocate(numSamples);
+      invoker(MVGaussianWithEnsemble2DSampling{}, samplingArray);
 
-      // compute kde distribution
-      using DispatcherProbKDE = vtkm::worklet::DispatcherMapField<HelperProbKDE<NumEnsembles>>;
+      vtkm::cont::printSummary_ArrayHandle(samplingArray, std::cout);
 
-      DispatcherProbKDE dispatcherProbKDE(HelperProbKDE<NumEnsembles>{iso});
-      vtkm::cont::ArrayHandle<vtkm::FloatDefault> postiveProb;
+      // Step 3 compute cases for each combination of cell and sample
+      vtkm::cont::ArrayHandle<vtkm::UInt8> casesArray;
+      // length of casesArray is #cells * # sample
+      vtkm::IdComponent numCells = eigenDecomposeMatrix.GetNumberOfValues();
+      std::cout << "numCells " << numCells << " numSamples " << numSamples << std::endl;
+      casesArray.Allocate(numCells * numSamples);
+      invoker(MVGaussianWithEnsemble2DComputeCases{numCells, numSamples, iso}, casesArray, eigenDecomposeMatrix, meanArray, samplingArray);
+      
+      std::cout << "step 3 out" << std::endl;
+      vtkm::cont::printSummary_ArrayHandle(casesArray, std::cout);
 
-      dispatcherProbKDE.Invoke(concrete, postiveProb);
+      // Step 4 compute corssPorb, entropy, non-zero prob and shrink len of casesArray to #cells
+      // there are two ways to do this, one is assign a thread per cell
+      // another is assign a thread per sampled data
+      crossProbability.Allocate(numCells);
+      numNonZeroProb.Allocate(numCells);
+      entropy.Allocate(numCells);
+      invoker(MVGaussianWithEnsemble2DComputeEntropy{numSamples}, crossProbability, numNonZeroProb, entropy, casesArray);
 
-      // compute entropy things
-      // go through cell by points
-      using DispatcherEntropyKDE = vtkm::worklet::DispatcherMapTopology<KDEEntropy<4, 16>>;
-
-      DispatcherEntropyKDE dispatcherEntropyKDE(KDEEntropy<4, 16>{iso});
-      dispatcherEntropyKDE.Invoke(vtkmDataSet.GetCellSet(), postiveProb, crossProbability, numNonZeroProb, entropy);
-    }
-    else if (strategy == "mvkde")
-    {
-      // TODO
-      // need to do the similar things with kde
-      // adjust the positive probabilty based on density value
-      // ? How to decide the positiv value, 1d case has the elf function
-      // should we also do the sampling for this case?
-
+      // output is cross prob, entropy, num_cross value for each cell position
+      vtkm::cont::printSummary_ArrayHandle(crossProbability, std::cout);
     }
     else
     {
@@ -116,14 +114,13 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   outputDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
   outputDataSet.AddCellField("entropy" + isostr, entropy);
 
-  std::string outputFileName = "./test_syntheticdata_el_sequence_" + strategy + "_ens" +  std::to_string(NumEnsembles) + "_iso" + isostr + ".vtk";
+  std::string outputFileName = "./test_syntheticdata_el_" + strategy + "_ens" + std::to_string(NumEnsembles) + "_iso" + isostr + ".vtk";
   vtkm::io::VTKDataSetWriter writeCross(outputFileName);
   writeCross.WriteDataSet(outputDataSet);
 }
 
 int main(int argc, char *argv[])
 {
-
   vtkm::cont::InitializeResult initResult = vtkm::cont::Initialize(
       argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
   vtkm::cont::Timer timer{initResult.Device};
@@ -198,11 +195,7 @@ int main(int argc, char *argv[])
   std::cout << "checking input dataset" << std::endl;
   vtkmDataSet.PrintSummary(std::cout);
 
-  // std::string outputFileName = "./red_sea_ens_slice_" + std::to_string(sliceId) + ".vtk";
-  // vtkm::io::VTKDataSetWriter writeEnsembles(outputFileName);
-  // writeEnsembles.WriteDataSet(vtkmDataSet);
-
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "ig");
+  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "mvg_multi_worklet");
 
   return 0;
 }

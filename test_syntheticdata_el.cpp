@@ -28,7 +28,7 @@
 #include <sstream>
 #include <iomanip>
 
-constexpr int NumEnsembles = 15;
+constexpr int NumEnsembles = 20;
 using SupportedTypesVec = vtkm::List<vtkm::Vec<double, NumEnsembles>>;
 
 void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, double iso, int numSamples, std::string dataPathSuffix, std::string strategy)
@@ -237,11 +237,11 @@ int main(int argc, char *argv[])
 
   // checking reuslts
 
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, fieldName, "mvg_less");
+  // callWorklet(timer, vtkmDataSet, isovalue, num_samples, fieldName, "mvg_less");
 
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, fieldName, "mvg_sanity");
+  // callWorklet(timer, vtkmDataSet, isovalue, num_samples, fieldName, "mvg_sanity");
 
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, fieldName, "ig");
+  // callWorklet(timer, vtkmDataSet, isovalue, num_samples, fieldName, "ig");
 
   // callWorklet(timer, vtkmDataSet, isovalue, num_samples, "kde");
 
