@@ -35,9 +35,9 @@
 constexpr int NumEnsembles = 20;
 using SupportedTypesVec = vtkm::List<vtkm::Vec<double, NumEnsembles>>;
 
-void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, double iso, int numSamples, std::string strategy)
+void callWorklet(vtkm::cont::Timer &timerWhole, vtkm::cont::Timer &timerDetails, vtkm::cont::DataSet vtkmDataSet, double iso, int numSamples, std::string strategy)
 {
-  timer.Start();
+  timerWhole.Start();
 
   vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
   vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
@@ -50,45 +50,56 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
   {
     if (strategy == "mvg_multi_worklet")
     {
+      timerDetails.Start();
       vtkm::cont::Invoker invoker;
-
       // Step 1 compute the eigen decomposition matrix and mean value per cell
       vtkm::cont::ArrayHandle<vtkm::Matrix<vtkm::FloatDefault, 4, 4>> eigenDecomposeMatrix;
       vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::FloatDefault, 4>> meanArray;
       invoker(MVGaussianWithEnsemble2DTryELEigenDecomp{numSamples}, vtkmDataSet.GetCellSet(), concrete, eigenDecomposeMatrix, meanArray);
-
-      std::cout << "step 1 out" << std::endl;
-      vtkm::cont::printSummary_ArrayHandle(eigenDecomposeMatrix, std::cout);
-      vtkm::cont::printSummary_ArrayHandle(meanArray, std::cout);
+      timerDetails.Stop();
+      // output is ms
+      std::cout << "step 1 execution time: " << timerDetails.GetElapsedTime() * 1000 << std::endl;
+      // restart timerDetails
+      // std::cout << "step 1 out" << std::endl;
+      // vtkm::cont::printSummary_ArrayHandle(eigenDecomposeMatrix, std::cout);
+      // vtkm::cont::printSummary_ArrayHandle(meanArray, std::cout);
 
       // Step 2 compute sampling array
+      timerDetails.Start();
       vtkm::cont::ArrayHandle<vtkm::Vec<vtkm::FloatDefault, 4>> samplingArray;
       samplingArray.Allocate(numSamples);
       invoker(MVGaussianWithEnsemble2DSampling{}, samplingArray);
-
-      vtkm::cont::printSummary_ArrayHandle(samplingArray, std::cout);
+      timerDetails.Stop();
+      // output is ms
+      std::cout << "step 2 execution time: " << timerDetails.GetElapsedTime() * 1000 << std::endl;
+      // vtkm::cont::printSummary_ArrayHandle(samplingArray, std::cout);
 
       // Step 3 compute cases for each combination of cell and sample
+      timerDetails.Start();
       vtkm::cont::ArrayHandle<vtkm::UInt8> casesArray;
       // length of casesArray is #cells * # sample
       vtkm::IdComponent numCells = eigenDecomposeMatrix.GetNumberOfValues();
-      std::cout << "numCells " << numCells << " numSamples " << numSamples << std::endl;
+      //std::cout << "numCells " << numCells << " numSamples " << numSamples << std::endl;
       casesArray.Allocate(numCells * numSamples);
       invoker(MVGaussianWithEnsemble2DComputeCases{numCells, numSamples, iso}, casesArray, eigenDecomposeMatrix, meanArray, samplingArray);
-      
-      std::cout << "step 3 out" << std::endl;
-      vtkm::cont::printSummary_ArrayHandle(casesArray, std::cout);
+      timerDetails.Stop();
+      std::cout << "step 3 execution time: " << timerDetails.GetElapsedTime() * 1000 << std::endl;
+      // std::cout << "step 3 out" << std::endl;
+      // vtkm::cont::printSummary_ArrayHandle(casesArray, std::cout);
 
       // Step 4 compute corssPorb, entropy, non-zero prob and shrink len of casesArray to #cells
       // there are two ways to do this, one is assign a thread per cell
       // another is assign a thread per sampled data
+      timerDetails.Start();
       crossProbability.Allocate(numCells);
       numNonZeroProb.Allocate(numCells);
       entropy.Allocate(numCells);
       invoker(MVGaussianWithEnsemble2DComputeEntropy{numSamples}, crossProbability, numNonZeroProb, entropy, casesArray);
-
+      timerDetails.Stop();
       // output is cross prob, entropy, num_cross value for each cell position
-      vtkm::cont::printSummary_ArrayHandle(crossProbability, std::cout);
+      // vtkm::cont::printSummary_ArrayHandle(crossProbability, std::cout);
+      // output is ms
+      std::cout << "step 4 execution time: " << timerDetails.GetElapsedTime() * 1000 << std::endl;
     }
     else
     {
@@ -98,10 +109,10 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
 
   vtkmDataSet.GetField("ensembles").GetData().CastAndCallForTypes<SupportedTypesVec, VTKM_DEFAULT_STORAGE_LIST>(resolveType);
 
-  timer.Stop();
+  timerWhole.Stop();
 
   // output is ms
-  std::cout << "execution time: " << timer.GetElapsedTime() * 1000 << std::endl;
+  std::cout << "execution time: " << timerWhole.GetElapsedTime() * 1000 << std::endl;
 
   std::stringstream stream;
   stream << std::fixed << std::setprecision(2) << iso;
@@ -122,8 +133,9 @@ void callWorklet(vtkm::cont::Timer &timer, vtkm::cont::DataSet vtkmDataSet, doub
 int main(int argc, char *argv[])
 {
   vtkm::cont::InitializeResult initResult = vtkm::cont::Initialize(
-      argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
-  vtkm::cont::Timer timer{initResult.Device};
+  argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
+  vtkm::cont::Timer timerWhole{initResult.Device};
+  vtkm::cont::Timer timerDetails{initResult.Device};
 
   if (argc != 6)
   {
@@ -132,7 +144,7 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-  std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
+  std::cout << "timer device: " << timerWhole.GetDevice().GetName() << std::endl;
 
   std::string dataPathSuffix = std::string(argv[1]);
   std::string fieldName = std::string(argv[2]);
@@ -195,7 +207,7 @@ int main(int argc, char *argv[])
   std::cout << "checking input dataset" << std::endl;
   vtkmDataSet.PrintSummary(std::cout);
 
-  callWorklet(timer, vtkmDataSet, isovalue, num_samples, "mvg_multi_worklet");
+  callWorklet(timerWhole, timerDetails, vtkmDataSet, isovalue, num_samples, "mvg_multi_worklet");
 
   return 0;
 }

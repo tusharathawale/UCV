@@ -172,7 +172,6 @@ public:
             eigenValues.Show();
         }
 #endif
-        int k = 1;
         double largestEigen = vtkm::NegativeInfinity64();
         for (int i = 0; i < 4; i++)
         {

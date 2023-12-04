@@ -229,9 +229,9 @@ public:
             // only need to sample it one time
             for (int i = 0; i < 4; i++)
             {
-                // sample_v[i]=vtkm::Sqrt(eigenValues[i])*norm(rng);
-                std::normal_distribution<double> norm(0, vtkm::Sqrt(eigenValues[i]));
-                sample_v[i] = norm(rng);
+                sample_v[i]=vtkm::Sqrt(eigenValues[i])*norm(rng);
+                // std::normal_distribution<double> norm(0, vtkm::Sqrt(eigenValues[i]));
+                // sample_v[i] = norm(rng);
             }
 
             // compute sampled results

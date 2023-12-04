@@ -195,11 +195,11 @@ int main(int argc, char *argv[])
     vtkm::cont::ArrayHandle<vtkm::Float64> fieldDataArray;
     vtkm::cont::ArrayCopyShallowIfPossible(inData.GetField(fieldName).GetData(), fieldDataArray);
     dataArray.push_back(fieldDataArray);
-    if (ensId == 2)
-    {
-      std::cout << "debug fileName " << fileName << std::endl;
-      std::cout << "debug value " << fieldDataArray.ReadPortal().Get(0) << std::endl;
-    }
+    // if (ensId == 2)
+    // {
+    //   std::cout << "debug fileName " << fileName << std::endl;
+    //   std::cout << "debug value " << fieldDataArray.ReadPortal().Get(0) << std::endl;
+    // }
   }
 
   // go through the data array and put them into the dataArraySOA

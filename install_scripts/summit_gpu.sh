@@ -150,6 +150,10 @@ mkdir -p $EASY_LINALG_INSTALL_DIR
 
 # move files to new dir
 cp EasyLinalg/StaticMemTemplate/include/* $EASY_LINALG_INSTALL_DIR
+
+# update the macro
+sed -i 's/__attribute__((visibility("default")))/VTKM_EXEC/' $EASY_LINALG_INSTALL_DIR/basic.h
+
 # clean source files
 rm -rf $EASY_LINALG_SRC_DIR
 

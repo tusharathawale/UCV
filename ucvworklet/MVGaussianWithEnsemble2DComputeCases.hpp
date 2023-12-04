@@ -23,12 +23,12 @@ public:
         SampleArrayType sampleArray,
         vtkm::Id workIndex) const
     {
-        if (workIndex == 0)
-        {
-            printf("matrix array len %d\n", matrixArray.GetNumberOfValues());
-            printf("mean array len %d\n", meanArray.GetNumberOfValues());
-            printf("sample array len %d\n", sampleArray.GetNumberOfValues());
-        }
+        // if (workIndex == 0)
+        // {
+        //     printf("matrix array len %d\n", matrixArray.GetNumberOfValues());
+        //     printf("mean array len %d\n", meanArray.GetNumberOfValues());
+        //     printf("sample array len %d\n", sampleArray.GetNumberOfValues());
+        // }
 
         // select matrix mean sample according to the workIndex
         int cellIndex = workIndex / m_numSamples;
@@ -54,7 +54,7 @@ public:
             result[i] = result[i] + M[i];
         }
         
-        printf("worklet index %d ASM result %f %f %f %f\n",workIndex,result[0],result[1],result[2],result[3]);
+        //printf("worklet index %d ASM result %f %f %f %f\n",workIndex,result[0],result[1],result[2],result[3]);
 
         // TODO, simplify previous operation, A*M can be merged together in previous worklet
         // then we only need one vector here, just + M
@@ -69,7 +69,7 @@ public:
             }
         }
         caseValue=tempCaseValue;
-        printf("worklet index %d case value %d\n",workIndex,caseValue);
+        //printf("worklet index %d case value %d\n",workIndex,caseValue);
     }
 
 private:

@@ -81,6 +81,16 @@ add_executable(uvm_point_neighborhood uvm_point_neighborhood.cpp)
 set_target_properties(uvm_point_neighborhood PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 target_link_libraries(uvm_point_neighborhood ${VTKm_LIBRARIES})
 
+set_source_files_properties(test_mvgaussian_el_multiple_worklet.cpp PROPERTIES LANGUAGE "CUDA")
+add_executable(test_mvgaussian_el_multiple_worklet test_mvgaussian_el_multiple_worklet.cpp)
+set_target_properties(test_mvgaussian_el_multiple_worklet PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(test_mvgaussian_el_multiple_worklet ${VTKm_LIBRARIES})
+
+set_source_files_properties(test_syntheticdata_el.cpp PROPERTIES LANGUAGE "CUDA")
+add_executable(test_syntheticdata_el test_syntheticdata_el.cpp)
+set_target_properties(test_syntheticdata_el PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(test_syntheticdata_el ${VTKm_LIBRARIES})
+
 elseif(USE_HIP)
 
 set_source_files_properties(ucvworklet/EntropyUniform.hpp PROPERTIES LANGUAGE "HIP")

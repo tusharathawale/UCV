@@ -148,9 +148,9 @@ public:
         // UCVMATH::mat_t AOriginal = UCVMATH::eigen_vector_decomposition(&ucvcov4by4_original);
         // gsl_matrix *A = UCVMATH_CSTM_GSL::gsl_eigen_vector_decomposition(ucvcov4by4);
         EASYLINALG::Matrix<double, 4, 4> A = EASYLINALG::SymmEigenDecomposition(ucvcov4by4, this->m_tolerance, this->m_iterations);
-        printf("debug thread id %d\n",workIndex);
-        A.Show();
-        ucvmeanv.Show();
+        //printf("debug thread id %d\n",workIndex);
+        //A.Show();
+        //ucvmeanv.Show();
         // some values are filtered out since it can be in the empty region
         // with 0 values there
 
@@ -201,8 +201,8 @@ public:
             // Ax+b operation
             AUM = EASYLINALG::DGEMV(1.0, A, sample_v, 1.0, ucvmeanv);
             
-            printf("debug AUM sample %d\n",n);
-            AUM.Show();
+            //printf("debug AUM sample %d\n",n);
+            //AUM.Show();
 
             // compute the specific position
             // map > or < to specific cases
@@ -216,7 +216,7 @@ public:
                 }
             }
 
-            printf("case value %d\n",caseValue);
+            //printf("case value %d\n",caseValue);
 
             // the associated pos is 0 otherwise
             probHistogram[caseValue] = probHistogram[caseValue] + 1.0;
