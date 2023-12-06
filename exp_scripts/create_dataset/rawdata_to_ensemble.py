@@ -55,10 +55,12 @@ if __name__ == "__main__":
     ensemble_all=[]
     for p in pointArrayNp:
         # mu is current point, sigma is 1
-        mu=p
-        sigma=0.02
+        mu=0
+        sigma=0.003
+        # sigma=0.001
         # TODO, use multimodal distribution to add noise
-        ensembles_each_point = np.random.normal(mu, sigma, numEnsembleMem)
+        #ensembles_each_point = np.random.normal(mu+, sigma, numEnsembleMem)
+        ensembles_each_point = p+abs(np.random.normal(mu, sigma, numEnsembleMem))
         ensemble_all.append(ensembles_each_point)
     # write out the ensemble members into a separate files.
     # plt.hist(ensemble_all[0],bins=20)
