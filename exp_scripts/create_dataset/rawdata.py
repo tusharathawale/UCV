@@ -15,8 +15,8 @@ def writeStructuredDs(fname, ds):
     writer.Write() 
 
 
-xdim=5
-ydim=5
+xdim=100
+ydim=100
 zdim=1
 
 x,y = np.meshgrid(np.linspace(-1.0,1.0,xdim), np.linspace(-1.0,1.0,ydim))
@@ -40,6 +40,6 @@ vtkArray.SetName("TestField")
 structured_dataset.GetPointData().AddArray(vtkArray)
 structured_dataset.GetPointData().SetActiveScalars("TestField")
 
-writeStructuredDs("RawdataPointScalar5By5.vtk",structured_dataset)
+writeStructuredDs("RawdataPointScalar.vtk",structured_dataset)
 
 #print(structured_dataset)
