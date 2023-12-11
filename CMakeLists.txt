@@ -213,6 +213,9 @@ target_link_libraries(test_syntheticdata_el_sequence_test_runtime ${VTKm_LIBRARI
 add_executable(test_mvgaussian_el_multiple_worklet test_mvgaussian_el_multiple_worklet.cpp)
 target_link_libraries(test_mvgaussian_el_multiple_worklet ${VTKm_LIBRARIES})
 
+add_executable(test_syntheticdata_el_without_ens test_syntheticdata_el_without_ens.cpp)
+target_link_libraries(test_syntheticdata_el_without_ens ${VTKm_LIBRARIES})
+
 endif()
 
 

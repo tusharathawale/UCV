@@ -20,23 +20,32 @@ def readDS(fname) :
 
 if __name__ == "__main__":
     #file_dir = "/Users/zw1/Documents/cworkspace/src/UCV/install_scripts/mac/install/UCV"
-    num_ensemble=50
+    
     acc_diff=[]
     prev_array=[]
 
-    if(len(sys.argv)!=3):
-        print("<executable> <fieldSuffix> <iso>")
+    if(len(sys.argv)!=4):
+        print("<executable> <fieldSuffix> <iso> <num_ens>")
         exit(0)
         
     fieldSuffix = str(sys.argv[1])
     isovalue = str(sys.argv[2])
-   
-    for i in range(1,num_ensemble+1,1):
+    num_ensemble=int(sys.argv[3])
+
+    # get case that use all ens
+    file_name_all_ens = fieldSuffix+"_using_all_ens_iso_"+isovalue+".vtk"
+    ds_all_ens = readDS(file_name_all_ens)
+    entropy_field_name= "entropy"+isovalue
+    pointArray = ds_all_ens.GetCellData().GetArray(entropy_field_name)
+    pointArrayAllEnsNp = numpy_support.vtk_to_numpy(pointArray)
+    
+    diff_sum_list=[]
+    for i in range(0,num_ensemble,1):
         #file_name = file_dir+"/"+"test_syntheticdata_el_sequence_ig_ens"+str(i)+"_iso0.80.vtk"
         #file_name = file_dir+"/"+"test_2ddata_el_using_ens_"+str(i)+"_iso0.80.vtk"
         
         #file_name = file_dir+"/"+"test_2ddata_el_velocityMagnitude_using_ens_"+str(i)+"_iso0.10.vtk"
-        file_name = fieldSuffix+"_"+str(i)+"_iso"+isovalue+".vtk"
+        file_name = fieldSuffix+"_no_ens_"+str(i)+"_iso_"+isovalue+".vtk"
         #print("process file", file_name)
         #load data
         #field_name= "entropy0.80"
@@ -46,20 +55,20 @@ if __name__ == "__main__":
         # convert the data into the numpy format
         pointArray = ds.GetCellData().GetArray(field_name)
         pointArrayNp = numpy_support.vtk_to_numpy(pointArray)
-        #print("pointArrayNp.shape", pointArrayNp.shape)
-        #extract field
-        #compare accumulated difference between two files
-        #put results into a list
-        if len(prev_array)==0:
-            # just replace the array and do nothing
-            prev_array=pointArrayNp
-            continue
 
-            
         # when the prev is not none, comare difference between two array
-        diffs = np.abs(pointArrayNp-prev_array)
+        diffs = np.abs(pointArrayNp-pointArrayAllEnsNp)
         #print(diffs)
         diff_sum = np.sum(diffs)
-        print("diff sum between first %d and first %d is %f"%(i,i-1,diff_sum))
-        # update prev array
-        prev_array=pointArrayNp
+        diff_sum_list.append(diff_sum)
+        print("diff sum between all and no ens %d is %f"%(i,diff_sum))
+
+no_ens_id_list=list(range(0, num_ensemble,1))
+plt.plot(diff_sum_list, np.zeros_like(diff_sum_list) + 0, 'x')
+plt.savefig("no_ens_diff_1d.png")
+plt.clf()
+plt.scatter(no_ens_id_list, diff_sum_list)
+plt.savefig("no_ens_diff_2d.png")
+
+
+

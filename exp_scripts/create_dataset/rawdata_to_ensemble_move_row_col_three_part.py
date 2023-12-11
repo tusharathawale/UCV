@@ -41,7 +41,7 @@ def writeVTKDataFromArray(xdim, ydim, zdim, file_name, inputArray):
 if __name__ == "__main__":
     filename = sys.argv[1]
     fieldarray= "TestField"
-    numEnsembleMem=20
+    numEnsembleMem=50
 
     ds = readDS(filename)
     # convert the data into the numpy format
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         # go through each row of pointArray
         # twist x direaction
         print(ens)
-        if ens%2==0:
+        if ens%3==0:
             print("twist x") 
             for r in range(ydim):
                 mu=0
@@ -66,16 +66,26 @@ if __name__ == "__main__":
                 for c in range (xdim):
                     index = r*xdim+c
                     pointArrayNpEns[index]=pointArrayNpEns[index]+moveV
-        else:
+        elif ens%3==1:
             # twist y direaction
             print("twist +y")
             for c in range (xdim):
                 mu=0
-                sigma=0.01
+                sigma=0.03
                 moveV = abs(np.random.normal(mu, sigma))
                 for r in range (ydim):
                     index = r*xdim+c
-                    pointArrayNpEns[index]=pointArrayNpEns[index]+moveV 
+                    pointArrayNpEns[index]=pointArrayNpEns[index]+moveV
+        else:
+            # twist y direaction
+            print("twist -y")
+            for c in range (xdim):
+                mu=0
+                sigma=0.05
+                moveV = -abs(np.random.normal(mu, sigma))
+                for r in range (ydim):
+                    index = r*xdim+c
+                    pointArrayNpEns[index]=pointArrayNpEns[index]+moveV    
         output_filename = filename[:-4] + "_" + str(ens) + ".vtk"
         writeVTKDataFromArray(xdim,ydim,zdim,output_filename,pointArrayNpEns)
 
