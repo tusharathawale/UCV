@@ -50,6 +50,13 @@ void callWorklet(vtkm::cont::Timer &timerWhole, vtkm::cont::Timer &timerDetails,
   {
     if (strategy == "mvg_multi_worklet")
     {
+      //TODO, also adding a flag array for each cell here
+      //TO label it is out of min and max or not
+      //If it is out of bounds, when computing cases, 
+      //We just set it to 0 or 1 direactly
+      //Only small portion of data actually need to be taken care of seriously
+      //Since only small portion of them is located within min and max region
+      //Filtering out the interesting region can definately save a large amount of time
       timerDetails.Start();
       vtkm::cont::Invoker invoker;
       // Step 1 compute the eigen decomposition matrix and mean value per cell

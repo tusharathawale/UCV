@@ -1,0 +1,51 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="UncertainContour"
+                 class="vtkUncertainContour"
+                 label="Contour With uncertainty">
+      <Documentation
+          long_help="Find the probable locations of a contour for a given isovalue"
+          short_help="Find a contour with normally distributed uncertainty." />
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkImageData" />
+      </DataTypeDomain>
+      <InputArrayDomain attribute_type="point"
+                        name="input_array"
+                        number_of_components="1"
+                        data_type="vtkImageData" />
+      </InputProperty>
+      <!-- For the input field selections, the default_values specifies the input index. -->     
+      <DoubleVectorProperty command="SetIsoValue"
+                            default_values="0"
+                            name="IsoValue"
+                            number_of_elements="1">
+        <ArrayRangeDomain name="range" default_mode="mid">
+        </ArrayRangeDomain>
+      </DoubleVectorProperty>
+      
+      <StringVectorProperty name="ContourProbabilityFieldName"
+                            command="SetContourProbabilityName"
+                            number_of_elements="1"
+                            default_values="contour_probability"
+                            panel_visibility="advanced" />
+      <StringVectorProperty name="NumberNonzeroProbabilityFieldName"
+                            command="SetNumberNonzeroProbabilityName"
+                            number_of_elements="1"
+                            default_values="num_nonzero_probability"
+                            panel_visibility="advanced" />
+      <StringVectorProperty name="EntropyFieldName"
+                            command="SetEntropyName"
+                            number_of_elements="1"
+                            default_values="entropy"
+                            panel_visibility="advanced" />
+      <Hints>
+        <ShowInMenu category="Uncertainty" />
+      </Hints>
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>

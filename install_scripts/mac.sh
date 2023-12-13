@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-build_jobs=6
+build_jobs=1
 mkdir -p mac
 cd mac
 
@@ -102,24 +102,28 @@ UCV_SRC_DIR=$HERE/../../
 # use the install dir as the build dir
 UCV_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/UCV"
 
-if [ -d $UCV_INSTALL_DIR ]; then
-    echo "====> skip, $UCV_INSTALL_DIR already exists," \
-             "please remove it if you want to reinstall it"
-else
+#if [ -d $UCV_INSTALL_DIR ]; then
+#    echo "====> skip, $UCV_INSTALL_DIR already exists," \
+#             "please remove it if you want to reinstall it"
+#else
     
     #-DCMAKE_BUILD_TYPE=Release \
     # using Debug mode for enabling the assert option in testing
+    # comment out paraview dir if not install plugin
+    # if using paraview plugin build, just comment out the vtkm dir
     cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=Debug \
     -DBUILD_SHARED_LIBS=ON \
-    -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0
-    
+    -DBUILD_PARAVIEW_PLUGIN=ON \
+    -DParaView_DIR=/Users/zw1/Documents/cworkspace/build/paraview/lib/cmake/paraview-5.11
+    #-DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 \
+
     cd $HERE
 
     # build and install
     echo "**** Building UCV"
     cmake --build ${UCV_INSTALL_DIR} -j${build_jobs}
-fi
+#fi
 
 # not sure why the libvtkmdiympi.so is not included during the build process
 echo "try to add library path by executing:"

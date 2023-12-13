@@ -2,11 +2,32 @@ cmake_minimum_required(VERSION 3.12...3.15 FATAL_ERROR)
 project(ucv LANGUAGES CXX)
 add_compile_options(-std=c++14)
 
-#Find the VTK-m package
-find_package(VTKm REQUIRED QUIET)
+
+option(BUILD_PARAVIEW_PLUGIN
+  "Build a plugin for ParaView that makes uncertainty filters available. Using the VTKm integrated with Paraview to build"
+  OFF)
+
+if(BUILD_PARAVIEW_PLUGIN)
+  find_package(ParaView REQUIRED)
+  #Find the VTK-m package
+find_package(VTKm REQUIRED)
 #set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::vtkmdiympi vtkm::io)
 #NOMPI version
+message("debug vtkm_source:" ${vtkm_source})
+message("debug VTKm_DIR ${VTKm_DIR}")
+set(VTKm_LIBRARIES vtkm_cont vtkm_filter vtkm_source vtkm_io)
+
+else()
+#Find the VTK-m package
+find_package(VTKm REQUIRED)
+#set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::vtkmdiympi vtkm::io)
+#NOMPI version
+message("debug vtkm_source:" ${vtkm_source})
+message("debug VTKm_DIR ${VTKm_DIR}")
 set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::io)
+endif()
+
+
 
 #Find MPI
 find_package(MPI REQUIRED)
@@ -118,6 +139,25 @@ set_source_files_properties(uvm_point_neighborhood.cpp PROPERTIES LANGUAGE "HIP"
 add_executable(uvm_point_neighborhood uvm_point_neighborhood.cpp)
 target_link_libraries(uvm_point_neighborhood ${VTKm_LIBRARIESNOMPI})
 
+elseif(BUILD_PARAVIEW_PLUGIN) 
+
+  # ParaView plugins need this included to be built.
+  # (Why don't they just include themselves?)
+  include(GNUInstallDirs)
+
+  # ParaView plugins need to be packaged in a shared library
+  set(BUILD_SHARED_LIBS ON)
+
+  paraview_plugin_scan(
+    PLUGIN_FILES ${CMAKE_CURRENT_SOURCE_DIR}/pv-plugin/paraview.plugin
+    PROVIDES_PLUGINS plugins
+    ENABLE_BY_DEFAULT ON
+    HIDE_PLUGINS_FROM_CACHE ON
+    )
+
+  # Note: this will call subdirectory for pv-plugin so we don't have to.
+  paraview_plugin_build(PLUGINS ${plugins})
+
 else()
  
 add_executable(ucv_extract ucv_extract.cpp)
@@ -217,6 +257,5 @@ add_executable(test_syntheticdata_el_without_ens test_syntheticdata_el_without_e
 target_link_libraries(test_syntheticdata_el_without_ens ${VTKm_LIBRARIES})
 
 endif()
-
 
 

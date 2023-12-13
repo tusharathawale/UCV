@@ -8,6 +8,7 @@ import sys
 from vtk.util import numpy_support
 import matplotlib.pyplot as plt
 from vtkmodules.vtkCommonDataModel import vtkStructuredPoints
+from sklearn.cluster import KMeans
 
 def readDS(fname) :
     reader = vtk.vtkDataSetReader()
@@ -70,5 +71,27 @@ plt.clf()
 plt.scatter(no_ens_id_list, diff_sum_list)
 plt.savefig("no_ens_diff_2d.png")
 
+# TODO Using GMM to do the classification for the diff_sum_list
+# using kmeans to get the classification
+# km = KMeans()
+# km.fit(diff_sum_list)  # -1 will be calculated to be 13876 here
+# print(km)
 
+# Create some data
+# data = np.random.randn(10)
+# make sure the column is 1 for the output data set
+print("diff_sum_list before reshape: ", diff_sum_list)
+data_reshaped = np.array(diff_sum_list).reshape(-1,1)
+print(data_reshaped)
 
+# Create a KMeans object
+kmeans = KMeans(n_clusters=3)
+
+# Fit the model to the data
+kmeans.fit(data_reshaped)
+
+# Predict the cluster labels for each data point
+labels = kmeans.predict(data_reshaped)
+
+# Print the cluster labels
+print(labels)

@@ -24,10 +24,10 @@ namespace EASYLINALG
         Eye.InitEye();
 
         Matrix<T, Size, Size> R, Q;
-        int actualIter = 0;
+        //int actualIter = 0;
         for (int i = 0; i < maxIter; ++i)
         {
-            actualIter = i;
+            //actualIter = i;
             // s_k is the last item of the first diagonal
             T s = Ak[Size - 1][Size - 1];
             Matrix<T, Size, Size> smulI = MSCALE(s, Eye);
@@ -48,7 +48,7 @@ namespace EASYLINALG
             }
         }
 
-        std::cout << "actual iter is " << actualIter << std::endl;
+        //std::cout << "actual iter is " << actualIter << std::endl;
 
         for (uint i = 0; i < Size; i++)
         {
