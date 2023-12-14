@@ -7,6 +7,8 @@
 #include "vtkObjectFactory.h"
 
 #include "vtkmlib/DataSetConverters.h"
+#include "../../ucvworklet/ExtractingMeanStdev.hpp"
+#include "../../ucvworklet/EntropyIndependentGaussian.hpp"
 
 VTK_ABI_NAMESPACE_BEGIN
 
@@ -35,28 +37,45 @@ std::string vtkUncertainContour::GetInputArrayName(
     return scalarFieldName;
 }
 
-vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont::DataSet inputDataSet)
+vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont::DataSet vtkmDataSet)
 {
-    vtkm::cont::DataSet outputDataSet;
-    if (this->Distribution == "mvg")
+    std::cout << "debug CallUncertainContourWorklet" << std::endl;
+    std::cout << "---debug isovalue is " << this->IsoValue << std::endl;
+    auto outputDataSet = vtkmDataSet;
+
+    // Processing current ensemble data sets based on uncertianty countour
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> stdevArray;
+    auto resolveType = [&](auto &concreteArray)
     {
-        // TODO call the mvg
-        vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
-        vtkm::cont::ArrayHandle<vtkm::FloatDefault> stdevArray;
-        auto resolveType = [&](auto &concreteArray)
-        {
-            printSummary_ArrayHandle(concreteArray, std::cout);
-        };
-        inputDataSet.GetField("ensemble")
-            .GetData()
-            .CastAndCallWithExtractedArray(resolveType);
-    }
-    else
-    {
-        throw std::runtime_error("distribution type " + this->Distribution + " is not supported yet");
-    }
-    //for testing
-    outputDataSet = inputDataSet;
+        vtkm::cont::Invoker invoke;
+        vtkm::Id numPoints = concreteArray.GetNumberOfValues();
+        std::cout << "---debug numPoints is " << numPoints << std::endl;
+
+        auto concreteArrayView = vtkm::cont::make_ArrayHandleView(concreteArray, 0, numPoints);
+
+        invoke(ExtractingMeanStdevEnsembles{}, concreteArrayView, meanArray, stdevArray);
+        printSummary_ArrayHandle(meanArray, std::cout);
+        printSummary_ArrayHandle(stdevArray, std::cout);
+
+        vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
+        vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
+        vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
+
+        invoke(EntropyIndependentGaussian<4, 16>{this->IsoValue}, vtkmDataSet.GetCellSet(), meanArray, stdevArray, crossProbability, numNonZeroProb, entropy);
+
+        outputDataSet.AddCellField(this->ContourProbabilityName, crossProbability);
+        outputDataSet.AddCellField(this->NumberNonzeroProbabilityName, numNonZeroProb);
+        outputDataSet.AddCellField(this->EntropyName, entropy);
+
+        // vtkm::io::VTKDataSetWriter writeCross(outputFileName);
+        // writeCross.WriteDataSet(outputDataSet);
+    };
+
+    vtkmDataSet.GetField("ensemble")
+        .GetData()
+        .CastAndCallWithExtractedArray(resolveType);
+
     return outputDataSet;
 }
 
@@ -73,19 +92,28 @@ int vtkUncertainContour::RequestData(
     try
     {
         // Convert the input dataset to VTK-m
+        
+        std::cout << "original vtk data set" << std::endl;
+
+        std::cout << *input << std::endl;
+
+        // write out data for checking
+
         vtkm::cont::DataSet in = tovtkm::Convert(input, tovtkm::FieldsFlag::PointsAndCells);
 
+        std::cout << "debug input vtkm data" << std::endl;
         in.PrintSummary(std::cout);
 
         vtkm::cont::DataSet result = this->CallUncertainContourWorklet(in);
 
-        // Convert the result back.
+        // Convert the result back from VTKm to VTK.
         // It would be easier if there was a simple method to just convert from general
         // vtkm::cont::DataSet to vtkDataSet. However, that does not exist so you have
         // to copy the vtkDataSet structure in VTK and copy the new fields over. I think
         // it is done this way to prevent creating new arrays for what should be shallow
         // copies. (Maybe in the future the data sharing will be good enough where that
         // is not an issue.)
+
         output->ShallowCopy(input);
         auto copyField = [&](const std::string &fieldName)
         {
@@ -98,6 +126,7 @@ int vtkUncertainContour::RequestData(
             output->GetCellData()->AddArray(resultingArray);
             resultingArray->FastDelete();
         };
+        // Copy the field from the vtkm to vtk and adding associated array into it
         copyField(this->ContourProbabilityName);
         copyField(this->NumberNonzeroProbabilityName);
         copyField(this->EntropyName);
