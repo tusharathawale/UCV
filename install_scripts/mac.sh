@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-build_jobs=1
+build_jobs=6
 mkdir -p mac
 cd mac
 
@@ -102,6 +102,7 @@ UCV_SRC_DIR=$HERE/../../
 # use the install dir as the build dir
 UCV_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/UCV"
 
+#build the latest paraview (paraview 1.2 for this)
 #if [ -d $UCV_INSTALL_DIR ]; then
 #    echo "====> skip, $UCV_INSTALL_DIR already exists," \
 #             "please remove it if you want to reinstall it"
@@ -115,8 +116,8 @@ UCV_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/UCV"
     -DCMAKE_BUILD_TYPE=Debug \
     -DBUILD_SHARED_LIBS=ON \
     -DBUILD_PARAVIEW_PLUGIN=ON \
-    -DParaView_DIR=/Users/zw1/Documents/cworkspace/build/paraview/lib/cmake/paraview-5.11
-    #-DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 \
+    -DParaView_DIR=/Users/zw1/Documents/cworkspace/build/paraview/lib/cmake/paraview-5.12
+    #-DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 
 
     cd $HERE
 

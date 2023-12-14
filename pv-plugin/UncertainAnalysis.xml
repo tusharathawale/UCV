@@ -16,7 +16,7 @@
       </DataTypeDomain>
       <InputArrayDomain attribute_type="point"
                         name="input_array"
-                        number_of_components="1"
+                        number_of_components="20"
                         data_type="vtkImageData" />
       </InputProperty>
       <!-- For the input field selections, the default_values specifies the input index. -->     
@@ -44,7 +44,7 @@
                             default_values="entropy"
                             panel_visibility="advanced" />
       <Hints>
-        <ShowInMenu category="Uncertainty" />
+        <ShowInMenu category="UncertaintyAnalysis" />
       </Hints>
     </SourceProxy>
   </ProxyGroup>

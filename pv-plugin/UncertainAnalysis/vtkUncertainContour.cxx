@@ -35,14 +35,28 @@ std::string vtkUncertainContour::GetInputArrayName(
     return scalarFieldName;
 }
 
-vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont::DataSet input)
+vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont::DataSet inputDataSet)
 {
     vtkm::cont::DataSet outputDataSet;
-    if(this->Distribution=="mvg"){
-        //TODO
-    }else{
-        throw std::runtime_error("distribution type " + this->Distribution + " is not supported yet" );
+    if (this->Distribution == "mvg")
+    {
+        // TODO call the mvg
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> stdevArray;
+        auto resolveType = [&](auto &concreteArray)
+        {
+            printSummary_ArrayHandle(concreteArray, std::cout);
+        };
+        inputDataSet.GetField("ensemble")
+            .GetData()
+            .CastAndCallWithExtractedArray(resolveType);
     }
+    else
+    {
+        throw std::runtime_error("distribution type " + this->Distribution + " is not supported yet");
+    }
+    //for testing
+    outputDataSet = inputDataSet;
     return outputDataSet;
 }
 
@@ -60,6 +74,8 @@ int vtkUncertainContour::RequestData(
     {
         // Convert the input dataset to VTK-m
         vtkm::cont::DataSet in = tovtkm::Convert(input, tovtkm::FieldsFlag::PointsAndCells);
+
+        in.PrintSummary(std::cout);
 
         vtkm::cont::DataSet result = this->CallUncertainContourWorklet(in);
 

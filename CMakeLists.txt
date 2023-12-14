@@ -15,7 +15,9 @@ find_package(VTKm REQUIRED)
 #NOMPI version
 message("debug vtkm_source:" ${vtkm_source})
 message("debug VTKm_DIR ${VTKm_DIR}")
-set(VTKm_LIBRARIES vtkm_cont vtkm_filter vtkm_source vtkm_io)
+#set(VTKm_LIBRARIES vtkm_cont vtkm_filter vtkm_source vtkm_io)
+set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::io)
+
 
 else()
 #Find the VTK-m package
@@ -255,6 +257,9 @@ target_link_libraries(test_mvgaussian_el_multiple_worklet ${VTKm_LIBRARIES})
 
 add_executable(test_syntheticdata_el_without_ens test_syntheticdata_el_without_ens.cpp)
 target_link_libraries(test_syntheticdata_el_without_ens ${VTKm_LIBRARIES})
+
+add_executable(test_syntheticdata_el_combine_data_to_one_ensemble test_syntheticdata_el_combine_data_to_one_ensemble.cpp)
+target_link_libraries(test_syntheticdata_el_combine_data_to_one_ensemble ${VTKm_LIBRARIES})
 
 endif()
 
