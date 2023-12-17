@@ -29,40 +29,46 @@
 #include <iomanip>
 
 void ComputeEntropyWithRuntimeVec(vtkm::cont::DataSet vtkmDataSet,
-                                  vtkm::cont::ArrayHandleRuntimeVec<vtkm::FloatDefault> &runtimeVecArray,
                                   double isovalue, std::string outputFileNameSuffix)
 {
   // Processing current ensemble data sets based on uncertianty countour
   vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
   vtkm::cont::ArrayHandle<vtkm::FloatDefault> stdevArray;
+  auto resolveType = [&](auto &concreteArray)
+  {
+    vtkm::cont::Invoker invoke;
+    vtkm::Id numPoints = concreteArray.GetNumberOfValues();
+    auto concreteArrayView = vtkm::cont::make_ArrayHandleView(concreteArray, 0, numPoints);
 
-  using ComponentType = vtkm::FloatDefault;
+    invoke(ExtractingMeanStdevEnsembles{}, concreteArrayView, meanArray, stdevArray);
+    // printSummary_ArrayHandle(meanArray, std::cout);
+    // printSummary_ArrayHandle(stdevArray, std::cout);
 
-  vtkm::cont::Invoker invoke;
-  invoke(ExtractingMeanStdevEnsembles{}, runtimeVecArray, meanArray, stdevArray);
-  // printSummary_ArrayHandle(meanArray, std::cout);
-  // printSummary_ArrayHandle(stdevArray, std::cout);
+    vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
+    vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
+    vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
 
-  vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
-  vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
-  vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
+    invoke(EntropyIndependentGaussian<4, 16>{isovalue}, vtkmDataSet.GetCellSet(), meanArray, stdevArray, crossProbability, numNonZeroProb, entropy);
 
-  invoke(EntropyIndependentGaussian<4, 16>{isovalue}, vtkmDataSet.GetCellSet(), meanArray, stdevArray, crossProbability, numNonZeroProb, entropy);
+    auto outputDataSet = vtkmDataSet;
 
-  auto outputDataSet = vtkmDataSet;
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(2) << isovalue;
+    std::string isostr = stream.str();
 
-  std::stringstream stream;
-  stream << std::fixed << std::setprecision(2) << isovalue;
-  std::string isostr = stream.str();
+    std::string outputFileName = outputFileNameSuffix + isostr + ".vtk";
 
-  std::string outputFileName = outputFileNameSuffix + isostr + ".vtk";
+    outputDataSet.AddCellField("cross_prob_" + isostr, crossProbability);
+    outputDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
+    outputDataSet.AddCellField("entropy" + isostr, entropy);
 
-  outputDataSet.AddCellField("cross_prob_" + isostr, crossProbability);
-  outputDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
-  outputDataSet.AddCellField("entropy" + isostr, entropy);
+    vtkm::io::VTKDataSetWriter writeCross(outputFileName);
+    writeCross.WriteDataSet(outputDataSet);
+  };
 
-  vtkm::io::VTKDataSetWriter writeCross(outputFileName);
-  writeCross.WriteDataSet(outputDataSet);
+  vtkmDataSet.GetField("ensembles")
+      .GetData()
+      .CastAndCallWithExtractedArray(resolveType);
 }
 
 int main(int argc, char *argv[])
@@ -109,8 +115,8 @@ int main(int argc, char *argv[])
   // store results into the allEnsemblesArray
   std::vector<vtkm::cont::ArrayHandle<vtkm::Float64>> dataArray;
   // redsea data start from 1
-   for (int ensId = 0; ensId < total_num_ensemble; ensId++)
-  //for (int ensId = 1; ensId <= total_num_ensemble; ensId++)
+  for (int ensId = 0; ensId < total_num_ensemble; ensId++)
+  // for (int ensId = 1; ensId <= total_num_ensemble; ensId++)
   {
     std::string fileName = dataPathSuffix + "_" + std::to_string(ensId) + ".vtk";
     vtkm::io::VTKDataSetReader reader(fileName);
@@ -142,15 +148,16 @@ int main(int argc, char *argv[])
     }
   }
 
+  vtkmDataSet.AddPointField("ensembles", runtimeVecArray);
+
   std::string outputFileNameSuffix = "./test_2ddata_el_" + fieldName + "_using_all_ens_iso_";
-  ComputeEntropyWithRuntimeVec(vtkmDataSet, runtimeVecArray, isovalue, outputFileNameSuffix);
+  ComputeEntropyWithRuntimeVec(vtkmDataSet, isovalue, outputFileNameSuffix);
   std::cout << "ok to get entropy for all ensembles" << std::endl;
 
   // // using ensemble without 0 1 2 ... n-1
-  //after loaded, te first element becodes 0
-  //for (int noEnsId = 0; noEnsId < total_num_ensemble; noEnsId++)
+  // after loaded, te first element becodes 0
+  // for (int noEnsId = 0; noEnsId < total_num_ensemble; noEnsId++)
   for (int noEnsId = 0; noEnsId < total_num_ensemble; noEnsId++)
-
   {
     vtkm::cont::ArrayHandleRuntimeVec<vtkm::FloatDefault> runtimeVecArray(total_num_ensemble - 1);
     runtimeVecArray.Allocate(dimx * dimy);
@@ -174,11 +181,11 @@ int main(int argc, char *argv[])
             actualEnsId++;
             continue;
           }
-          //for debug
-          // if (i == 0 && j == 0 && noEnsId==49)
-          // {
-          //   std::cout << "no ens " << noEnsId << " currEnsId " << currEnsId << " actualEnsId " << actualEnsId << std::endl;
-          // }
+          // for debug
+          //  if (i == 0 && j == 0 && noEnsId==49)
+          //  {
+          //    std::cout << "no ens " << noEnsId << " currEnsId " << currEnsId << " actualEnsId " << actualEnsId << std::endl;
+          //  }
           vecValue[currEnsId] = dataArray[actualEnsId].ReadPortal().Get(pointIndex);
           actualEnsId++;
           currEnsId++;
@@ -186,10 +193,9 @@ int main(int argc, char *argv[])
       }
     }
     std::string outputFileNameSuffix = "./test_2ddata_el_" + fieldName + "_no_ens_" + std::to_string(noEnsId) + "_iso_";
-    ComputeEntropyWithRuntimeVec(vtkmDataSet, runtimeVecArray, isovalue, outputFileNameSuffix);
+    ComputeEntropyWithRuntimeVec(vtkmDataSet, isovalue, outputFileNameSuffix);
     std::cout << "ok for no ens " << noEnsId << std::endl;
   }
-
 
   return 0;
 }

@@ -101,6 +101,7 @@ echo "====> build UCV"
 UCV_SRC_DIR=$HERE/../../
 # use the install dir as the build dir
 UCV_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/UCV"
+rm -rf $UCV_INSTALL_DIR
 
 #build the latest paraview (paraview 1.2 for this)
 #if [ -d $UCV_INSTALL_DIR ]; then

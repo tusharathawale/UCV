@@ -1,6 +1,7 @@
 #ifndef UCV_EXTRACTING_MEAN_STD_h
 #define UCV_EXTRACTING_MEAN_STD_h
 
+#include <vtkm/worklet/WorkletMapField.h>
 #include <vtkm/worklet/WorkletReduceByKey.h>
 #include <cmath>
 
