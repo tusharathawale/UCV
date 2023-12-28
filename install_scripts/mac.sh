@@ -37,7 +37,7 @@ else
     git clone $VTKM_REPO
     cd $VTKM_SRC_DIR
     #git checkout v2.0.0-rc1
-    git checkout $VTKM_VERSION    
+    #git checkout $VTKM_VERSION    
 fi
     
     cd $HERE
@@ -116,9 +116,7 @@ rm -rf $UCV_INSTALL_DIR
     cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=Debug \
     -DBUILD_SHARED_LIBS=ON \
-    -DBUILD_PARAVIEW_PLUGIN=ON \
-    -DParaView_DIR=/Users/zw1/Documents/cworkspace/build/paraview/lib/cmake/paraview-5.12
-    #-DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 
+    -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.1 
 
     cd $HERE
 

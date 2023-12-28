@@ -1,0 +1,8 @@
+
+
+1 Output python format ensemble data into vtk file [ok]
+2 load the vtk file through c++ program [ok]
+3 adapts python code for integration into cpp version
+
+3.1 necessary operation before sorting
+maybe using a smaller scale as the input for testing (using 5 by 5 data set with 3 ens)
