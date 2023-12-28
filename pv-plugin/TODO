@@ -1,5 +1,5 @@
 1 ok to use each ens as separate field
 2 ok to call filter
-3 still faild to build paraview with self selected field regions
-(maybe trying to build it on ubuntu in lab to see if it works)
-(or send email to cory if it still does not work)
+3 still faild to build paraview with self selected field regions [ok]
+4 after extraction, the data set become the unstructured grid, need to support that in filter, we can use resample to image as a temporary solution, but resample does not work well for screwed data set, asked on paraview discources
+5 compute the no ens solutions and set it for whole data set properties

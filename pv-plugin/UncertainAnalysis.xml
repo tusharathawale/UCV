@@ -12,12 +12,11 @@
           <Group name="filters" />
       </ProxyGroupDomain>
       <DataTypeDomain name="input_type">
-        <DataType value="vtkImageData" />
+        <DataType value="vtkDataSet" />
       </DataTypeDomain>
       <InputArrayDomain attribute_type="point"
                         name="input_array"
-                        number_of_components="20"
-                        data_type="vtkImageData" />
+                        data_type="vtkDataSet" />
       </InputProperty>
       <!-- For the input field selections, the default_values specifies the input index. -->     
       <DoubleVectorProperty command="SetIsoValue"

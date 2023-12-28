@@ -160,6 +160,9 @@ elseif(BUILD_PARAVIEW_PLUGIN)
   # Note: this will call subdirectory for pv-plugin so we don't have to.
   paraview_plugin_build(PLUGINS ${plugins})
 
+  add_executable(test_syntheticdata_el_combine_data_to_one_ensemble test_syntheticdata_el_combine_data_to_one_ensemble.cpp)
+  target_link_libraries(test_syntheticdata_el_combine_data_to_one_ensemble ${VTKm_LIBRARIES})
+
 else()
  
 add_executable(ucv_extract ucv_extract.cpp)
