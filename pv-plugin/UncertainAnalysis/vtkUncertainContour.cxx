@@ -43,38 +43,82 @@ vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont:
     std::cout << "---debug isovalue is " << this->IsoValue << std::endl;
     auto outputDataSet = vtkmDataSet;
 
-    // Processing current ensemble data sets based on uncertianty countour
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> stdevArray;
-    auto resolveType = [&](auto &concreteArray)
+    // merging ensemble data sets firstly then call functor
+    // get number of ens members in data sets, get all fields and check their fields
+    std::string ensSuffix = "ensemble_";
+    vtkm::Id totalNumEnsemble = 0;
+    vtkm::IdComponent numFields = vtkmDataSet.GetNumberOfFields();
+    std::string nameOfFirstEns = "";
+    std::vector<vtkm::cont::ArrayHandle<vtkm::Float64>> ensFieldArrays;
+
+    for (vtkm::IdComponent fieldIndex = 0; fieldIndex < numFields; fieldIndex++)
     {
-        vtkm::cont::Invoker invoke;
-        vtkm::Id numPoints = concreteArray.GetNumberOfValues();
-        std::cout << "---debug numPoints is " << numPoints << std::endl;
+        auto field = vtkmDataSet.GetField(fieldIndex);
+        std::string fieldName = field.GetName();
+        if (fieldName.find(ensSuffix) != std::string::npos)
+        {
+            // this is one of the ensembles
+            totalNumEnsemble++;
+            if (nameOfFirstEns == "")
+            {
+                nameOfFirstEns = fieldName;
+            }
+            vtkm::cont::ArrayHandle<vtkm::Float64> fieldArray;
+            field.GetData().AsArrayHandle(fieldArray);
+            ensFieldArrays.push_back(fieldArray);
+        }
+    }
 
-        auto concreteArrayView = vtkm::cont::make_ArrayHandleView(concreteArray, 0, numPoints);
+    std::cout << " debug ok to store vtkm array with explicit type" << std::endl;
 
-        invoke(ExtractingMeanStdevEnsembles{}, concreteArrayView, meanArray, stdevArray);
-        printSummary_ArrayHandle(meanArray, std::cout);
-        printSummary_ArrayHandle(stdevArray, std::cout);
+    // get size of first ens element
+    vtkm::Id lengthOfEnsField = vtkmDataSet.GetField(nameOfFirstEns).GetNumberOfValues();
 
-        vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
-        vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
-        vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
+    vtkm::cont::ArrayHandleRuntimeVec<vtkm::Float64>
+        allEnsemblesArray(totalNumEnsemble);
+    allEnsemblesArray.Allocate(lengthOfEnsField);
 
-        invoke(EntropyIndependentGaussian<4, 16>{this->IsoValue}, vtkmDataSet.GetCellSet(), meanArray, stdevArray, crossProbability, numNonZeroProb, entropy);
+    auto allEnsWritePortal = allEnsemblesArray.WritePortal();
+    //cache the read portal
+    using ReadPortalType = typename vtkm::cont::ArrayHandle<vtkm::Float64>::ReadPortalType;
+    std::vector<ReadPortalType> ReadPortalList;
+    for (int ensIndex = 0; ensIndex < totalNumEnsemble; ensIndex++)
+    {
+        auto readPortal = ensFieldArrays[ensIndex].ReadPortal();
+        ReadPortalList.push_back(readPortal);
+    }
 
-        outputDataSet.AddCellField(this->ContourProbabilityName, crossProbability);
-        outputDataSet.AddCellField(this->NumberNonzeroProbabilityName, numNonZeroProb);
-        outputDataSet.AddCellField(this->EntropyName, entropy);
+    for (int fieldValueIndex = 0; fieldValueIndex < lengthOfEnsField; fieldValueIndex++)
+    {
+        auto vecValue = allEnsWritePortal.Get(fieldValueIndex);
+        for (int ensIndex = 0; ensIndex < totalNumEnsemble; ensIndex++)
+        {
+            vecValue[ensIndex] = ReadPortalList[ensIndex].Get(fieldValueIndex);
+        }
+    }
 
-        // vtkm::io::VTKDataSetWriter writeCross(outputFileName);
-        // writeCross.WriteDataSet(outputDataSet);
-    };
+    std::cout << "debug, print runtime allEnsemblesArray" << std::endl;
+    printSummary_ArrayHandle(allEnsemblesArray, std::cout);
 
-    vtkmDataSet.GetField("ensemble")
-        .GetData()
-        .CastAndCallWithExtractedArray(resolveType);
+    vtkm::cont::ArrayHandle<vtkm::Float64> meanArray;
+    vtkm::cont::ArrayHandle<vtkm::Float64> stdevArray;
+    
+    vtkm::cont::Invoker invoke;
+    invoke(ExtractingMeanStdevEnsembles{}, allEnsemblesArray, meanArray, stdevArray);
+    // printSummary_ArrayHandle(meanArray, std::cout);
+    // printSummary_ArrayHandle(stdevArray, std::cout);
+
+    vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
+    vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
+    vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
+
+    invoke(EntropyIndependentGaussian<4, 16>{this->IsoValue}, vtkmDataSet.GetCellSet(), meanArray, stdevArray, crossProbability, numNonZeroProb, entropy);
+
+    outputDataSet.AddCellField(this->ContourProbabilityName, crossProbability);
+    outputDataSet.AddCellField(this->NumberNonzeroProbabilityName, numNonZeroProb);
+    outputDataSet.AddCellField(this->EntropyName, entropy);
+
+    //TODO, no ensemble results.
 
     return outputDataSet;
 }

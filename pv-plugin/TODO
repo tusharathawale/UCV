@@ -1,0 +1,5 @@
+1 ok to use each ens as separate field
+2 ok to call filter
+3 still faild to build paraview with self selected field regions
+(maybe trying to build it on ubuntu in lab to see if it works)
+(or send email to cory if it still does not work)
