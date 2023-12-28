@@ -261,6 +261,9 @@ target_link_libraries(test_syntheticdata_el_without_ens ${VTKm_LIBRARIES})
 add_executable(test_syntheticdata_el_combine_data_to_one_ensemble test_syntheticdata_el_combine_data_to_one_ensemble.cpp)
 target_link_libraries(test_syntheticdata_el_combine_data_to_one_ensemble ${VTKm_LIBRARIES})
 
+add_executable(ucv_amrex_uni ucv_amrex_uni.cpp)
+target_link_libraries(ucv_amrex_uni ${VTKm_LIBRARIES})
+
 endif()
 
 
