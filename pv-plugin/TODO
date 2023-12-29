@@ -7,3 +7,5 @@
 start to record some results
 make sure workflow
 raw data -> add ens -> extract encertainty property / no ens for each value -> property/similariteis between them (k means, cluster ML based approach)
+6 Only the single type data can be converted to vtkm, adding support for processing data with three point
+

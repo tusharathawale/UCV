@@ -42,12 +42,12 @@ vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont:
     std::cout << "debug CallUncertainContourWorklet" << std::endl;
     std::cout << "---debug isovalue is " << this->IsoValue << std::endl;
 
-    //todo, the new data set only need to get the cellset of the original data
-    //auto outputDataSet = vtkmDataSet;
+    // todo, the new data set only need to get the cellset of the original data
+    // auto outputDataSet = vtkmDataSet;
 
     vtkm::cont::DataSet outputDataSet;
     outputDataSet.SetCellSet(vtkmDataSet.GetCellSet());
-    
+
     // merging ensemble data sets firstly then call functor
     // get number of ens members in data sets, get all fields and check their fields
     std::string ensSuffix = "ensemble_";
@@ -84,7 +84,7 @@ vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont:
     allEnsemblesArray.Allocate(lengthOfEnsField);
 
     auto allEnsWritePortal = allEnsemblesArray.WritePortal();
-    //cache the read portal
+    // cache the read portal
     using ReadPortalType = typename vtkm::cont::ArrayHandle<vtkm::Float64>::ReadPortalType;
     std::vector<ReadPortalType> ReadPortalList;
     for (int ensIndex = 0; ensIndex < totalNumEnsemble; ensIndex++)
@@ -107,7 +107,7 @@ vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont:
 
     vtkm::cont::ArrayHandle<vtkm::Float64> meanArray;
     vtkm::cont::ArrayHandle<vtkm::Float64> stdevArray;
-    
+
     vtkm::cont::Invoker invoke;
     invoke(ExtractingMeanStdevEnsembles{}, allEnsemblesArray, meanArray, stdevArray);
     // printSummary_ArrayHandle(meanArray, std::cout);
@@ -117,13 +117,26 @@ vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont:
     vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
     vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
 
-    invoke(EntropyIndependentGaussian<4, 16>{this->IsoValue}, vtkmDataSet.GetCellSet(), meanArray, stdevArray, crossProbability, numNonZeroProb, entropy);
+    // TODO, checking the type of cell to determine if call 4, 16 or 3, 8 as input parameter
+    vtkm::IdComponent numberOfPointsPerCell = vtkmDataSet.GetCellSet().GetNumberOfPointsInCell(0);
+    if (numberOfPointsPerCell == 4)
+    {
+        invoke(EntropyIndependentGaussian<4, 16>{this->IsoValue}, vtkmDataSet.GetCellSet(), meanArray, stdevArray, crossProbability, numNonZeroProb, entropy);
+    }
+    else if (numberOfPointsPerCell == 3)
+    {
+        invoke(EntropyIndependentGaussian<3, 8>{this->IsoValue}, vtkmDataSet.GetCellSet(), meanArray, stdevArray, crossProbability, numNonZeroProb, entropy);
+    }
+    else
+    {
+        throw std::runtime_error("numberOfPointsPerCell is " + std::to_string(numberOfPointsPerCell) + " is unsupported" );
+    }
 
     outputDataSet.AddCellField(this->ContourProbabilityName, crossProbability);
     outputDataSet.AddCellField(this->NumberNonzeroProbabilityName, numNonZeroProb);
     outputDataSet.AddCellField(this->EntropyName, entropy);
 
-    //TODO, no ensemble results.
+    // TODO, results with no ens.
 
     return outputDataSet;
 }
@@ -141,14 +154,16 @@ int vtkUncertainContour::RequestData(
     try
     {
         // Convert the input dataset to VTK-m
-        
+
         std::cout << "original vtk data set" << std::endl;
 
         std::cout << *input << std::endl;
 
         // write out data for checking
-
+        std::cout << "debug before vtk to vtkm converting" << std::endl;
+        // Only the data with the fixed cellset can be converted into the vtkm data set
         vtkm::cont::DataSet in = tovtkm::Convert(input, tovtkm::FieldsFlag::PointsAndCells);
+        std::cout << "debug after vtk to vtkm converting" << std::endl;
 
         std::cout << "debug input vtkm data" << std::endl;
         in.PrintSummary(std::cout);

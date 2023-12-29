@@ -13,15 +13,16 @@
 #define vtkUncertainContour_h
 
 #include "vtkUncertainAnalysisFiltersModule.h" // for export macro
-#include "vtkImageAlgorithm.h" // Currently only support regular grids. Superclass may change.
+//#include "vtkImageAlgorithm.h" // Currently only support regular grids. Superclass may change.
+#include "vtkDataSetAlgorithm.h"
 #include "vtkmlib/vtkmInitializer.h"
 #include "vtkmlib/DataSetConverters.h"
 
 VTK_ABI_NAMESPACE_BEGIN
-class VTKUNCERTAINANALYSISFILTERS_EXPORT vtkUncertainContour : public vtkImageAlgorithm
+class VTKUNCERTAINANALYSISFILTERS_EXPORT vtkUncertainContour : public vtkDataSetAlgorithm
 {
 public:
-  vtkTypeMacro(vtkUncertainContour, vtkImageAlgorithm);
+  vtkTypeMacro(vtkUncertainContour, vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
   static vtkUncertainContour *New();
 
