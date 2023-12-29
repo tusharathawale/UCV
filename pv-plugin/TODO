@@ -3,3 +3,7 @@
 3 still faild to build paraview with self selected field regions [ok]
 4 after extraction, the data set become the unstructured grid, need to support that in filter, we can use resample to image as a temporary solution, but resample does not work well for screwed data set, asked on paraview discources
 5 compute the no ens solutions and set it for whole data set properties
+(output should be entropy or probability?)
+start to record some results
+make sure workflow
+raw data -> add ens -> extract encertainty property / no ens for each value -> property/similariteis between them (k means, cluster ML based approach)

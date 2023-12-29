@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     vtkm::cont::Invoker invoke;
     auto resolveType = [&](auto &concreteArray)
     {
-        invoke(AmrexMinMax{isovalue}, concreteArray, minArray, maxArray);
+        invoke(AmrexMinMax{errvalue}, concreteArray, minArray, maxArray);
     };
 
     inData.GetField(fieldName)
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     outputDataSet.PrintSummary(std::cout);
 
     // output the dataset into the vtk file for results checking
-    std::string outputFileName = "amrex_output.vtk";
+    std::string outputFileName = "amrex_output_"+std::to_string(int(errvalue))+".vtk";
     vtkm::io::VTKDataSetWriter write(outputFileName);
     write.WriteDataSet(outputDataSet);
 

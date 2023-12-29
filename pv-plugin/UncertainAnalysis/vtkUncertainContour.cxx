@@ -41,8 +41,13 @@ vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont:
 {
     std::cout << "debug CallUncertainContourWorklet" << std::endl;
     std::cout << "---debug isovalue is " << this->IsoValue << std::endl;
-    auto outputDataSet = vtkmDataSet;
 
+    //todo, the new data set only need to get the cellset of the original data
+    //auto outputDataSet = vtkmDataSet;
+
+    vtkm::cont::DataSet outputDataSet;
+    outputDataSet.SetCellSet(vtkmDataSet.GetCellSet());
+    
     // merging ensemble data sets firstly then call functor
     // get number of ens members in data sets, get all fields and check their fields
     std::string ensSuffix = "ensemble_";
@@ -158,7 +163,10 @@ int vtkUncertainContour::RequestData(
         // copies. (Maybe in the future the data sharing will be good enough where that
         // is not an issue.)
 
+        // TODO, is there a way to only copy the cellset of the origianl data set?
+        // or removing the original ens field in data set
         output->ShallowCopy(input);
+
         auto copyField = [&](const std::string &fieldName)
         {
             vtkDataArray *resultingArray = fromvtkm::Convert(result.GetCellField(fieldName));
