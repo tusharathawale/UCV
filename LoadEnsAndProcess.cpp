@@ -21,12 +21,15 @@ void callCriticalPointWorklet(vtkm::cont::DataSet vtkmDataSet)
         vtkm::cont::ArrayHandle<vtkm::FloatDefault> fieldMax;
         invoke(ExtractMinMaxOfPoint{}, concreteArray, fieldMin, fieldMax);
 
-        printSummary_ArrayHandle(fieldMin, std::cout);
-        printSummary_ArrayHandle(fieldMax, std::cout);
+        printSummary_ArrayHandle(fieldMin, std::cout, true);
+        printSummary_ArrayHandle(fieldMax, std::cout,true);
 
-        
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> outMinProb;
         // Use point neighborhood to go through data
-        invoke(CriticalPointWorklet{}, vtkmDataSet.GetCellSet(), fieldMin);
+        invoke(CriticalPointWorklet{}, vtkmDataSet.GetCellSet(), fieldMin, fieldMax, outMinProb);
+        std::cout << "debug outMinProb:" << std::endl;
+        printSummary_ArrayHandle(outMinProb, std::cout, true);
+
     };
 
     vtkmDataSet.GetField("ensembles")
@@ -41,10 +44,10 @@ int main(int argc, char *argv[])
         argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
     vtkm::cont::Timer timer{initResult.Device};
 
-    if (argc != 8)
+    if (argc != 7)
     {
         //./test_syntheticdata_el_sequence /Users/zw1/Documents/cworkspace/src/UCV/exp_scripts/create_dataset/RawdataPointScalar TestField 300 0.8 1000
-        std::cout << "<executable> <SyntheticDataSuffix> <FieldName> <Dimx> <Dimy> <Dimz> <iso> <num of ensembles>" << std::endl;
+        std::cout << "<executable> <SyntheticDataSuffix> <FieldName> <Dimx> <Dimy> <Dimz> <num of ensembles>" << std::endl;
         exit(0);
     }
 
@@ -57,8 +60,7 @@ int main(int argc, char *argv[])
     int dimy = std::stoi(argv[4]);
     int dimz = std::stoi(argv[5]);
 
-    double isovalue = std::stod(argv[6]);
-    int numEnsembles = std::stoi(argv[7]);
+    int numEnsembles = std::stoi(argv[6]);
 
     const vtkm::Id3 dims(dimx, dimy, dimz);
     vtkm::cont::DataSetBuilderUniform dataSetBuilder;

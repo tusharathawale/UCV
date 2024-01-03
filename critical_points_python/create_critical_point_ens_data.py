@@ -69,4 +69,6 @@ zdim=1
 for ensid in range(count):
     print("create ensid", ensid)
     output_filename=dir_name+"/critical_point_ens_5by5_"+str(ensid)+".vtk"
+    print("ensid",ensid)
+    print(ensemble[:,:,ensid])
     writeVTKDataFromArray(xdim,ydim,zdim,output_filename,ensemble[:,:,ensid])
