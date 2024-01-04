@@ -11,7 +11,7 @@
 #include "ucvworklet/ExtractMinMaxOfPoint.hpp"
 #include "ucvworklet/CriticalPointWorklet.hpp"
 
-void callCriticalPointWorklet(vtkm::cont::DataSet vtkmDataSet)
+void callCriticalPointWorklet(vtkm::cont::DataSet& vtkmDataSet)
 {
     auto resolveType = [&](auto &concreteArray)
     {
@@ -22,19 +22,21 @@ void callCriticalPointWorklet(vtkm::cont::DataSet vtkmDataSet)
         invoke(ExtractMinMaxOfPoint{}, concreteArray, fieldMin, fieldMax);
 
         printSummary_ArrayHandle(fieldMin, std::cout, true);
-        printSummary_ArrayHandle(fieldMax, std::cout,true);
+        printSummary_ArrayHandle(fieldMax, std::cout, true);
 
         vtkm::cont::ArrayHandle<vtkm::FloatDefault> outMinProb;
         // Use point neighborhood to go through data
         invoke(CriticalPointWorklet{}, vtkmDataSet.GetCellSet(), fieldMin, fieldMax, outMinProb);
-        std::cout << "debug outMinProb:" << std::endl;
-        printSummary_ArrayHandle(outMinProb, std::cout, true);
-
+        // std::cout << "debug outMinProb:" << std::endl;
+        // printSummary_ArrayHandle(outMinProb, std::cout, true);
+        vtkmDataSet.AddPointField("MinProb", outMinProb);
     };
 
     vtkmDataSet.GetField("ensembles")
         .GetData()
         .CastAndCallWithExtractedArray(resolveType);
+
+    return;
 }
 
 int main(int argc, char *argv[])
@@ -112,6 +114,10 @@ int main(int argc, char *argv[])
 
     // using pointNeighborhood worklet to process the data
     callCriticalPointWorklet(vtkmDataSet);
+
+    std::string outputFileName = "MinProb_" + std::to_string(dimx) + "_" + std::to_string(dimy) + ".vtk";
+    vtkm::io::VTKDataSetWriter writeCross(outputFileName);
+    writeCross.WriteDataSet(vtkmDataSet);
 
     return 0;
 }

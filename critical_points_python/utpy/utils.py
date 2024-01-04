@@ -469,8 +469,8 @@ def generate_ensemble(foo, noise_level, count=50, noise_model="uniform"):
     """
     
     # Discrete grid
-    #xi = np.arange(0, 1, 0.025)
-    xi = np.arange(0, 1, 0.2)
+    xi = np.arange(0, 1, 0.02)
+    #xi = np.arange(0, 1, 0.2)
     xv, yv = np.meshgrid(xi, xi)
     print("xv yv",xv,yv)
     # grid vertex indices in linear sequence

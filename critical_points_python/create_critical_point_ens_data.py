@@ -41,7 +41,7 @@ fractional_noise_level=20
 persistence = 0.665
 n_clusters = 9
 #number of ensemble data
-count = 3
+count = 10
 noise_level = 0.01*persistence*fractional_noise_level
 noise_model = "uniform"
 ground_truth, ensemble = utpy.utils.generate_ensemble(foo, noise_level, count, noise_model)
@@ -53,7 +53,7 @@ plt.savefig("demo_critial_point.png")
 print("all ens shape", ensemble.shape)
 print("each ens shape", ensemble[:,:,0].shape)
 
-dir_name="critical_point_ens_data_5by5"
+dir_name="critical_point_ens_data_50by50"
 
 isExist = os.path.exists(dir_name)
 if not isExist:
@@ -62,13 +62,13 @@ if not isExist:
 #xdim=50
 #ydim=50
 
-xdim=5
-ydim=5
+xdim=50
+ydim=50
 zdim=1
 
 for ensid in range(count):
     print("create ensid", ensid)
-    output_filename=dir_name+"/critical_point_ens_5by5_"+str(ensid)+".vtk"
+    output_filename=dir_name+"/critical_point_ens_50by50_"+str(ensid)+".vtk"
     print("ensid",ensid)
     print(ensemble[:,:,ensid])
     writeVTKDataFromArray(xdim,ydim,zdim,output_filename,ensemble[:,:,ensid])
