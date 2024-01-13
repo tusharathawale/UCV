@@ -13,17 +13,11 @@ set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::io)
 
 #Find MPI
 find_package(MPI REQUIRED)
+add_executable(LoadEnsAndProcessByUniform LoadEnsAndProcessByUniform.cpp)
+target_link_libraries(LoadEnsAndProcessByUniform ${VTKm_LIBRARIES})
 
-#Fine eigen assume this is installed by apt-get install
-#find_package (Eigen3 3.3 REQUIRED)
-
-OPTION (USE_CUDA OFF)
-OPTION (USE_HIP OFF)
-message ("USE_CUDA is setting as: " ${USE_CUDA})
-message ("USE_HIP is setting as: " ${USE_HIP})
-
-add_executable(LoadEnsAndProcess LoadEnsAndProcess.cpp)
-target_link_libraries(LoadEnsAndProcess ${VTKm_LIBRARIES})
+add_executable(LoadEnsAndProcessByHistogram LoadEnsAndProcessByHistogram.cpp)
+target_link_libraries(LoadEnsAndProcessByHistogram ${VTKm_LIBRARIES})
 
 
 

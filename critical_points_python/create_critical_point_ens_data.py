@@ -53,7 +53,7 @@ plt.savefig("demo_critial_point.png")
 print("all ens shape", ensemble.shape)
 print("each ens shape", ensemble[:,:,0].shape)
 
-dir_name="critical_point_ens_data_50by50"
+dir_name="critical_point_ens_data_5by5"
 
 isExist = os.path.exists(dir_name)
 if not isExist:
@@ -62,13 +62,13 @@ if not isExist:
 #xdim=50
 #ydim=50
 
-xdim=50
-ydim=50
+xdim=5
+ydim=5
 zdim=1
 
 for ensid in range(count):
     print("create ensid", ensid)
-    output_filename=dir_name+"/critical_point_ens_50by50_"+str(ensid)+".vtk"
+    output_filename=dir_name+"/critical_point_ens_5by5_"+str(ensid)+".vtk"
     print("ensid",ensid)
     print(ensemble[:,:,ensid])
     writeVTKDataFromArray(xdim,ydim,zdim,output_filename,ensemble[:,:,ensid])

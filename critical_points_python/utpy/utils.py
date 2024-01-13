@@ -472,7 +472,7 @@ def generate_ensemble(foo, noise_level, count=50, noise_model="uniform"):
     xi = np.arange(0, 1, 0.02)
     #xi = np.arange(0, 1, 0.2)
     xv, yv = np.meshgrid(xi, xi)
-    print("xv yv",xv,yv)
+    print("xv yv",len(xv),len(yv))
     # grid vertex indices in linear sequence
     X = np.vstack((xv.flatten(), yv.flatten())).T
     
