@@ -87,7 +87,7 @@ public:
   vtkGetMacro(EntropyName, std::string);
   ///@}
 
-  vtkm::cont::DataSet CallUncertainContourWorklet(vtkm::cont::DataSet input);
+  vtkm::cont::DataSet CallUncertainContourWorklet(vtkm::cont::DataSet input,vtkm::Id& totalNumEnsemble);
 
 protected:
   vtkUncertainContour();

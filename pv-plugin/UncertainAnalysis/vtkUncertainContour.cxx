@@ -9,7 +9,8 @@
 #include "vtkmlib/DataSetConverters.h"
 #include "../../ucvworklet/ExtractingMeanStdev.hpp"
 #include "../../ucvworklet/EntropyIndependentGaussian.hpp"
-
+#include "../../ucvworklet/ComputeDiffSum.hpp"
+#include <vtkm/cont/Algorithm.h>
 VTK_ABI_NAMESPACE_BEGIN
 
 vtkStandardNewMacro(vtkUncertainContour);
@@ -37,7 +38,7 @@ std::string vtkUncertainContour::GetInputArrayName(
     return scalarFieldName;
 }
 
-vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont::DataSet vtkmDataSet)
+vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont::DataSet vtkmDataSet, vtkm::Id &totalNumEnsemble)
 {
     std::cout << "debug CallUncertainContourWorklet" << std::endl;
     std::cout << "---debug isovalue is " << this->IsoValue << std::endl;
@@ -51,15 +52,28 @@ vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont:
     // merging ensemble data sets firstly then call functor
     // get number of ens members in data sets, get all fields and check their fields
     std::string ensSuffix = "ensemble_";
-    vtkm::Id totalNumEnsemble = 0;
+    totalNumEnsemble = 0;
     vtkm::IdComponent numFields = vtkmDataSet.GetNumberOfFields();
-    std::string nameOfFirstEns = "";
-    std::vector<vtkm::cont::ArrayHandle<vtkm::Float64>> ensFieldArrays;
 
+    // compute the numFields with ensSuffix in it
+    vtkm::IdComponent fieldNameWithEns = 0;
     for (vtkm::IdComponent fieldIndex = 0; fieldIndex < numFields; fieldIndex++)
     {
-        auto field = vtkmDataSet.GetField(fieldIndex);
+        auto field =vtkmDataSet.GetField(fieldIndex);
         std::string fieldName = field.GetName();
+        if (fieldName.find(ensSuffix) != std::string::npos)
+        {
+            fieldNameWithEns++;
+        }
+    }
+    std::string nameOfFirstEns = "";
+    std::vector<vtkm::cont::ArrayHandle<vtkm::Float64>> ensFieldArrays;
+    //make sure the ensemble is loaded with sequence through 0 to n
+    for (vtkm::IdComponent fieldIndex = 0; fieldIndex < fieldNameWithEns; fieldIndex++)
+    {
+        std::string fieldName = ensSuffix + std::to_string(fieldIndex);
+        auto field = vtkmDataSet.GetField(fieldName);
+        std::cout << "load field with field name " << fieldName << std::endl;
         if (fieldName.find(ensSuffix) != std::string::npos)
         {
             // this is one of the ensembles
@@ -76,9 +90,10 @@ vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont:
 
     std::cout << " debug ok to store vtkm array with explicit type" << std::endl;
 
-    // get size of first ens element
+    // get size of first ens element (how many point in each entry)
     vtkm::Id lengthOfEnsField = vtkmDataSet.GetField(nameOfFirstEns).GetNumberOfValues();
 
+    // for allEnsArray
     vtkm::cont::ArrayHandleRuntimeVec<vtkm::Float64>
         allEnsemblesArray(totalNumEnsemble);
     allEnsemblesArray.Allocate(lengthOfEnsField);
@@ -129,14 +144,90 @@ vtkm::cont::DataSet vtkUncertainContour::CallUncertainContourWorklet(vtkm::cont:
     }
     else
     {
-        throw std::runtime_error("numberOfPointsPerCell is " + std::to_string(numberOfPointsPerCell) + " is unsupported" );
+        throw std::runtime_error("numberOfPointsPerCell is " + std::to_string(numberOfPointsPerCell) + " is unsupported");
     }
 
     outputDataSet.AddCellField(this->ContourProbabilityName, crossProbability);
     outputDataSet.AddCellField(this->NumberNonzeroProbabilityName, numNonZeroProb);
     outputDataSet.AddCellField(this->EntropyName, entropy);
 
-    // TODO, results with no ens.
+    // For element without ens, create the runtime array without the specific element
+    // the code is similar to the place creating allEnsemblesArray
+    vtkm::cont::ArrayHandleRuntimeVec<vtkm::Float64>
+        withoutOneEnsembleArray(totalNumEnsemble - 1);
+    withoutOneEnsembleArray.Allocate(lengthOfEnsField);
+    auto withoutOneEnsWritePortal = withoutOneEnsembleArray.WritePortal();
+    // cache the read portal
+    using ReadPortalType = typename vtkm::cont::ArrayHandle<vtkm::Float64>::ReadPortalType;
+
+    // Results with no ens for each ensemble
+    // for each case with out the specific ensemble
+    for (int noEnsId = 0; noEnsId < totalNumEnsemble; noEnsId++)
+    {
+        // init value for no_ens computation
+        vtkm::cont::ArrayHandle<vtkm::Float64> noEnscrossProbability;
+        vtkm::cont::ArrayHandle<vtkm::Id> noEnsnumNonZeroProb;
+        vtkm::cont::ArrayHandle<vtkm::Float64> noEnsentropy;
+        vtkm::cont::ArrayHandle<vtkm::Float64> noEnsmeanArray;
+        vtkm::cont::ArrayHandle<vtkm::Float64> noEnsstdevArray;
+
+        // the first loop is each value in the lengthOfEnsField
+        // the second loop is each ensemble value
+        for (vtkm::Id pointIndex = 0; pointIndex < lengthOfEnsField; pointIndex++)
+        {
+            // the noEnsId should be skipped at each iteration
+            int currEnsId = 0;   // currEnsId is from 0 to totalNumEnsemble-2
+            int actualEnsId = 0; // actualEnsId is from 0 to totalNumEnsemble-1
+            while (actualEnsId < totalNumEnsemble)
+            {
+                if (actualEnsId == noEnsId)
+                {
+                    // skip this ens ensemble info
+                    actualEnsId++;
+                    continue;
+                }
+                auto vecValue = withoutOneEnsWritePortal.Get(pointIndex);
+                vecValue[currEnsId] = ensFieldArrays[actualEnsId].ReadPortal().Get(pointIndex);
+                actualEnsId++;
+                currEnsId++;
+            }
+        }
+
+        if (noEnsId == 0)
+        {
+            std::cout << "debug non ens id 0 vec value " << withoutOneEnsWritePortal.Get(0)[0] << std::endl;
+        }
+
+        // compute ens for this case
+        // compute mean and stdev
+        // std::cout << "process the no ens with id " << noEnsId << std::endl;
+        invoke(ExtractingMeanStdevEnsembles{}, withoutOneEnsembleArray, noEnsmeanArray, noEnsstdevArray);
+        vtkm::IdComponent numberOfPointsPerCell = vtkmDataSet.GetCellSet().GetNumberOfPointsInCell(0);
+        if (numberOfPointsPerCell == 4)
+        {
+            invoke(EntropyIndependentGaussian<4, 16>{this->IsoValue}, vtkmDataSet.GetCellSet(), noEnsmeanArray, noEnsstdevArray, noEnscrossProbability, noEnsnumNonZeroProb, noEnsentropy);
+        }
+        else if (numberOfPointsPerCell == 3)
+        {
+            invoke(EntropyIndependentGaussian<3, 8>{this->IsoValue}, vtkmDataSet.GetCellSet(), noEnsmeanArray, noEnsstdevArray, noEnscrossProbability, noEnsnumNonZeroProb, noEnsentropy);
+        }
+        else
+        {
+            throw std::runtime_error("numberOfPointsPerCell is " + std::to_string(numberOfPointsPerCell) + " is unsupported");
+        }
+        // only add the entropy array into result
+        outputDataSet.AddCellField("entropy_no_ens_" + std::to_string(noEnsId), noEnsentropy);
+
+        // compute the sum of difference compared with the original entropy value
+        vtkm::cont::ArrayHandle<vtkm::Float64> diffArray;
+        invoke(ComputeDiffSum{}, noEnsentropy, entropy, diffArray);
+
+        outputDataSet.AddCellField("entropy_diff_no_ens_" + std::to_string(noEnsId), diffArray);
+
+        vtkm::Float64 totalDiffValue =
+            vtkm::cont::Algorithm::Reduce(diffArray, 0, vtkm::Sum());
+        std::cout << totalDiffValue << std::endl;
+    }
 
     return outputDataSet;
 }
@@ -167,8 +258,8 @@ int vtkUncertainContour::RequestData(
 
         std::cout << "debug input vtkm data" << std::endl;
         in.PrintSummary(std::cout);
-
-        vtkm::cont::DataSet result = this->CallUncertainContourWorklet(in);
+        vtkm::Id totalNumEnsemble = 0;
+        vtkm::cont::DataSet result = this->CallUncertainContourWorklet(in, totalNumEnsemble);
 
         // Convert the result back from VTKm to VTK.
         // It would be easier if there was a simple method to just convert from general
@@ -197,6 +288,14 @@ int vtkUncertainContour::RequestData(
         copyField(this->ContourProbabilityName);
         copyField(this->NumberNonzeroProbabilityName);
         copyField(this->EntropyName);
+        // Copy the field with no_ens value
+        for (int noEnsId = 0; noEnsId < totalNumEnsemble; noEnsId++)
+        {
+            std::string NoEnsName = "entropy_no_ens_" + std::to_string(noEnsId);
+            std::string NoEnsDiffName = "entropy_diff_no_ens_" + std::to_string(noEnsId);
+            copyField(NoEnsName);
+            copyField(NoEnsDiffName);
+        }
         output->GetCellData()->SetActiveScalars(this->ContourProbabilityName.c_str());
     }
     catch (const vtkm::cont::Error &e)

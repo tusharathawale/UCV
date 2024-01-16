@@ -72,7 +72,8 @@ void CombineToOneField(vtkm::Id xdim, vtkm::Id ydim, vtkm::Id zdim, vtkm::Id tot
   writeCross.WriteDataSet(vtkmDataSet);
 }
 
-void CombineToSeparateFields(vtkm::Id xdim, vtkm::Id ydim, vtkm::Id zdim, vtkm::Id totalNumEnsemble, std::string dataPathSuffix, std::string fieldName)
+void CombineToSeparateFields(vtkm::Id xdim, vtkm::Id ydim, vtkm::Id zdim, vtkm::Id totalNumEnsemble, std::string dataPathSuffix, std::string fieldName,
+                             std::string outputFieldNameSuffix)
 {
   std::cout << "Using CombineToSeparateFields" << std::endl;
 
@@ -95,7 +96,7 @@ void CombineToSeparateFields(vtkm::Id xdim, vtkm::Id ydim, vtkm::Id zdim, vtkm::
     vtkmDataSet.AddPointField(fieldName, fieldDataArray);
   }
 
-  std::string outputFileNameSuffix = "./ensemble_data_sep_" + fieldName + "_ens" + std::to_string(totalNumEnsemble) + ".vtk";
+  std::string outputFileNameSuffix = outputFieldNameSuffix + ".vtk";
   vtkm::io::VTKDataSetWriter writeCross(outputFileNameSuffix);
   writeCross.WriteDataSet(vtkmDataSet);
 }
@@ -107,10 +108,10 @@ int main(int argc, char *argv[])
       argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
   vtkm::cont::Timer timer{initResult.Device};
 
-  if (argc != 7)
+  if (argc != 8)
   {
     //./test_syntheticdata_el_sequence /Users/zw1/Documents/cworkspace/src/UCV/exp_scripts/create_dataset/RawdataPointScalar TestField 300 0.8 1000
-    std::cout << "<executable> <SyntheticDataSuffix> <FieldName> <Dimx> <Dimy> <num of ensembles> <extract type (one/sep)>" << std::endl;
+    std::cout << "<executable> <SyntheticDataSuffix> <FieldName> <Dimx> <Dimy> <num of ensembles> <extract type (one/sep)> <outputName>" << std::endl;
     exit(0);
   }
 
@@ -125,6 +126,7 @@ int main(int argc, char *argv[])
   int totalNumEnsemble = std::stoi(argv[5]);
 
   std::string extractType = std::string(argv[6]);
+  std::string outputName = std::string(argv[7]);
 
   vtkm::Id xdim = dimx;
   vtkm::Id ydim = dimy;
@@ -136,7 +138,7 @@ int main(int argc, char *argv[])
   }
   else if (extractType == "sep")
   {
-    CombineToSeparateFields(dimx, dimy, 1, totalNumEnsemble, dataPathSuffix, fieldName);
+    CombineToSeparateFields(dimx, dimy, 1, totalNumEnsemble, dataPathSuffix, fieldName, outputName);
   }
   else
   {

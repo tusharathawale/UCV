@@ -41,7 +41,7 @@ def writeVTKDataFromArray(xdim, ydim, zdim, file_name, inputArray):
 if __name__ == "__main__":
     filename = sys.argv[1]
     fieldarray= "TestField"
-    numEnsembleMem=50
+    numEnsembleMem=20
 
     ds = readDS(filename)
     # convert the data into the numpy format
