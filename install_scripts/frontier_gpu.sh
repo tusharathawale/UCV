@@ -5,8 +5,9 @@ set -x
 module load rocm
 module load cmake
 module load git-lfs
+module load ninja
 
-build_jobs=4
+build_jobs=8
 mkdir -p frontier_gpu
 cd frontier_gpu
 
@@ -52,9 +53,13 @@ VTKM_SRC_DIR="${SOFTWARE_SRC_DIR}/vtk-m"
 VTKM_BUILD_DIR="${SOFTWARE_BUILD_DIR}/vtk-m"
 VTKM_INSTALL_DIR="${SOFTWARE_INSTALL_DIR}/vtk-m"
 
+    echo $VTKM_SRC_DIR
+    echo $VTKM_BUILD_DIR
+    echo $VTKM_INSTALL_DIR
+
 # check the install dir
-if [ -d $VTKM_INSTALL_DIR ]; then
-    echo "====> skip, $VTKM_INSTALL_DIR already exists," \
+if [ -d $VTKM_SRC_DIR ]; then
+    echo "====> skip, $VTKM_SRC_DIR already exists," \
              "please remove it if you want to reinstall it"
 else
     echo $VTKM_SRC_DIR
@@ -64,26 +69,33 @@ else
     if [ ! -d $VTKM_SRC_DIR ]; then
     # clone the source
     cd $SOFTWARE_SRC_DIR
-    git clone $VTKM_REPO
+    git clone $VTKM_MASTER_REPO
     cd $VTKM_SRC_DIR
-    git checkout $VTKM_VERSION
+    git checkout master
     fi
-    
+fi
     cd $HERE
 
     # build and install
     echo "**** Building vtk-m"
 
+if [ -d $VTKM_INSTALL_DIR ]; then
+    echo "====> skip, $VTKM_INSTALL_DIR already exists," \
+             "please remove it if you want to reinstall it"
+else
+
     # putting the -B before the -S may causing some issues sometimes
-    
-    cmake -S ${VTKM_SRC_DIR} -B ${VTKM_BUILD_DIR} \
+    mkdir -p ${VTKM_BUILD_DIR}
+    rm -rf ${VTKM_BUILD_DIR}/CMakeCache.txt
+    cd ${VTKM_BUILD_DIR}    
+    cmake -S ${VTKM_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=${VTKM_INSTALL_DIR} \
     -DBUILD_SHARED_LIBS=OFF \
     -DVTKm_USE_DEFAULT_TYPES_FOR_ASCENT=ON \
     -DVTKm_USE_DOUBLE_PRECISION=ON \
     -DVTKm_NO_DEPRECATED_VIRTUAL=ON \
     -DVTKm_USE_64BIT_IDS=OFF \
-    -DCMAKE_INSTALL_PREFIX=${VTKM_INSTALL_DIR} \
     -DVTKm_ENABLE_MPI=ON \
     -DVTKm_ENABLE_OPENMP=ON \
     -DVTKm_ENABLE_LOGGING=ON \
@@ -94,19 +106,48 @@ else
     -DCMAKE_PREFIX_PATH=${kokkos_install_dir} \
     -DCMAKE_CXX_COMPILER=hipcc -DCMAKE_C_COMPILER=hipcc
 
-    cmake --build ${VTKM_BUILD_DIR} -j${build_jobs}
-
-    #cd ${VTKM_BUILD_DIR}
-    
-    #make install
-
-    echo "**** Installing vtk-m"
-    cmake --install ${VTKM_BUILD_DIR}
+    #cmake --build ${VTKM_BUILD_DIR} -j${build_jobs}
+    #cmake --install ${VTKM_INSTALL_DIR}
+    cd ${VTKM_BUILD_DIR}
+    #ninja -j${build_jobs}
+    #ninja install
+    make -j${build_jobs}
+    make install
+    #echo "**** Installing vtk-m"
+    #cmake --install ${VTKM_BUILD_DIR}
 fi
 
 echo "====> Installing vtk-m, ok"
 
 echo "vtkm install dir ${VTKM_INSTALL_DIR}"
+
+echo "====> Installing EasyLinalg"
+EASY_LINALG_SRC_DIR="$SOFTWARE_SRC_DIR/EasyLinalg"
+EASY_LINALG_INSTALL_DIR="$HERE/../../ucvworklet/linalg/EasyLinalg/"
+
+rm -rf $EASY_LINALG_SRC_DIR
+cd $SOFTWARE_SRC_DIR
+git clone $EASY_LINALG_REPO
+
+# move include dir to correct place
+
+# clean old dir if it exist
+if [ -d $EASY_LINALG_INSTALL_DIR ]; then
+    rm -rf $EASY_LINALG_INSTALL_DIR
+fi
+
+mkdir -p $EASY_LINALG_INSTALL_DIR
+
+# move files to new dir
+cp EasyLinalg/StaticMemTemplate/include/* $EASY_LINALG_INSTALL_DIR
+
+# update the macro
+sed -i 's/__attribute__((visibility("default")))/VTKM_EXEC/' $EASY_LINALG_INSTALL_DIR/basic.h
+
+# clean source files
+rm -rf $EASY_LINALG_SRC_DIR
+
+echo "====> Installing EasyLinalg, ok"
 
 echo "====> build UCV"
 # the only have build dir without the install dir
@@ -119,23 +160,23 @@ UCV_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/UCV"
 #    echo "====> skip, $UCV_INSTALL_DIR already exists," \
 #             "please remove it if you want to reinstall it"
 #else
-
-    cmake -S ${UCV_SRC_DIR} -B ${UCV_INSTALL_DIR} \
+    mkdir -p ${UCV_INSTALL_DIR}
+    cd ${UCV_INSTALL_DIR}
+    cmake -S ${UCV_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=OFF \
     -DUSE_HIP=ON \
-    -DCMAKE_PREFIX_PATH=${kokkos_install_dir} \
-    -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 \
+    -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.1 \
+    -DKokkos_DIR=${kokkos_install_dir}/lib64/cmake/Kokkos \
     -DCMAKE_HIP_ARCHITECTURES=gfx90a \
     -DCMAKE_CXX_COMPILER=hipcc -DCMAKE_C_COMPILER=hipcc
     
-    cd $HERE
-
     # build and install
     echo "**** Building UCV"
-    cmake --build ${UCV_INSTALL_DIR} -j${build_jobs}
+    make -j${build_jobs}
 #fi
 
+cd $HERE
 # not sure why the libvtkmdiympi.so is not included during the build process
 echo "try to add library path by executing:"
 echo "export LD_LIBRARY_PATH=${VTKM_INSTALL_DIR}/lib:\${LD_LIBRARY_PATH}"

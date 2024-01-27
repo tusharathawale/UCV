@@ -22,7 +22,7 @@
 #include <iomanip>
 
 void ComputeEntropyWithRuntimeVec(vtkm::cont::DataSet vtkmDataSet,
-                                  double isovalue, int numSamples, std::string outputFileNameSuffix, bool use2d)
+                                  double isovalue, int numSamples, std::string outputFileNameSuffix, bool use2d, double eigenThreshold)
 {
     // Processing current ensemble data sets based on uncertianty countour
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
@@ -43,11 +43,11 @@ void ComputeEntropyWithRuntimeVec(vtkm::cont::DataSet vtkmDataSet,
         // check 2d or 3d
         if (use2d)
         {
-            invoke(EntropyAdaptiveEigens<4, 16>{isovalue, numSamples, 1.0, 0.0}, vtkmDataSet.GetCellSet(), concreteArrayView, meanArray, crossProbability, numNonZeroProb, entropy);
+            invoke(EntropyAdaptiveEigens<4, 16>{isovalue, numSamples, 1.0, eigenThreshold}, vtkmDataSet.GetCellSet(), concreteArrayView, meanArray, crossProbability, numNonZeroProb, entropy);
         }
         else
         {
-            invoke(EntropyAdaptiveEigens<8, 256>{isovalue, numSamples, 1.0, 0.1}, vtkmDataSet.GetCellSet(), concreteArrayView, meanArray, crossProbability, numNonZeroProb, entropy);
+            invoke(EntropyAdaptiveEigens<8, 256>{isovalue, numSamples, 1.0, eigenThreshold}, vtkmDataSet.GetCellSet(), concreteArrayView, meanArray, crossProbability, numNonZeroProb, entropy);
         }
 
         auto outputDataSet = vtkmDataSet;
@@ -77,10 +77,10 @@ int main(int argc, char *argv[])
         argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
     vtkm::cont::Timer timer{initResult.Device};
 
-    if (argc != 10)
+    if (argc != 11)
     {
         //./test_syntheticdata_el_sequence /Users/zw1/Documents/cworkspace/src/UCV/exp_scripts/create_dataset/RawdataPointScalar TestField 300 0.8 1000
-        std::cout << "<executable> <SyntheticDataSuffix> <FieldName> <Dimx> <Dimy> <Dimz> <iso> <num of sampls for mv> <num of ensembles> <outputFileSuffix>" << std::endl;
+        std::cout << "<executable> <SyntheticDataSuffix> <FieldName> <Dimx> <Dimy> <Dimz> <iso> <num of sampls for mv> <num of ensembles> <outputFileSuffix> <eigenThreshold>" << std::endl;
         exit(0);
     }
 
@@ -97,6 +97,7 @@ int main(int argc, char *argv[])
     int numSamples = std::stoi(argv[7]);
     int totalNumEnsemble = std::stoi(argv[8]);
     std::string outputSuffix = std::string(argv[9]);
+    double eigenThreshold =  std::stod(argv[10]);
 
     std::cout << "iso value is: " << isovalue << " numSamples is: " << numSamples << std::endl;
 
@@ -156,7 +157,7 @@ int main(int argc, char *argv[])
     {
         use2d = true;
     }
-    ComputeEntropyWithRuntimeVec(vtkmDataSet, isovalue, numSamples, outputSuffix, use2d);
+    ComputeEntropyWithRuntimeVec(vtkmDataSet, isovalue, numSamples, outputSuffix, use2d, eigenThreshold);
     std::cout << "ok to get entropy for all ensembles" << std::endl;
 
     return 0;

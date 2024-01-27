@@ -123,31 +123,31 @@ set_source_files_properties(ucvworklet/ExtractingMinMax.hpp PROPERTIES LANGUAGE 
 
 set_source_files_properties(ucv_reduce_umc.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
-target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIESNOMPI} MPI::MPI_CXX)
+target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 set_source_files_properties(ucv_reduce_umc_el.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(ucv_reduce_umc_el ucv_reduce_umc_el.cpp)
-target_link_libraries(ucv_reduce_umc_el ${VTKm_LIBRARIESNOMPI} MPI::MPI_CXX)
+target_link_libraries(ucv_reduce_umc_el ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 set_source_files_properties(test_mvgaussian_wind.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(test_mvgaussian_wind test_mvgaussian_wind.cpp)
-target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIESNOMPI})
+target_link_libraries(test_mvgaussian_wind ${VTKm_LIBRARIES})
 
 set_source_files_properties(test_mvgaussian_redsea.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(test_mvgaussian_redsea test_mvgaussian_redsea.cpp)
-target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIESNOMPI})
+target_link_libraries(test_mvgaussian_redsea ${VTKm_LIBRARIES})
 
 set_source_files_properties(uvm_point_neighborhood.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(uvm_point_neighborhood uvm_point_neighborhood.cpp)
-target_link_libraries(uvm_point_neighborhood ${VTKm_LIBRARIESNOMPI})
+target_link_libraries(uvm_point_neighborhood ${VTKm_LIBRARIES})
 
 set_source_files_properties(test_adaptive_eigen.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(test_adaptive_eigen test_adaptive_eigen.cpp)
-target_link_libraries(test_adaptive_eigen ${VTKm_LIBRARIESNOMPI})
+target_link_libraries(test_adaptive_eigen ${VTKm_LIBRARIES})
 
 set_source_files_properties(decompose_3d_into_ensembles.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(decompose_3d_into_ensembles decompose_3d_into_ensembles.cpp)
-target_link_libraries(decompose_3d_into_ensembles ${VTKm_LIBRARIESNOMPI})
+target_link_libraries(decompose_3d_into_ensembles ${VTKm_LIBRARIES})
 
 elseif(BUILD_PARAVIEW_PLUGIN) 
 

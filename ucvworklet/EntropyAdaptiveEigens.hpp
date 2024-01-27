@@ -27,8 +27,8 @@ public:
                                   FieldOutCell,
                                   FieldOutCell);
 
+    // using ExecutionSignature = void(_2, _3, _4, _5, _6, WorkIndex);
     using ExecutionSignature = void(_2, _3, _4, _5, _6);
-
     // the first parameter is binded with the worklet
     using InputDomain = _1;
     // InPointFieldType should be a vector
@@ -37,6 +37,12 @@ public:
               typename OutCellFieldType1,
               typename OutCellFieldType2,
               typename OutCellFieldType3>
+    // VTKM_EXEC void operator()(
+    //     const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
+    //     const InPointFieldVecMean &inMeanArray,
+    //     OutCellFieldType1 &outCellFieldCProb,
+    //     OutCellFieldType2 &outCellFieldNumNonzeroProb,
+    //     OutCellFieldType3 &outCellFieldEntropy,vtkm::Id workIndex) const
     VTKM_EXEC void operator()(
         const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
         const InPointFieldVecMean &inMeanArray,
@@ -44,6 +50,8 @@ public:
         OutCellFieldType2 &outCellFieldNumNonzeroProb,
         OutCellFieldType3 &outCellFieldEntropy) const
     {
+        // printf("debug workIndex %lld\n",workIndex);
+
         // how to process the case where there are multiple variables
         vtkm::IdComponent numVertexies = inPointFieldVecEnsemble.GetNumberOfComponents();
         // constexpr uint8_t numVertex3d = 8;
@@ -138,10 +146,10 @@ public:
         EASYLINALG::Vec<double, NumVertecies> eigenValues;
         EASYLINALG::SymmEigenValues(ucvcov, this->m_tolerance, this->m_iterations, eigenValues);
         using EigenValuesType = decltype(eigenValues);
-        
-        //sorting eigen values
+
+        // sorting eigen values
         Sort<EigenValuesType>(eigenValues);
-        
+
         // make sure eigen values are in descending order
         if (checkOrder<EigenValuesType>(eigenValues) == false)
         {
@@ -164,7 +172,7 @@ public:
         EASYLINALG::Vec<double, NumVertecies> eigenValuesFiltered(0);
         // using one eigen as default
         int filteredEigenCount = 1;
-        eigenValuesFiltered[0]=eigenValues[0];
+        eigenValuesFiltered[0] = eigenValues[0];
         // filter out eigen values when it is less then the threshold
         // and not all eigen value are used
         for (int i = 1; i < NumVertecies; i++)
@@ -185,15 +193,6 @@ public:
             eigenVectors[i] = EASYLINALG::ComputeEigenVectors(ucvcov, eigenValuesFiltered[i], this->m_iterations);
         }
 
-#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
-        thrust::minstd_rand rng;
-        thrust::random::normal_distribution<double> norm;
-#else
-        std::mt19937 rng;
-        rng.seed(std::mt19937::default_seed);
-        std::normal_distribution<double> norm;
-#endif // VTKM_CUDA
-
         vtkm::Vec<vtkm::FloatDefault, NumCases> probHistogram;
 
         EASYLINALG::Vec<double, NumVertecies> sample_v;
@@ -210,8 +209,17 @@ public:
 
             for (int i = 0; i < filteredEigenCount; i++)
             {
-                // sample_v[i]=vtkm::Sqrt(eigenValues[i])*norm(rng);
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
+                thrust::minstd_rand rng;
+                thrust::random::normal_distribution<double> norm(0, vtkm::Sqrt(eigenValuesFiltered[i]));
+#else
+                std::mt19937 rng;
+                rng.seed(std::mt19937::default_seed);
                 std::normal_distribution<double> norm(0, vtkm::Sqrt(eigenValuesFiltered[i]));
+#endif // VTKM_CUDA
+
+                // sample_v[i]=vtkm::Sqrt(eigenValues[i])*norm(rng);
+                // std::normal_distribution<double> norm(0, vtkm::Sqrt(eigenValuesFiltered[i]));
                 sample_v[i] = norm(rng);
             }
 
@@ -406,7 +414,7 @@ public:
     }
 
     template <typename VecType>
-    VTKM_EXEC inline void Sort(VecType & arr) const
+    VTKM_EXEC inline void Sort(VecType &arr) const
     {
         vtkm::Id num = arr.NUM_COMPONENTS;
         for (int i = 0; i < num; i++)
@@ -414,7 +422,7 @@ public:
             for (int j = 0; j < num - i - 1; j++)
             {
                 // compare element i and j
-                if (arr[j]< arr[j + 1])
+                if (arr[j] < arr[j + 1])
                 {
                     // swap
                     auto temp = arr[j];
