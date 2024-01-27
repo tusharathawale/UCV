@@ -30,19 +30,37 @@ def writeStructuredDs(fname, ds):
     writer.Update()
     writer.Write() 
 
-def writeVTKDataFromArray(xdim, ydim, zdim, file_name, inputArray):
+def writeVTKDataFromArray(xdim, ydim, zdim, file_name, field_name, inputArray):
     structured_dataset = vtkStructuredPoints()
     structured_dataset.SetDimensions(xdim, ydim, zdim)
     structured_dataset.SetOrigin(0, 0, 0)
     #print(np.array(g).shape)
     vtkArray = numpy_support.numpy_to_vtk(np.array(inputArray).flatten())
     vtkArray.SetNumberOfComponents(1)
-    vtkArray.SetName("MaxEntropyEnsId")
+    vtkArray.SetName(field_name)
 
     structured_dataset.GetPointData().AddArray(vtkArray)
-    structured_dataset.GetPointData().SetActiveScalars("MaxEntropyEnsId")
+    structured_dataset.GetPointData().SetActiveScalars(field_name)
     print("write file", file_name)
     writeStructuredDs(file_name,structured_dataset)
+
+def get_num_larger_than_3IQR(input_num_list):
+    q75 = np.quantile(input_num_list,0.75)
+    #print("q 0.75", actual_q75)
+    q50 = np.quantile(input_num_list,0.5)
+    #print("q 0.5", actual_q50)
+    q25 = np.quantile(input_num_list,0.25)
+    #print("q 0.25", actual_q25)
+
+    iqr = q75-q25
+    higher_bound = q50+1.5*iqr
+
+    num_elem_larger_than_3iqr=0
+    for v in input_num_list:
+        if v>higher_bound:
+            num_elem_larger_than_3iqr=num_elem_larger_than_3iqr+1
+
+    return num_elem_larger_than_3iqr
 
 if __name__ == "__main__":
     filename = sys.argv[1]
@@ -62,6 +80,7 @@ if __name__ == "__main__":
 
     # for each row in the entropy list
     largest_contribute_num=[]
+    num_outlayer=[]
     elem_num = len(all_entroly_diff_list[0])
     for element_index in range(0,elem_num,1):
         colum = [row[element_index] for row in all_entroly_diff_list]
@@ -72,8 +91,13 @@ if __name__ == "__main__":
         else:
             largest_contribute_num.append(-1)
 
+        #check the 3 iqr value
+        num_outlayer_for_colm=get_num_larger_than_3IQR(colum)
+        num_outlayer.append(num_outlayer_for_colm)
+
     #print(largest_contribute_num)
-    writeVTKDataFromArray(60,80,1,"max_entropy_id.vtk",largest_contribute_num)
+    writeVTKDataFromArray(60,80,1,"max_entropy_id.vtk","MaxEntropyDiffId",largest_contribute_num)
+    writeVTKDataFromArray(60,80,1,"num_outlayer.vtk","NumOfOutlayer", num_outlayer)
 
 
 

@@ -5,7 +5,31 @@
 #include <vtkm/worklet/WorkletReduceByKey.h>
 #include <cmath>
 
-// go through each vertexies and compute associated mean and stdec
+struct ExtractingMean : public vtkm::worklet::WorkletMapField
+{
+    using ControlSignature = void(FieldIn, FieldOut);
+    using ExecutionSignature = void(_1, _2);
+    using InputDomain = _1;
+    template <typename OriginalValuesType, typename OutputType>
+    VTKM_EXEC void operator()(
+        const OriginalValuesType &inPointFieldVecEnsemble, OutputType &meanValue) const
+    {
+        vtkm::FloatDefault boxSum = 0;
+
+        vtkm::IdComponent NumComponents = inPointFieldVecEnsemble.GetNumberOfComponents();
+
+        // refer to https://www.strchr.com/standard_deviation_in_one_pass
+        for (vtkm::IdComponent index = 0;
+             index < NumComponents; index++)
+        {
+            boxSum = boxSum + static_cast<vtkm::FloatDefault>(inPointFieldVecEnsemble[index]);
+        }
+
+        meanValue = boxSum / (1.0 * (NumComponents));
+    }
+};
+
+// go through each vertexies and compute associated mean and stdev
 struct ExtractingMeanStdevEnsembles : public vtkm::worklet::WorkletMapField
 {
     using ControlSignature = void(FieldIn, FieldOut, FieldOut);

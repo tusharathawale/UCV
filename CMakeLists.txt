@@ -141,6 +141,14 @@ set_source_files_properties(uvm_point_neighborhood.cpp PROPERTIES LANGUAGE "HIP"
 add_executable(uvm_point_neighborhood uvm_point_neighborhood.cpp)
 target_link_libraries(uvm_point_neighborhood ${VTKm_LIBRARIESNOMPI})
 
+set_source_files_properties(test_adaptive_eigen.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(test_adaptive_eigen test_adaptive_eigen.cpp)
+target_link_libraries(test_adaptive_eigen ${VTKm_LIBRARIESNOMPI})
+
+set_source_files_properties(decompose_3d_into_ensembles.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(decompose_3d_into_ensembles decompose_3d_into_ensembles.cpp)
+target_link_libraries(decompose_3d_into_ensembles ${VTKm_LIBRARIESNOMPI})
+
 elseif(BUILD_PARAVIEW_PLUGIN) 
 
   # ParaView plugins need this included to be built.
@@ -162,6 +170,12 @@ elseif(BUILD_PARAVIEW_PLUGIN)
 
   add_executable(test_syntheticdata_el_combine_data_to_one_ensemble test_syntheticdata_el_combine_data_to_one_ensemble.cpp)
   target_link_libraries(test_syntheticdata_el_combine_data_to_one_ensemble ${VTKm_LIBRARIES})
+
+  add_executable(test_adaptive_eigen test_adaptive_eigen.cpp)
+  target_link_libraries(test_adaptive_eigen ${VTKm_LIBRARIES})
+
+  add_executable(decompose_3d_into_ensembles decompose_3d_into_ensembles.cpp)
+  target_link_libraries(decompose_3d_into_ensembles ${VTKm_LIBRARIES})
 
 else()
  

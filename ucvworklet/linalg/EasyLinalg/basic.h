@@ -426,7 +426,7 @@ namespace EASYLINALG
             }
         }
 
-        LIAG_FUNC_MACRO void Show()
+        LIAG_FUNC_MACRO void Show() const
         {
             for (int i = 0; i < this->NUM_ROWS; i++)
             {
