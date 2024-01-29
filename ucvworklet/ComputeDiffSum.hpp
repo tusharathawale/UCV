@@ -18,4 +18,17 @@ struct ComputeDiffSum : public vtkm::worklet::WorkletMapField
     }
 };
 
+struct ComputeDiffSquare : public vtkm::worklet::WorkletMapField
+{
+    using ControlSignature = void(FieldIn, FieldIn, FieldOut);
+    using ExecutionSignature = void(_1, _2, _3);
+    template <typename TypeIn, typename TypeOut>
+    VTKM_EXEC void operator()(
+        const TypeIn &v1, const TypeIn &v2, TypeOut &diff) const
+    {
+        diff = (v1-v2)*(v1-v2);
+        return;
+    }
+};
+
 #endif // UCV_COMPUTE_DIFF_SUM_h

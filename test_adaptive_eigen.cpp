@@ -8,10 +8,13 @@
 #include <vtkm/cont/Initialize.h>
 #include <vtkm/cont/ArrayHandleRuntimeVec.h>
 #include <vtkm/cont/ArrayHandleGroupVec.h>
+#include <vtkm/cont/Algorithm.h>
+
 
 #include "ucvworklet/ExtractingMeanStdev.hpp"
 #include "ucvworklet/EntropyAdaptiveEigens.hpp"
 #include "ucvworklet/MVGaussianWithEnsemble3DTryEL.hpp"
+#include "ucvworklet/ComputeDiffSum.hpp"
 
 #include <vtkm/cont/Timer.h>
 
@@ -22,12 +25,17 @@
 #include <sstream>
 #include <iomanip>
 
-void ComputeEntropyWithRuntimeVec(vtkm::cont::DataSet vtkmDataSet,
-                                  double isovalue, int numSamples, std::string outputFileNameSuffix, bool use2d, double eigenThreshold, vtkm::cont::Timer &timer, std::string writeFile)
+// compute the RMSE
+
+vtkm::cont::ArrayHandle<vtkm::Float64> ComputeEntropyWithRuntimeVec(vtkm::cont::DataSet vtkmDataSet,
+                                                                    double isovalue, int numSamples, std::string outputFileNameSuffix, bool use2d, double eigenThreshold, vtkm::cont::Timer &timer, std::string writeFile)
 {
     timer.Start();
     // Processing current ensemble data sets based on uncertianty countour
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
+    vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
+    vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
+    vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
     auto resolveType = [&](auto &concreteArray)
     {
         vtkm::cont::Invoker invoke;
@@ -37,10 +45,6 @@ void ComputeEntropyWithRuntimeVec(vtkm::cont::DataSet vtkmDataSet,
         invoke(ExtractingMean{}, concreteArrayView, meanArray);
         // printSummary_ArrayHandle(meanArray, std::cout);
         // printSummary_ArrayHandle(stdevArray, std::cout);
-
-        vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
-        vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
-        vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
 
         // check 2d or 3d
         if (use2d)
@@ -75,14 +79,19 @@ void ComputeEntropyWithRuntimeVec(vtkm::cont::DataSet vtkmDataSet,
         .CastAndCallWithExtractedArray(resolveType);
     timer.Stop();
     std::cout << "worklet time is:" << timer.GetElapsedTime() << std::endl;
+
+    return crossProbability;
 }
 
-void ComputeEntropyWithOrigianlMVG(vtkm::cont::DataSet vtkmDataSet,
-                                   double isovalue, int numSamples, std::string outputFileNameSuffix, bool use2d, double eigenThreshold, vtkm::cont::Timer &timer, std::string writeFile)
+vtkm::cont::ArrayHandle<vtkm::Float64> ComputeEntropyWithOrigianlMVG(vtkm::cont::DataSet vtkmDataSet,
+                                                                     double isovalue, int numSamples, std::string outputFileNameSuffix, bool use2d, double eigenThreshold, vtkm::cont::Timer &timer, std::string writeFile)
 {
     timer.Start();
     // Processing current ensemble data sets based on uncertianty countour
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
+    vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
+    vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
+    vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
     auto resolveType = [&](auto &concreteArray)
     {
         vtkm::cont::Invoker invoke;
@@ -92,10 +101,6 @@ void ComputeEntropyWithOrigianlMVG(vtkm::cont::DataSet vtkmDataSet,
         invoke(ExtractingMean{}, concreteArrayView, meanArray);
         // printSummary_ArrayHandle(meanArray, std::cout);
         // printSummary_ArrayHandle(stdevArray, std::cout);
-
-        vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
-        vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
-        vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
 
         // check 2d or 3d
         if (use2d)
@@ -131,6 +136,8 @@ void ComputeEntropyWithOrigianlMVG(vtkm::cont::DataSet vtkmDataSet,
         .CastAndCallWithExtractedArray(resolveType);
     timer.Stop();
     std::cout << "worklet time is:" << timer.GetElapsedTime() << std::endl;
+
+    return crossProbability;
 }
 
 int main(int argc, char *argv[])
@@ -227,10 +234,19 @@ int main(int argc, char *argv[])
     }
 
     std::cout << "start to call the adaptive worklet" << std::endl;
-    ComputeEntropyWithRuntimeVec(vtkmDataSet, isovalue, numSamples, outputSuffix, use2d, eigenThreshold, timer, writeFile);
+    auto crossProb1 = ComputeEntropyWithRuntimeVec(vtkmDataSet, isovalue, numSamples, outputSuffix, use2d, eigenThreshold, timer, writeFile);
 
     std::cout << "start to call the original mvg worklet" << std::endl;
-    ComputeEntropyWithOrigianlMVG(vtkmDataSet, isovalue, numSamples, outputSuffix + "_originalMVG", use2d, eigenThreshold, timer, writeFile);
+    auto crossProb2 = ComputeEntropyWithOrigianlMVG(vtkmDataSet, isovalue, numSamples, outputSuffix + "_originalMVG", use2d, eigenThreshold, timer, writeFile);
+
+    // compute the RMSE for two cases
+    vtkm::cont::Invoker invoke;
+    vtkm::cont::ArrayHandle<vtkm::Float64> diff;
+
+    invoke(ComputeDiffSquare{}, crossProb1, crossProb2, diff);
+    vtkm::Float64 diffSquarSum = vtkm::cont::Algorithm::Reduce(diff, 0.0, vtkm ::Sum());
+    
+    std::cout << "diffSquarSum is: " << diffSquarSum << " RMSE is: " << vtkm::Sqrt(diffSquarSum/diff.GetNumberOfValues()) << std::endl;
 
     return 0;
 }
