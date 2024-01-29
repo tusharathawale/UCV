@@ -25,7 +25,7 @@ NUM_ENS=64
 ISO=900
 NUM_SAMPLE=500
 
-OMP_THREADS_LIST="16 32 64"
+OMP_THREADS_LIST="64"
 
 for OMP_THREADS in ${OMP_THREADS_LIST}
 
@@ -35,6 +35,7 @@ export OMP_NUM_THREADS=$OMP_THREADS
 
 done
 
+export OMP_NUM_THREADS=1
 # run on hip 
 ./test_adaptive_eigen --vtkm-device kokkos $DATADIR/beetle_${DIMX}_${DIMY}_${DIMZ}_ens/ens ground_truth $DIMX $DIMY $DIMZ $ISO $NUM_SAMPLE $NUM_ENS beetle_${DIMX}_${DIMY}_${DIMZ}_ens_output $EIGEN_THRESHOLD false &> adaptive_eigen_kokkos.log
 
