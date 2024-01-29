@@ -14,11 +14,11 @@ namespace EASYLINALG
     {
         Vec<double, Size> x(0.0);
         // TODO, double check this, in beetle beetle_124_208_208 some value is 0.0001848
-        bool ifUpper = A.IsUpperTriangular(0.0001);
+        bool ifUpper = A.IsUpperTriangular(0.0005);
         // TODO, print sth if the A is not upper triangular
-        if(ifUpper == false){
-            A.Show();
-        }
+        //if(ifUpper == false){
+        //    A.Show();
+        //}
         assert(ifUpper == true);
 
         for (int i = Size - 1; i >= 0; --i)

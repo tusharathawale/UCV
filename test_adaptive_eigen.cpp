@@ -11,6 +11,7 @@
 
 #include "ucvworklet/ExtractingMeanStdev.hpp"
 #include "ucvworklet/EntropyAdaptiveEigens.hpp"
+#include "ucvworklet/MVGaussianWithEnsemble3DTryEL.hpp"
 
 #include <vtkm/cont/Timer.h>
 
@@ -22,8 +23,9 @@
 #include <iomanip>
 
 void ComputeEntropyWithRuntimeVec(vtkm::cont::DataSet vtkmDataSet,
-                                  double isovalue, int numSamples, std::string outputFileNameSuffix, bool use2d, double eigenThreshold)
+                                  double isovalue, int numSamples, std::string outputFileNameSuffix, bool use2d, double eigenThreshold, vtkm::cont::Timer &timer, std::string writeFile)
 {
+    timer.Start();
     // Processing current ensemble data sets based on uncertianty countour
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
     auto resolveType = [&](auto &concreteArray)
@@ -61,14 +63,74 @@ void ComputeEntropyWithRuntimeVec(vtkm::cont::DataSet vtkmDataSet,
         outputDataSet.AddCellField("cross_prob_" + isostr, crossProbability);
         outputDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
         outputDataSet.AddCellField("entropy" + isostr, entropy);
-
-        vtkm::io::VTKDataSetWriter writeCross(outputFileName);
-        writeCross.WriteDataSet(outputDataSet);
+        if (writeFile == "true")
+        {
+            vtkm::io::VTKDataSetWriter writeCross(outputFileName);
+            writeCross.WriteDataSet(outputDataSet);
+        }
     };
 
     vtkmDataSet.GetField("ensembles")
         .GetData()
         .CastAndCallWithExtractedArray(resolveType);
+    timer.Stop();
+    std::cout << "worklet time is:" << timer.GetElapsedTime() << std::endl;
+}
+
+void ComputeEntropyWithOrigianlMVG(vtkm::cont::DataSet vtkmDataSet,
+                                   double isovalue, int numSamples, std::string outputFileNameSuffix, bool use2d, double eigenThreshold, vtkm::cont::Timer &timer, std::string writeFile)
+{
+    timer.Start();
+    // Processing current ensemble data sets based on uncertianty countour
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanArray;
+    auto resolveType = [&](auto &concreteArray)
+    {
+        vtkm::cont::Invoker invoke;
+        vtkm::Id numPoints = concreteArray.GetNumberOfValues();
+        auto concreteArrayView = vtkm::cont::make_ArrayHandleView(concreteArray, 0, numPoints);
+
+        invoke(ExtractingMean{}, concreteArrayView, meanArray);
+        // printSummary_ArrayHandle(meanArray, std::cout);
+        // printSummary_ArrayHandle(stdevArray, std::cout);
+
+        vtkm::cont::ArrayHandle<vtkm::Float64> crossProbability;
+        vtkm::cont::ArrayHandle<vtkm::Id> numNonZeroProb;
+        vtkm::cont::ArrayHandle<vtkm::Float64> entropy;
+
+        // check 2d or 3d
+        if (use2d)
+        {
+            std::runtime_error("only support 3d case for this testing");
+        }
+        else
+        {
+            invoke(MVGaussianWithEnsemble3DTryEL{isovalue, numSamples}, vtkmDataSet.GetCellSet(), concreteArrayView, meanArray, crossProbability, numNonZeroProb, entropy);
+        }
+
+        auto outputDataSet = vtkmDataSet;
+
+        std::stringstream stream;
+        stream << std::fixed << std::setprecision(2) << isovalue;
+        std::string isostr = stream.str();
+
+        std::string outputFileName = outputFileNameSuffix + isostr + ".vtk";
+
+        outputDataSet.AddCellField("cross_prob_" + isostr, crossProbability);
+        outputDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
+        outputDataSet.AddCellField("entropy" + isostr, entropy);
+
+        if (writeFile == "true")
+        {
+            vtkm::io::VTKDataSetWriter writeCross(outputFileName);
+            writeCross.WriteDataSet(outputDataSet);
+        }
+    };
+
+    vtkmDataSet.GetField("ensembles")
+        .GetData()
+        .CastAndCallWithExtractedArray(resolveType);
+    timer.Stop();
+    std::cout << "worklet time is:" << timer.GetElapsedTime() << std::endl;
 }
 
 int main(int argc, char *argv[])
@@ -77,10 +139,10 @@ int main(int argc, char *argv[])
         argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
     vtkm::cont::Timer timer{initResult.Device};
 
-    if (argc != 11)
+    if (argc != 12)
     {
         //./test_syntheticdata_el_sequence /Users/zw1/Documents/cworkspace/src/UCV/exp_scripts/create_dataset/RawdataPointScalar TestField 300 0.8 1000
-        std::cout << "<executable> <SyntheticDataSuffix> <FieldName> <Dimx> <Dimy> <Dimz> <iso> <num of sampls for mv> <num of ensembles> <outputFileSuffix> <eigenThreshold>" << std::endl;
+        std::cout << "<executable> <SyntheticDataSuffix> <FieldName> <Dimx> <Dimy> <Dimz> <iso> <num of sampls for mv> <num of ensembles> <outputFileSuffix> <eigenThreshold> <true/false (write file or not)>" << std::endl;
         exit(0);
     }
 
@@ -97,7 +159,13 @@ int main(int argc, char *argv[])
     int numSamples = std::stoi(argv[7]);
     int totalNumEnsemble = std::stoi(argv[8]);
     std::string outputSuffix = std::string(argv[9]);
-    double eigenThreshold =  std::stod(argv[10]);
+    double eigenThreshold = std::stod(argv[10]);
+    std::string writeFile = std::string(argv[11]);
+
+    if (eigenThreshold < 0)
+    {
+        throw std::runtime_error("eigenThreshold is supposed to be larger than 0");
+    }
 
     std::cout << "iso value is: " << isovalue << " numSamples is: " << numSamples << std::endl;
 
@@ -127,7 +195,7 @@ int main(int argc, char *argv[])
         dataArray.push_back(fieldDataArray);
     }
 
-    std::cout << "ok to load the data at the first step" << std::endl;
+    std::cout << "ok to load the data" << std::endl;
 
     // using all ensembles
     vtkm::cont::ArrayHandleRuntimeVec<vtkm::FloatDefault> runtimeVecArray(totalNumEnsemble);
@@ -157,8 +225,12 @@ int main(int argc, char *argv[])
     {
         use2d = true;
     }
-    ComputeEntropyWithRuntimeVec(vtkmDataSet, isovalue, numSamples, outputSuffix, use2d, eigenThreshold);
-    std::cout << "ok to get entropy for all ensembles" << std::endl;
+
+    std::cout << "start to call the adaptive worklet" << std::endl;
+    ComputeEntropyWithRuntimeVec(vtkmDataSet, isovalue, numSamples, outputSuffix, use2d, eigenThreshold, timer, writeFile);
+
+    std::cout << "start to call the original mvg worklet" << std::endl;
+    ComputeEntropyWithOrigianlMVG(vtkmDataSet, isovalue, numSamples, outputSuffix + "_originalMVG", use2d, eigenThreshold, timer, writeFile);
 
     return 0;
 }

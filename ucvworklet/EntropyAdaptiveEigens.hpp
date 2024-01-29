@@ -29,7 +29,7 @@ public:
 
     // using ExecutionSignature = void(_2, _3, _4, _5, _6, WorkIndex);
     using ExecutionSignature = void(_2, _3, _4, _5, _6);
-    // the first parameter is binded with the worklet
+    //  the first parameter is binded with the worklet
     using InputDomain = _1;
     // InPointFieldType should be a vector
     template <typename InPointFieldVecEnsemble,
@@ -42,7 +42,7 @@ public:
     //     const InPointFieldVecMean &inMeanArray,
     //     OutCellFieldType1 &outCellFieldCProb,
     //     OutCellFieldType2 &outCellFieldNumNonzeroProb,
-    //     OutCellFieldType3 &outCellFieldEntropy,vtkm::Id workIndex) const
+    //     OutCellFieldType3 &outCellFieldEntropy, vtkm::Id workIndex) const
     VTKM_EXEC void operator()(
         const InPointFieldVecEnsemble &inPointFieldVecEnsemble,
         const InPointFieldVecMean &inMeanArray,
@@ -170,19 +170,34 @@ public:
 
         // Choosing number of important eigen values
         EASYLINALG::Vec<double, NumVertecies> eigenValuesFiltered(0);
-        // using one eigen as default
+        // using first eigen as default case
         int filteredEigenCount = 1;
         eigenValuesFiltered[0] = eigenValues[0];
         // filter out eigen values when it is less then the threshold
         // and not all eigen value are used
+        // assuming this->m_thresholdEnergy is larger than 0
         for (int i = 1; i < NumVertecies; i++)
         {
+            // TODO, there are 0 eigen values in the dataset
+            // even if we set eigengy as small value, we still filter out a lot of them
             if (eigenValues[i] > this->m_thresholdEnergy * eigenValues[0])
             {
                 eigenValuesFiltered[filteredEigenCount] = eigenValues[i];
                 filteredEigenCount++;
             }
         }
+
+        // if (workIndex == 11282)
+        // {
+        //     printf("filteredEigenCount is %d\n", filteredEigenCount);
+        //     eigenValuesFiltered.Show();
+        //     printf("cov matrix is\n");
+        //     ucvcov.Show();
+        //     printf("ucvmeanv is\n");
+        //     ucvmeanv.Show();
+        // }
+
+        // printf("debug filteredEigenCount %d\n",filteredEigenCount);
 
         // Compute eigen vectors only for important eigen values
         EASYLINALG::Vec<EASYLINALG::Vec<double, NumVertecies>, NumVertecies> eigenVectors;
@@ -193,9 +208,27 @@ public:
             eigenVectors[i] = EASYLINALG::ComputeEigenVectors(ucvcov, eigenValuesFiltered[i], this->m_iterations);
         }
 
+        // if (workIndex == 11282)
+        // {
+        //     printf("debug eigen vec\n");
+        //     for (int i = 0; i < filteredEigenCount; i++)
+        //     {
+        //         eigenVectors[i].Show();
+        //     }
+        // }
+
         vtkm::Vec<vtkm::FloatDefault, NumCases> probHistogram;
 
         EASYLINALG::Vec<double, NumVertecies> sample_v;
+
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
+        thrust::minstd_rand rng;
+        thrust::random::normal_distribution<double> norm(0, 1);
+#else
+        std::mt19937 rng;
+        rng.seed(std::mt19937::default_seed);
+        std::normal_distribution<double> norm(0, 1);
+#endif // VTKM_CUDA
 
         // init to 0
         for (int i = 0; i < NumCases; i++)
@@ -209,18 +242,11 @@ public:
 
             for (int i = 0; i < filteredEigenCount; i++)
             {
-#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
-                thrust::minstd_rand rng;
-                thrust::random::normal_distribution<double> norm(0, vtkm::Sqrt(eigenValuesFiltered[i]));
-#else
-                std::mt19937 rng;
-                rng.seed(std::mt19937::default_seed);
-                std::normal_distribution<double> norm(0, vtkm::Sqrt(eigenValuesFiltered[i]));
-#endif // VTKM_CUDA
 
-                // sample_v[i]=vtkm::Sqrt(eigenValues[i])*norm(rng);
-                // std::normal_distribution<double> norm(0, vtkm::Sqrt(eigenValuesFiltered[i]));
-                sample_v[i] = norm(rng);
+                // vtkm will return nan for negative sqrt value
+                // just filter it out in the previous step when filter
+                // the eigen value
+                sample_v[i] = vtkm::Sqrt(eigenValues[i]) * norm(rng);
             }
 
             // compute sampled results
@@ -229,6 +255,8 @@ public:
             {
                 for (int j = 0; j < filteredEigenCount; j++)
                 {
+                    // eigen vector of jth eigen value, jth sample element
+                    // ith componnet in the eigen vector
                     sampleResults[i] += eigenVectors[j][i] * sample_v[j];
                 }
             }
@@ -256,7 +284,7 @@ public:
 
         // cross probability
         // outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
-        outCellFieldCProb = 1.0 - (probHistogram[0] + probHistogram[255]);
+        outCellFieldCProb = 1.0 - (probHistogram[0] + probHistogram[NumCases - 1]);
 
         vtkm::Id nonzeroCases = 0;
         vtkm::FloatDefault entropyValue = 0;
@@ -280,6 +308,18 @@ public:
 
         outCellFieldNumNonzeroProb = nonzeroCases;
         outCellFieldEntropy = entropyValue;
+
+        // if (workIndex == 11282)
+        // {
+        //     for (int i = 0; i < NumCases; i++)
+        //     {
+        //         printf("probHis %d is %f\n", i, probHistogram[i]);
+        //     }
+        //     printf("nonzeroCases is %lld\n", nonzeroCases);
+        //     printf("outCellFieldCProb is %f\n", outCellFieldCProb);
+        //     printf("outCellFieldEntropy is %f\n", outCellFieldEntropy);
+        //     printf("debug worklet index %lld\n", workIndex);
+        // }
 
         // check if eigen value is large to small
         // filter out the eigen values that is less then a specific threshold
@@ -487,7 +527,7 @@ public:
 private:
     double m_isovalue;
     int m_numSamples;
-    int m_iterations = 500;
+    int m_iterations = 200;
     double m_tolerance = 0.0001;
 
     // threshold to depend if there is sphere covaraince structure

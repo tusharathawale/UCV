@@ -13,7 +13,7 @@ namespace EASYLINALG
 
 // set as necessary header as needed
 // such as one using on GPU
-#define LIAG_FUNC_MACRO __attribute__((visibility("default")))
+#define LIAG_FUNC_MACRO VTKM_EXEC
 
     template <typename T, uint Size>
     class Vec
@@ -135,7 +135,7 @@ namespace EASYLINALG
             }
         }
 
-        LIAG_FUNC_MACRO void Show()
+        LIAG_FUNC_MACRO void Show() const
         {
             for (int i = 0; i < this->NUM_COMPONENTS; i++)
             {

@@ -68,13 +68,14 @@ public:
         }
 
         // std::vector<double> cov_matrix;
+        using VecType = decltype(inPointFieldVecEnsemble[0]);
         vtkm::Vec<vtkm::FloatDefault, 36> cov_matrix;
         vtkm::IdComponent index = 0;
         for (int p = 0; p < numVertexies; ++p)
         {
             for (int q = p; q < numVertexies; ++q)
             {
-                float cov = find_covariance(inPointFieldVecEnsemble[p], inPointFieldVecEnsemble[q], inMeanArray[p], inMeanArray[q]);
+                float cov = find_covariance<VecType>(inPointFieldVecEnsemble[p], inPointFieldVecEnsemble[q], inMeanArray[p], inMeanArray[q]);
                 cov_matrix[index] = cov;
                 index++;
             }
@@ -227,7 +228,8 @@ public:
         return mean;
     }
 
-    VTKM_EXEC inline vtkm::FloatDefault find_covariance(const vtkm::Vec<vtkm::FloatDefault, 64> &arr1, const vtkm::Vec<vtkm::FloatDefault, 64> &arr2,
+    template <typename VecType>
+    VTKM_EXEC inline vtkm::FloatDefault find_covariance(const VecType &arr1, const VecType &arr2,
                                                         const vtkm::FloatDefault &mean1, const vtkm::FloatDefault &mean2) const
     {
         if (arr1.GetNumberOfComponents() != arr2.GetNumberOfComponents())
@@ -238,7 +240,12 @@ public:
         vtkm::Id arraySize = arr1.GetNumberOfComponents();
         vtkm::FloatDefault sum = 0;
         for (int i = 0; i < arraySize; i++)
-            sum = sum + (arr1[i] - mean1) * (arr2[i] - mean2);
+        {
+            vtkm::FloatDefault v1 = arr1[i];
+            vtkm::FloatDefault v2 = arr2[i];
+            sum = sum + (v1 - mean1) * (v2 - mean2);
+        }
+
         return sum / (vtkm::FloatDefault)(arraySize - 1);
     }
 
