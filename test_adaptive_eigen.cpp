@@ -244,9 +244,9 @@ int main(int argc, char *argv[])
     vtkm::cont::ArrayHandle<vtkm::Float64> diff;
 
     invoke(ComputeDiffSquare{}, crossProb1, crossProb2, diff);
-    vtkm::Float64 diffSquarSum = vtkm::cont::Algorithm::Reduce(diff, 0.0, vtkm ::Sum());
+    vtkm::Float64 diffSquarSum = vtkm::cont::Algorithm::Reduce(diff, 0.0, vtkm::Sum());
     
-    std::cout << "diffSquarSum is: " << diffSquarSum << " RMSE is: " << vtkm::Sqrt(diffSquarSum/diff.GetNumberOfValues()) << std::endl;
+    std::cout << "DiffSquarSum is: " << diffSquarSum << " RMSE is: " << vtkm::Sqrt(diffSquarSum/diff.GetNumberOfValues()) << std::endl;
 
     return 0;
 }
