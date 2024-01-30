@@ -17,7 +17,7 @@ cd $RUNDIR
 rm test_adaptive_eigen
 ln -s $CURRDIR/../../install_scripts/frontier_gpu/install/UCV/test_adaptive_eigen test_adaptive_eigen
 
-EIGEN_THRESHOLD_LIST="0.0 0.05 0.15 0.20 0.25 0.30"
+EIGEN_THRESHOLD_LIST="0.0 0.05 0.10 0.15 0.20 0.25 0.30 0.35 0.40"
 
 DIMX=124
 DIMY=208
