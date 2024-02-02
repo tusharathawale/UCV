@@ -17,8 +17,11 @@ template <int NumVertecies, int NumCases>
 class EntropyAdaptiveEigensPearson : public vtkm::worklet::WorkletVisitCellsWithPoints
 {
 public:
-    EntropyAdaptiveEigensPearson(double isovalue, int numSamples, double thresholdInd, double thresholdEnergy)
-        : m_isovalue(isovalue), m_numSamples(numSamples), m_thresholdInd(thresholdInd), m_thresholdEnergy(thresholdEnergy){};
+    EntropyAdaptiveEigensPearson(double isovalue, int numSamples, double thresholdInd, double eigenThreshold, double pearsonThreshold)
+        : m_isovalue(isovalue),
+          m_numSamples(numSamples),
+          m_eigenThreshold(eigenThreshold),
+          m_pearsonThreshold(pearsonThreshold){};
 
     using ControlSignature = void(CellSetIn,
                                   FieldInPoint,
@@ -106,7 +109,7 @@ public:
         // }
         // return;
 
-        if (pearsonCorrelation < 0.2)
+        if (pearsonCorrelation < this->m_pearsonThreshold)
         {
             // using the indepedent situations
             // compute the stdev of 8 vertex
@@ -271,24 +274,12 @@ public:
         {
             // TODO, there are 0 eigen values in the dataset
             // even if we set eigengy as small value, we still filter out a lot of them
-            if (eigenValues[i] > this->m_thresholdEnergy * eigenValues[0])
+            if (eigenValues[i] > this->m_eigenThreshold * eigenValues[0])
             {
                 eigenValuesFiltered[filteredEigenCount] = eigenValues[i];
                 filteredEigenCount++;
             }
         }
-
-        // if (workIndex == 11282)
-        // {
-        //     printf("filteredEigenCount is %d\n", filteredEigenCount);
-        //     eigenValuesFiltered.Show();
-        //     printf("cov matrix is\n");
-        //     ucvcov.Show();
-        //     printf("ucvmeanv is\n");
-        //     ucvmeanv.Show();
-        // }
-
-        // printf("debug filteredEigenCount %d\n",filteredEigenCount);
 
         // Compute eigen vectors only for important eigen values
         EASYLINALG::Vec<EASYLINALG::Vec<double, NumVertecies>, NumVertecies> eigenVectors;
@@ -399,151 +390,7 @@ public:
 
         outCellFieldNumNonzeroProb = nonzeroCases;
         outCellFieldEntropy = entropyValue;
-
-        // if (workIndex == 11282)
-        // {
-        //     for (int i = 0; i < NumCases; i++)
-        //     {
-        //         printf("probHis %d is %f\n", i, probHistogram[i]);
-        //     }
-        //     printf("nonzeroCases is %lld\n", nonzeroCases);
-        //     printf("outCellFieldCProb is %f\n", outCellFieldCProb);
-        //     printf("outCellFieldEntropy is %f\n", outCellFieldEntropy);
-        //     printf("debug worklet index %lld\n", workIndex);
-        // }
-
-        // check if eigen value is large to small
-        // filter out the eigen values that is less then a specific threshold
-
-        /*
-        EASYLINALG::Vec<double, NumVertecies> eigenValuesFiltered(0);
-        // use all eigen values when the use_all_eigen is true
-        int filteredEigenCount = NumVertecies;
-
-        //TODO, checking the eigen values are in desending sequence
-        // decide two cases
-        //either adopt the indepedent assumption
-        //or the case that decide how many eigen values should be used
-
-        if (this->m_use_all_eigen == true)
-        {
-            eigenValuesFiltered = eigenValues;
-        }
-        else
-        {
-            filteredEigenCount = 0;
-            // filter out eigen values when it is less then the threshold
-            // and not all eigen value are used
-            for (int i = 0; i < NumVertecies; i++)
-            {
-                if (eigenValues[i] > this->m_eigen_threshold)
-                {
-                    eigenValuesFiltered[filteredEigenCount] = eigenValues[i];
-                    filteredEigenCount++;
-                }
-            }
-        }
-
-        // Compute eigen vectors
-        EASYLINALG::Vec<EASYLINALG::Vec<double, NumVertecies>, NumVertecies> eigenVectors;
-        // how many eigen vector we want to use
-
-        for (int i = 0; i < filteredEigenCount; i++)
-        {
-            eigenVectors[i] = EASYLINALG::ComputeEigenVectors(ucvcov, eigenValuesFiltered[i], this->m_iterations);
-        }
-
-#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
-        thrust::minstd_rand rng;
-        thrust::random::normal_distribution<double> norm;
-#else
-        std::mt19937 rng;
-        rng.seed(std::mt19937::default_seed);
-        std::normal_distribution<double> norm;
-#endif // VTKM_CUDA
-
-        vtkm::Vec<vtkm::FloatDefault, NumCases> probHistogram;
-
-        EASYLINALG::Vec<double, numVertex3d> sample_v;
-
-        // init to 0
-        for (int i = 0; i < NumCases; i++)
-        {
-            probHistogram[i] = 0.0;
-        }
-
-        for (vtkm::Id n = 0; n < numSamples; ++n)
-        {
-            EASYLINALG::Vec<double, numVertex3d> sampleResults(0);
-
-            for (int i = 0; i < filteredEigenCount; i++)
-            {
-                // sample_v[i]=vtkm::Sqrt(eigenValues[i])*norm(rng);
-                std::normal_distribution<double> norm(0, vtkm::Sqrt(eigenValuesFiltered[i]));
-                sample_v[i] = norm(rng);
-            }
-
-            // compute sampled results
-            // for each sampled results
-            for (int i = 0; i < numVertex3d; i++)
-            {
-                for (int j = 0; j < filteredEigenCount; j++)
-                {
-                    sampleResults[i] += eigenVectors[j][i] * sample_v[j];
-                }
-            }
-
-            // go through 8 cases
-            uint caseValue = 0;
-            for (uint i = 0; i < numVertex3d; i++)
-            {
-                // setting associated position to 1 if iso larger then specific cases
-                if (transformIso[i] >= sampleResults[i])
-                {
-                    caseValue = (1 << i) | caseValue;
-                }
-            }
-
-            // the associated pos is 0 otherwise
-            probHistogram[caseValue] = probHistogram[caseValue] + 1.0;
-        }
-
-        // go through probHistogram and compute pro
-        for (int i = 0; i < NumCases; i++)
-        {
-            probHistogram[i] = (probHistogram[i] / (1.0 * numSamples));
-            // printf("debug caseValue %d probHistogram %f\n", i, probHistogram[i]);
-        }
-
-        // cross probability
-        // outCellFieldCProb = (1.0 * numCrossings) / (1.0 * numSamples);
-        outCellFieldCProb = 1.0 - (probHistogram[0] + probHistogram[255]);
-
-        vtkm::Id nonzeroCases = 0;
-        vtkm::FloatDefault entropyValue = 0;
-        vtkm::FloatDefault templog = 0;
-        // compute number of nonzero cases
-        // compute entropy
-        for (int i = 0; i < NumCases; i++)
-        {
-            if (probHistogram[i] > 0.0001)
-            {
-                nonzeroCases++;
-                templog = vtkm::Log2(probHistogram[i]);
-                // if (i != 0 && i != totalNumCases - 1)
-                //{
-                //     totalnonzeroProb += probHistogram[i];
-                // }
-            }
-            // do not update entropy if the pro is zero
-            entropyValue = entropyValue + (-probHistogram[i]) * templog;
-        }
-
-        outCellFieldNumNonzeroProb = nonzeroCases;
-        outCellFieldEntropy = entropyValue;
-         */
     }
-    
 
     VTKM_EXEC inline void traverseBit(vtkm::Vec<vtkm::Vec2f, NumVertecies> &ProbList,
                                       vtkm::Vec<vtkm::FloatDefault, NumCases> &probHistogram) const
@@ -647,11 +494,9 @@ private:
     int m_numSamples;
     int m_iterations = 200;
     double m_tolerance = 0.0001;
-
-    // threshold to depend if there is sphere covaraince structure
-    double m_thresholdInd = 1.0;
     // threshold to determine the number of eigen values we should keep
-    double m_thresholdEnergy = 0.1;
+    double m_eigenThreshold = 0.1;
+    double m_pearsonThreshold = 0.1;
 };
 
 #endif // UCV_MULTIVARIANT_GAUSSIAN3D_h

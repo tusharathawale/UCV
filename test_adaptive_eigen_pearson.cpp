@@ -87,7 +87,7 @@ vtkm::cont::ArrayHandle<vtkm::Float64> ComputeEntropyWithRuntimeVec(vtkm::cont::
 }
 
 vtkm::cont::ArrayHandle<vtkm::Float64> ComputeEntropyBasedOnPearson(vtkm::cont::DataSet vtkmDataSet, vtkm::cont::DataSet pearsonData,
-                                                                    double isovalue, int numSamples, std::string outputFileNameSuffix, double eigenThreshold, vtkm::cont::Timer &timer, std::string writeFile)
+                                                                    double isovalue, int numSamples, std::string outputFileNameSuffix, double eigenThreshold, double pearsonThreshold,vtkm::cont::Timer &timer)
 {
     timer.Start();
     // Processing current ensemble data sets based on uncertianty countour
@@ -115,7 +115,7 @@ vtkm::cont::ArrayHandle<vtkm::Float64> ComputeEntropyBasedOnPearson(vtkm::cont::
         }
 
         //visit cell based on pearson correlations
-        invoke(EntropyAdaptiveEigensPearson<8, 256>{isovalue, numSamples, 1.0, eigenThreshold}, vtkmDataSet.GetCellSet(), concreteArray, meanArray, stdArray, pearsonCorrelation, crossProbability, numNonZeroProb, entropy);
+        invoke(EntropyAdaptiveEigensPearson<8, 256>{isovalue, numSamples, 1.0, eigenThreshold, pearsonThreshold}, vtkmDataSet.GetCellSet(), concreteArray, meanArray, stdArray, pearsonCorrelation, crossProbability, numNonZeroProb, entropy);
 
 
     };
@@ -130,7 +130,7 @@ vtkm::cont::ArrayHandle<vtkm::Float64> ComputeEntropyBasedOnPearson(vtkm::cont::
 }
 
 vtkm::cont::ArrayHandle<vtkm::Float64> ComputeEntropyWithOrigianlMVG(vtkm::cont::DataSet vtkmDataSet,
-                                                                     double isovalue, int numSamples, std::string outputFileNameSuffix, bool use2d, double eigenThreshold, vtkm::cont::Timer &timer, std::string writeFile)
+                                                                     double isovalue, int numSamples, std::string outputFileNameSuffix, bool use2d, double eigenThreshold, vtkm::cont::Timer &timer)
 {
     timer.Start();
     // Processing current ensemble data sets based on uncertianty countour
@@ -169,12 +169,6 @@ vtkm::cont::ArrayHandle<vtkm::Float64> ComputeEntropyWithOrigianlMVG(vtkm::cont:
         outputDataSet.AddCellField("cross_prob_" + isostr, crossProbability);
         outputDataSet.AddCellField("num_nonzero_prob" + isostr, numNonZeroProb);
         outputDataSet.AddCellField("entropy" + isostr, entropy);
-
-        if (writeFile == "true")
-        {
-            vtkm::io::VTKDataSetWriter writeCross(outputFileName);
-            writeCross.WriteDataSet(outputDataSet);
-        }
     };
 
     vtkmDataSet.GetField("ensembles")
@@ -195,7 +189,7 @@ int main(int argc, char *argv[])
     if (argc != 13)
     {
         // ./test_syntheticdata_el_sequence /Users/zw1/Documents/cworkspace/src/UCV/exp_scripts/create_dataset/RawdataPointScalar TestField 300 0.8 1000
-        std::cout << "<executable> <SyntheticDataSuffix> <PearsonFile> <FieldName> <Dimx> <Dimy> <Dimz> <iso> <num of sampls for mv> <num of ensembles> <outputFileSuffix> <eigenThreshold> <true/false (write file or not)>" << std::endl;
+        std::cout << "<executable> <SyntheticDataSuffix> <PearsonFile> <FieldName> <Dimx> <Dimy> <Dimz> <iso> <num of sampls for mv> <num of ensembles> <outputFileSuffix> <eigenThreshold> <pearsonThreshold>" << std::endl;
         exit(0);
     }
 
@@ -214,7 +208,7 @@ int main(int argc, char *argv[])
     int totalNumEnsemble = std::stoi(argv[9]);
     std::string outputSuffix = std::string(argv[10]);
     double eigenThreshold = std::stod(argv[11]);
-    std::string writeFile = std::string(argv[12]);
+    double pearsonThreshold = std::stod(argv[12]);
 
     if (eigenThreshold < 0)
     {
@@ -280,10 +274,10 @@ int main(int argc, char *argv[])
     vtkm::cont::DataSet pearsonData = pearsonReader.ReadDataSet();
 
     std::cout << "start to call the data by pearson correlation" << std::endl;
-    auto crossProb1 = ComputeEntropyBasedOnPearson(vtkmDataSet, pearsonData, isovalue, numSamples, outputSuffix + "_pearson", eigenThreshold, timer, writeFile);
+    auto crossProb1 = ComputeEntropyBasedOnPearson(vtkmDataSet, pearsonData, isovalue, numSamples, outputSuffix + "_pearson", eigenThreshold, pearsonThreshold, timer);
 
     std::cout << "start to call the original mvg worklet" << std::endl;
-    auto crossProb2 = ComputeEntropyWithOrigianlMVG(vtkmDataSet, isovalue, numSamples, outputSuffix + "_originalMVG", false, eigenThreshold, timer, writeFile);
+    auto crossProb2 = ComputeEntropyWithOrigianlMVG(vtkmDataSet, isovalue, numSamples, outputSuffix + "_originalMVG", false, eigenThreshold, timer);
 
     // compute the RMSE for two cases
     vtkm::cont::Invoker invoke;

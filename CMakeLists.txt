@@ -145,6 +145,10 @@ set_source_files_properties(test_adaptive_eigen.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(test_adaptive_eigen test_adaptive_eigen.cpp)
 target_link_libraries(test_adaptive_eigen ${VTKm_LIBRARIES})
 
+set_source_files_properties(test_adaptive_eigen_pearson.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(test_adaptive_eigen_pearson test_adaptive_eigen_pearson.cpp)
+target_link_libraries(test_adaptive_eigen_pearson ${VTKm_LIBRARIES})
+
 elseif(BUILD_PARAVIEW_PLUGIN) 
 
   # ParaView plugins need this included to be built.
