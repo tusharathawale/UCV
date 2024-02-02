@@ -173,6 +173,9 @@ elseif(BUILD_PARAVIEW_PLUGIN)
   add_executable(decompose_3d_into_ensembles decompose_3d_into_ensembles.cpp)
   target_link_libraries(decompose_3d_into_ensembles ${VTKm_LIBRARIES})
 
+  add_executable(test_adaptive_eigen_pearson test_adaptive_eigen_pearson.cpp)
+  target_link_libraries(test_adaptive_eigen_pearson ${VTKm_LIBRARIES})
+  
 else()
  
 add_executable(ucv_extract ucv_extract.cpp)
