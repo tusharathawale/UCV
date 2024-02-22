@@ -121,7 +121,7 @@ echo "====> build UCV"
 UCV_SRC_DIR=$HERE/../../
 # use the install dir as the build dir
 UCV_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/UCV"
-
+rm -rf $UCV_INSTALL_DIR
 #if [ -d $UCV_INSTALL_DIR ]; then
 #    echo "====> skip, $UCV_INSTALL_DIR already exists," \
 #             "please remove it if you want to reinstall it"

@@ -11,9 +11,9 @@
 OPTION (USE_HIP OFF)
 if(USE_HIP)
 
-set_source_files_properties(ucv_reduce_umc.cpp PROPERTIES LANGUAGE "HIP")
-add_executable(ucv_reduce_umc ucv_reduce_umc.cpp)
-target_link_libraries(ucv_reduce_umc ${VTKm_LIBRARIES} MPI::MPI_CXX)
+set_source_files_properties(TestFiber.cxx PROPERTIES LANGUAGE "HIP")
+add_executable(TestFiber TestFiber.cxx ../Fiber.cxx)
+target_link_libraries(TestFiber ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 else()
 
