@@ -114,3 +114,35 @@ fi
 echo "====> Installing vtk-m, ok"
 
 echo "vtkm install dir ${VTKM_INSTALL_DIR}"
+
+echo "====> build UCV"
+# the only have build dir without the install dir
+# the install dir is same with the build dir
+UCV_SRC_DIR=$HERE/../../
+# use the install dir as the build dir
+UCV_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/UCV"
+
+#if [ -d $UCV_INSTALL_DIR ]; then
+#    echo "====> skip, $UCV_INSTALL_DIR already exists," \
+#             "please remove it if you want to reinstall it"
+#else
+    mkdir -p ${UCV_INSTALL_DIR}
+    cd ${UCV_INSTALL_DIR}
+    cmake -S ${UCV_SRC_DIR} \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_SHARED_LIBS=OFF \
+    -DUSE_HIP=ON \
+    -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.1 \
+    -DKokkos_DIR=${kokkos_install_dir}/lib64/cmake/Kokkos \
+    -DCMAKE_HIP_ARCHITECTURES=gfx90a \
+    -DCMAKE_CXX_COMPILER=hipcc -DCMAKE_C_COMPILER=hipcc
+    
+    # build and install
+    echo "**** Building UCV"
+    make -j${build_jobs}
+#fi
+
+cd $HERE
+# not sure why the libvtkmdiympi.so is not included during the build process
+echo "try to add library path by executing:"
+echo "export LD_LIBRARY_PATH=${VTKM_INSTALL_DIR}/lib:\${LD_LIBRARY_PATH}"
