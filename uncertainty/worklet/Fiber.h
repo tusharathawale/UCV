@@ -32,7 +32,7 @@ namespace worklet
 {
 namespace detail
 {
-class VTKM_FILTER_UNCERTAINTY_EXPORT Fiber : public vtkm::worklet::WorkletPointNeighborhood
+class Fiber : public vtkm::worklet::WorkletPointNeighborhood
 {
 public:
   // Worklet Input

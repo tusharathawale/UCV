@@ -12,7 +12,6 @@
 #define vtk_m_filter_uncertainty_Fiber_h
 
 #include <vtkm/filter/FilterField.h>
-#include <vtkm/filter/uncertainty/vtkm_filter_uncertainty_export.h>
 
 namespace vtkm
 {
@@ -20,7 +19,7 @@ namespace filter
 {
 namespace uncertainty
 {
-class VTKM_FILTER_UNCERTAINTY_EXPORT Fiber : public vtkm::filter::FilterField
+class Fiber : public vtkm::filter::FilterField
 {
   vtkm::Pair<vtkm::Float64, vtkm::Float64> minAxis;
   vtkm::Pair<vtkm::Float64, vtkm::Float64> maxAxis;

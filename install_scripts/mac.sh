@@ -80,7 +80,6 @@ rm -rf $UCV_INSTALL_DIR
     cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=Debug \
     -DBUILD_SHARED_LIBS=ON \
-    -DBUILD_PARAVIEW_PLUGIN=ON \
     -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.1
 
     cd $HERE

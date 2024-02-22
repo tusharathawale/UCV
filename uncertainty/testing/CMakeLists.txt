@@ -8,19 +8,6 @@
 ##  PURPOSE.  See the above copyright notice for more information.
 ##============================================================================
 
-set(libraries
-  vtkm_filter_uncertainty
-  vtkm_filter_core
-  vtkm_io
-  vtkm_filter_vector_analysis
-  )
 
-set(unit_tests
-  Fiber.cxx
-  )
-
-vtkm_unit_tests(
-  SOURCES ${unit_tests}
-  LIBRARIES ${libraries}
-  USE_VTKM_JOB_POOL
-  )
+add_executable(TestFiber TestFiber.cxx ../Fiber.cxx)
+target_link_libraries(TestFiber ${VTKm_LIBRARIES})

@@ -14,8 +14,7 @@
 #include <vtkm/Pair.h>
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
-#include <vtkm/cont/testing/Testing.h>
-#include <vtkm/filter/uncertainty/Fiber.h>
+#include "../Fiber.h"
 #include <vtkm/io/VTKDataSetReader.h>
 #include <vtkm/io/VTKDataSetWriter.h>
 
@@ -87,7 +86,8 @@ void TestFiber()
 }
 } // anonymous namespace
 
-int Fiber(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
-  return vtkm::cont::testing::Testing::Run(TestFiber, argc, argv);
+  TestFiber();
+  return 0;
 }

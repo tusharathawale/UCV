@@ -10,8 +10,8 @@
 
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/Timer.h>
-#include <vtkm/filter/uncertainty/Fiber.h>
-#include <vtkm/filter/uncertainty/worklet/Fiber.h>
+#include "Fiber.h"
+#include "./worklet/Fiber.h"
 
 namespace vtkm
 {
