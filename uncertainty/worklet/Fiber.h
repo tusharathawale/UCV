@@ -17,7 +17,7 @@
 #include <vector>
 #include <vtkm/worklet/WorkletPointNeighborhood.h>
 
-#ifdef VTKM_CUDA
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
 #include <thrust/device_vector.h>
 #include <thrust/random/linear_congruential_engine.h>
 #include <thrust/random/uniform_real_distribution.h>
@@ -119,7 +119,7 @@ public:
     // Monte Carlo
     // Trait Coordinates (X1,Y1) & (X2,Y2)
 
-#ifdef VTKM_CUDA
+#if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
     thrust::minstd_rand rng;
     thrust::uniform_real_distribution<vtkm::FloatDefault> distX(X1, X2);
     thrust::uniform_real_distribution<vtkm::FloatDefault> distY(Y1, Y2);
