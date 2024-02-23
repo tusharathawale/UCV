@@ -94,7 +94,7 @@ public:
     vtkm::FloatDefault N1 = 0.0;
     vtkm::FloatDefault N2 = 0.0;
     vtkm::IdComponent NonZeroCases = 0;
-    vtkm::IdComponent NumSample = 10;
+    vtkm::IdComponent NumSample = 100;
     vtkm::FloatDefault MCProbability = 0.0;
 
     X3 = static_cast<vtkm::FloatDefault>(EnsembleMinOne);
@@ -151,7 +151,7 @@ public:
     }
 
 #endif
-
+    printf("X1 %f Y1 %f X2 %f Y2 %f X3 %f X4 %f Y3 %f Y4 %f NonZeroCases %d\n",X1,Y1,X2,Y2,X3,X4,Y3,Y4,NonZeroCases);
     MCProbability = NonZeroCases / NumSample;
     MonteCarloProbability = MCProbability;
 

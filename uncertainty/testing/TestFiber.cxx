@@ -77,6 +77,8 @@ namespace
 
     vtkm::cont::DataSet output = filter.Execute(input);
 
+    output.PrintSummary(std::cout);
+
     vtkm::io::VTKDataSetWriter writer("./out_fiber_uncertainty.vtk");
     writer.WriteDataSet(output);
   }
