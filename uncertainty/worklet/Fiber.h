@@ -151,7 +151,7 @@ public:
     }
 
 #endif
-    printf("X1 %f Y1 %f X2 %f Y2 %f X3 %f X4 %f Y3 %f Y4 %f NonZeroCases %d\n",X1,Y1,X2,Y2,X3,X4,Y3,Y4,NonZeroCases);
+    //printf("X1 %f Y1 %f X2 %f Y2 %f X3 %f X4 %f Y3 %f Y4 %f NonZeroCases %d\n",X1,Y1,X2,Y2,X3,X4,Y3,Y4,NonZeroCases);
     MCProbability = NonZeroCases / NumSample;
     MonteCarloProbability = MCProbability;
 

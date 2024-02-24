@@ -21,8 +21,7 @@ namespace uncertainty
 {
 VTKM_CONT vtkm::cont::DataSet Fiber::DoExecute(const vtkm::cont::DataSet& input)
 {
-  vtkm::cont::Timer timer;
-  timer.Start();
+
 
   // Input Field
   vtkm::cont::Field EnsembleMinOne = this->GetFieldFromDataSet(0, input);
@@ -77,9 +76,7 @@ VTKM_CONT vtkm::cont::DataSet Fiber::DoExecute(const vtkm::cont::DataSet& input)
   vtkm::cont::DataSet result = this->CreateResult(input);
   result.AddPointField("OutputMonteCarloProbability", OutputMonteCarloProbability);
   result.AddPointField("OutputInteriorProbability", OutputInteriorProbability);
-  timer.Stop();
-  vtkm::Float64 elapsedTime = timer.GetElapsedTime();
-  std::cout << elapsedTime << std::endl;
+
   return result;
 }
 }
