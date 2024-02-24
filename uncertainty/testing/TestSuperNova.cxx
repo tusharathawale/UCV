@@ -155,9 +155,9 @@ int main(int argc, char *argv[])
   vtkm::Float64 elapsedTime = timer.GetElapsedTime();
   std::cout << elapsedTime << std::endl;
 
-  // output the dataset
-  vtkm::io::VTKDataSetWriter writer("./out_fiber_supernova_uncertainty_" + std::to_string(dimx) + ".vtk");
-  writer.WriteDataSet(output);
+  //output the dataset
+  //vtkm::io::VTKDataSetWriter writer("./out_fiber_supernova_uncertainty_" + std::to_string(dimx) + ".vtk");
+  //writer.WriteDataSet(output);
 
   return 0;
 }
