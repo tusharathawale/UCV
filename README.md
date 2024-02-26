@@ -13,5 +13,9 @@ Run fiber exp
 ./mac/install/UCV/uncertainty/testing/TestSuperNova ./supernova_25_data 64
 
 TODO:
-Double check why the ouput is zero
-Use the supernova data for testing (Nickle and Iron)
+Run on readsea data, using mean+-stdev to get min and max
+
+Associated paper is this one
+https://diglib.eg.org/bitstream/handle/10.2312/evs20211053/043-047.pdf?sequence=1&isAllowed=y
+
+Get the performance number for GPU on andes machine maybe, show that it can run on different backend (andes has a low gpu version)
