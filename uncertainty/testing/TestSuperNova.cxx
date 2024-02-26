@@ -131,8 +131,8 @@ int main(int argc, char *argv[])
   const vtkm::Id3 dims(dimx, dimy, dimz);
   vtkm::cont::DataSetBuilderUniform dataSetBuilder;
   vtkm::cont::DataSet dataSetForFilter = dataSetBuilder.Create(dims);
-  
-  //TODO, update spacing based on the original dataset
+
+  // TODO, update spacing based on the original dataset
 
   dataSetForFilter.AddPointField("ensemble_min_one", minField1);
   dataSetForFilter.AddPointField("ensemble_max_one", maxField1);
@@ -149,15 +149,21 @@ int main(int argc, char *argv[])
   vtkm::cont::Timer timer{initResult.Device};
   std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
 
-  timer.Start();
-  vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
-  timer.Stop();
-  vtkm::Float64 elapsedTime = timer.GetElapsedTime();
-  std::cout << "total elapsedTime:" << elapsedTime << std::endl;
+  // run filter five times
+  for (int i = 1; i <= 5; i++)
+  {
+    std::cout << "------" << std::endl;
+    std::cout << std::to_string(i) << "th run" << std::endl;
+    timer.Start();
+    vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
+    timer.Stop();
+    vtkm::Float64 elapsedTime = timer.GetElapsedTime();
+    std::cout << "total elapsedTime:" << elapsedTime << std::endl;
+  }
 
-  //output the dataset
-  //vtkm::io::VTKDataSetWriter writer("./out_fiber_supernova_uncertainty_" + std::to_string(dimx) + ".vtk");
-  //writer.WriteDataSet(output);
+  // output the dataset
+  // vtkm::io::VTKDataSetWriter writer("./out_fiber_supernova_uncertainty_" + std::to_string(dimx) + ".vtk");
+  // writer.WriteDataSet(output);
 
   return 0;
 }

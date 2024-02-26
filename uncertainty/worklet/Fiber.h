@@ -9,13 +9,12 @@
 //============================================================================
 // New Fiber.h
 
-
 #ifndef vtk_m_worklet_uncertainty_Fiber_h
 #define vtk_m_worklet_uncertainty_Fiber_h
 #include <iostream>
 #include <utility>
 #include <vector>
-#include <vtkm/worklet/WorkletPointNeighborhood.h>
+#include <vtkm/worklet/WorkletMapField.h>
 
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
 #include <thrust/device_vector.h>
@@ -32,7 +31,7 @@ namespace worklet
 {
 namespace detail
 {
-class Fiber : public vtkm::worklet::WorkletPointNeighborhood
+class Fiber : public vtkm::worklet::WorkletMapField
 {
 public:
   // Worklet Input
@@ -45,9 +44,9 @@ public:
     , InputMaxAxis(maxAxis){};
 
   // Input and Output Parameters
-  using ControlSignature = void(CellSetIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldOut, FieldOut);
+  using ControlSignature = void(FieldIn, FieldIn, FieldIn, FieldIn, FieldOut, FieldOut);
 
-  using ExecutionSignature = void(_2, _3, _4, _5, _6, _7);
+  using ExecutionSignature = void(_1, _2, _3, _4, _5, _6);
   //using ExecutionSignature = void(_2, _3, _4, _5, _6);
   using InputDomain = _1;
 

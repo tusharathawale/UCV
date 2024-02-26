@@ -34,9 +34,7 @@ namespace vtkm
         // Output Field
         vtkm::cont::UnknownArrayHandle OutputMonteCarloProbability;
         vtkm::cont::UnknownArrayHandle OutputInteriorProbability;
-        // CellSet
-        vtkm::cont::CellSetStructured<3> cellSet;
-        input.GetCellSet().AsCellSet(cellSet);
+
         timer.Stop();
         std::cout << "filter 1 " << timer.GetElapsedTime() << std::endl;
         // For Invoker
@@ -66,7 +64,6 @@ namespace vtkm
           // Invoker
           // this->IsoValue
           this->Invoke(vtkm::worklet::detail::Fiber{this->minAxis, this->maxAxis},
-                       cellSet,
                        ConcreteEnsembleMinOne,
                        ConcreteEnsembleMaxOne,
                        ConcreteEnsembleMinTwo,

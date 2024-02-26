@@ -28,17 +28,17 @@ export OMP_NUM_THREADS=1
 ./TestSuperNova --vtkm-device serial $DATADIR/supernova_100_data 64 &> supernova_100_serial.log
 
 # kokkos
-./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_25_data 64 &> supernova_25_kokkos_1.log
+#./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_25_data 64 &> supernova_25_kokkos_1.log
 
 #./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_25_data 64 &> supernova_25_kokkos_2.log
 
 #./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_50_data 64 &> supernova_50_kokkos_1.log
 
-./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_50_data 64 &> supernova_50_kokkos_2.log
+#./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_50_data 64 &> supernova_50_kokkos_2.log
 
-#./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_100_data 64 &> supernova_100_kokkos_1.log
+./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_100_data 64 &> supernova_100_kokkos_1.log
 
-#./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_100_data 64 &> supernova_100_kokkos_2.log
+./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_100_data 64 &> supernova_100_kokkos_2.log
 
 # openmp
 export OMP_NUM_THREADS=64
