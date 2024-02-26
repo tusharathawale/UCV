@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
   vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
   timer.Stop();
   vtkm::Float64 elapsedTime = timer.GetElapsedTime();
-  std::cout << elapsedTime << std::endl;
+  std::cout << "total elapsedTime:" << elapsedTime << std::endl;
 
   //output the dataset
   //vtkm::io::VTKDataSetWriter writer("./out_fiber_supernova_uncertainty_" + std::to_string(dimx) + ".vtk");
