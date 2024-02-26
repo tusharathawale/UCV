@@ -10,7 +10,7 @@
 
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/Timer.h>
-#include "Fiber.h"
+#include "./Fiber.h"
 #include "./worklet/Fiber.h"
 
 namespace vtkm

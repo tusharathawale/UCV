@@ -19,14 +19,14 @@ int main(int argc, char *argv[])
         argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
     std::cout << "initResult.Device: " << initResult.Device.GetName() << std::endl;
 
-    if (argc != 3)
+    if (argc != 2)
     {
-        std::cout << "<executable> <DataFolder> <NumEns>" << std::endl;
+        std::cout << "<executable> <DataFolder>" << std::endl;
         exit(0);
     }
 
     std::string dataFolder = std::string(argv[1]);
-    int NumEns = std::stoi(argv[2]);
+    int NumEns = 20;
 
     // compute the min and max through the mean+-stdev for two variables
     std::string CurlField = "curlZ";
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     vtkm::cont::DataSet MeanCurlData = MeanCurlReader.ReadDataSet();
 
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> MeanCurlDataArray;
-    vtkm::cont::ArrayCopyShallowIfPossible(inData.GetField("meanVorticity").GetData(), MeanCurlDataArray);
+    vtkm::cont::ArrayCopyShallowIfPossible(MeanCurlData.GetField("meanVorticity").GetData(), MeanCurlDataArray);
 
     // get the cellset
     auto cellSet = MeanCurlData.GetCellSet();
@@ -56,13 +56,23 @@ int main(int argc, char *argv[])
     std::cout << "point dim: " << pointDims[0] << " " << pointDims[1] << " " << pointDims[2] << std::endl;
 
     // get dev for the curl
-    vtkm::io::VTKDataSetReader DevCurlReader(MeanCurlFile);
+    vtkm::io::VTKDataSetReader DevCurlReader(DevDevFile);
     vtkm::cont::DataSet DevCurlData = DevCurlReader.ReadDataSet();
 
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> MeanDevDataArray;
-    vtkm::cont::ArrayCopyShallowIfPossible(DevCurlData.GetField("devVorticity").GetData(), MeanDevDataArray);
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> DevCurlDataArray;
+    vtkm::cont::ArrayCopyShallowIfPossible(DevCurlData.GetField("devVorticity").GetData(), DevCurlDataArray);
 
     // get mean for the vorticity
+    vtkm::io::VTKDataSetReader MeanVorReader(MeanVorFile);
+    vtkm::cont::DataSet MeanVorData = MeanVorReader.ReadDataSet();
+
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> MeanVorDataArray;
+    vtkm::cont::ArrayCopyShallowIfPossible(MeanVorData.GetField("meanVorticity").GetData(), MeanVorDataArray);
 
     // get dev for the vorticity
+    vtkm::io::VTKDataSetReader DevVorReader(DevVorFile);
+    vtkm::cont::DataSet DevVorData = MeanVorReader.ReadDataSet();
+
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> DevVorDataArray;
+    vtkm::cont::ArrayCopyShallowIfPossible(DevVorData.GetField("devVorticity").GetData(), DevVorDataArray);
 }

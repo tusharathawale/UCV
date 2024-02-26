@@ -40,14 +40,14 @@ sed -i 's/sm_35/sm_80/g' $CXX
 rm -rf ${kokkos_build_dir}
 cmake -S ${kokkos_src_dir} -B ${kokkos_build_dir} \
    -DCMAKE_CXX_FLAGS=-fPIC \
-   -DBUILD_SHARED_LIBS=ON \
+   -DBUILD_SHARED_LIBS=OFF \
    -DKokkos_ENABLE_EXAMPLES=OFF \
    -DKokkos_ENABLE_TESTS=OFF \
    -DKokkos_ENABLE_CUDA=ON \
    -DKokkos_ENABLE_CUDA_CONSTEXPR=ON \
    -DKokkos_ENABLE_CUDA_LAMBDA=ON \
    -DKokkos_ENABLE_CUDA_LDG_INTRINSIC=ON \
-   -DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=OFF \
+   -DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=ON \
    -DKokkos_ENABLE_CUDA_UVM=ON \
    -DCMAKE_CXX_STANDARD=14 \
    -DCMAKE_CXX_COMPILER=g++ \
@@ -146,7 +146,7 @@ rm -rf $UCV_INSTALL_DIR
     -DUSE_CUDA=ON \
     -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.1 \
     -DKokkos_DIR=${kokkos_install_dir}/lib64/cmake/Kokkos 
-    
+
     # build and install
     echo "**** Building UCV"
     make -j${build_jobs}

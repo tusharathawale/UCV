@@ -20,12 +20,25 @@ set_source_files_properties(TestSuperNova.cxx PROPERTIES LANGUAGE "HIP")
 add_executable(TestSuperNova TestSuperNova.cxx ../Fiber.cxx)
 target_link_libraries(TestSuperNova ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
-if(USE_CUDA)
+elseif(USE_CUDA)
 
-add_executable(TestSuperNova TestSuperNova.cpp)
+message("---use cuda build---")
+
+set_source_files_properties(../Fiber.h PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(../worklet/Fiber.h PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(../worklet/ExtractingByNeigoborhoodEnsTwoFields.hpp PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(../worklet/ExtractingMinMax.hpp PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(TestSuperNova.cxx PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(../Fiber.cxx PROPERTIES LANGUAGE "CUDA")
+
+add_library(fiber ../Fiber.cxx)
+target_link_libraries(fiber ${VTKm_LIBRARIES})
+set_target_properties(fiber PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+add_executable(TestSuperNova TestSuperNova.cxx)
+target_link_libraries(TestSuperNova fiber)
 set_target_properties(TestSuperNova PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-target_link_libraries(TestSuperNova ${VTKm_LIBRARIES} MPI::MPI_CXX)
-
+# DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=ON can fix multiple defination issue
 else()
 
 add_executable(TestFiber TestFiber.cxx ../Fiber.cxx)
@@ -39,5 +52,8 @@ target_link_libraries(FiberSurfaceExample ${VTKm_LIBRARIES})
 
 add_executable(DecomposeSuperNovaToEns DecomposeSuperNovaToEns.cxx)
 target_link_libraries(DecomposeSuperNovaToEns ${VTKm_LIBRARIES})
+
+add_executable(TestRedSea TestRedSea.cxx)
+target_link_libraries(TestRedSea ${VTKm_LIBRARIES})
 
 endif()

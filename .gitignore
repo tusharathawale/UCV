@@ -4,3 +4,4 @@ install/
 *.vtk
 *_data/
 .vscode/
+*.tar.gz

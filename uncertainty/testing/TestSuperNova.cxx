@@ -156,6 +156,7 @@ int main(int argc, char *argv[])
     std::cout << std::to_string(i) << "th run" << std::endl;
     timer.Start();
     vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
+    timer.Synchronize();
     timer.Stop();
     vtkm::Float64 elapsedTime = timer.GetElapsedTime();
     std::cout << "total elapsedTime:" << elapsedTime << std::endl;

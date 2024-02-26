@@ -9,8 +9,8 @@
 //============================================================================
 // New Fiber.h
 
-#ifndef vtk_m_worklet_uncertainty_Fiber_h
-#define vtk_m_worklet_uncertainty_Fiber_h
+#ifndef vtk_m_worklet_uncertainty_Fiber_inner_h
+#define vtk_m_worklet_uncertainty_Fiber_inner_h
 #include <iostream>
 #include <utility>
 #include <vector>
