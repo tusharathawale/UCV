@@ -100,24 +100,23 @@ else
     cmake -S ${VTKM_SRC_DIR} \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=${VTKM_INSTALL_DIR} \
-   -DVTKm_NO_DEPRECATED_VIRTUAL=ON \
-   -DVTKm_ENABLE_KOKKOS=ON \
-   -DVTKm_ENABLE_RENDERING=OFF \
-   -DVTKm_ENABLE_BENCHMARKS=OFF \
-   -DVTKm_ENABLE_CUDA=ON \
-   -DCMAKE_CUDA_ARCHITECTURES=80 \
-   -DBUILD_SHARED_LIBS=OFF \
-   -DVTKm_USE_DOUBLE_PRECISION=OFF \
-   -DVTKm_ENABLE_TESTING=OFF \
-   -DCMAKE_CXX_STANDARD=14 \
-   -DCMAKE_PREFIX_PATH=${kokkos_install_dir} \
-   -DCMAKE_INSTALL_PREFIX=${vtkm_install_dir} \
-   -DCMAKE_CXX_COMPILER=g++ \
-   -DCMAKE_C_COMPILER=gcc \
-   -DKokkos_DIR=${kokkos_install_dir}/lib64/cmake/Kokkos \
-   -DVTKm_ENABLE_KOKKOS=ON \
-   -DKokkos_COMPILE_LAUNCHER=${kokkos_install_dir}/bin/kokkos_launch_compiler \
-   -DKokkos_NVCC_WRAPPER=${kokkos_install_dir}/bin/nvcc_wrapper 
+    -DVTKm_NO_DEPRECATED_VIRTUAL=ON \
+    -DVTKm_ENABLE_KOKKOS=ON \
+    -DVTKm_ENABLE_RENDERING=OFF \
+    -DVTKm_ENABLE_BENCHMARKS=OFF \
+    -DVTKm_ENABLE_CUDA=ON \
+    -DCMAKE_CUDA_ARCHITECTURES=80 \
+    -DBUILD_SHARED_LIBS=OFF \
+    -DVTKm_USE_DOUBLE_PRECISION=OFF \
+    -DVTKm_ENABLE_TESTING=OFF \
+    -DCMAKE_CXX_STANDARD=14 \
+    -DCMAKE_PREFIX_PATH=${kokkos_install_dir} \
+    -DCMAKE_CXX_COMPILER=g++ \
+    -DCMAKE_C_COMPILER=gcc \
+    -DKokkos_DIR=${kokkos_install_dir}/lib64/cmake/Kokkos \
+    -DVTKm_ENABLE_KOKKOS=ON \
+    -DKokkos_COMPILE_LAUNCHER=${kokkos_install_dir}/bin/kokkos_launch_compiler \
+    -DKokkos_NVCC_WRAPPER=${kokkos_install_dir}/bin/nvcc_wrapper 
     cd ${VTKM_BUILD_DIR}
     make -j${build_jobs}
     make install
@@ -125,34 +124,33 @@ fi
 
 echo "====> Installing vtk-m, ok"
 
-# echo "vtkm install dir ${VTKM_INSTALL_DIR}"
+echo "vtkm install dir ${VTKM_INSTALL_DIR}"
 
-# echo "====> build UCV"
-# # the only have build dir without the install dir
-# # the install dir is same with the build dir
-# UCV_SRC_DIR=$HERE/../../
-# # use the install dir as the build dir
-# UCV_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/UCV"
-# rm -rf $UCV_INSTALL_DIR
-# #if [ -d $UCV_INSTALL_DIR ]; then
-# #    echo "====> skip, $UCV_INSTALL_DIR already exists," \
-# #             "please remove it if you want to reinstall it"
-# #else
-#     mkdir -p ${UCV_INSTALL_DIR}
-#     cd ${UCV_INSTALL_DIR}
-#     cmake -S ${UCV_SRC_DIR} \
-#     -DCMAKE_BUILD_TYPE=Release \
-#     -DBUILD_SHARED_LIBS=OFF \
-#     -DUSE_HIP=ON \
-#     -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.1 \
-#     -DKokkos_DIR=${kokkos_install_dir}/lib64/cmake/Kokkos \
-#     -DCMAKE_HIP_ARCHITECTURES=gfx90a \
-#     -DCMAKE_CXX_COMPILER=hipcc -DCMAKE_C_COMPILER=hipcc
+echo "====> build UCV"
+# the only have build dir without the install dir
+# the install dir is same with the build dir
+UCV_SRC_DIR=$HERE/../../
+# use the install dir as the build dir
+UCV_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/UCV"
+rm -rf $UCV_INSTALL_DIR
+#if [ -d $UCV_INSTALL_DIR ]; then
+#    echo "====> skip, $UCV_INSTALL_DIR already exists," \
+#             "please remove it if you want to reinstall it"
+#else
+    mkdir -p ${UCV_INSTALL_DIR}
+    cd ${UCV_INSTALL_DIR}
+    cmake -S ${UCV_SRC_DIR} \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_SHARED_LIBS=OFF \
+    -DUSE_HIP=OFF \
+    -DUSE_CUDA=ON \
+    -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.1 \
+    -DKokkos_DIR=${kokkos_install_dir}/lib64/cmake/Kokkos 
     
-#     # build and install
-#     echo "**** Building UCV"
-#     make -j${build_jobs}
-# #fi
+    # build and install
+    echo "**** Building UCV"
+    make -j${build_jobs}
+#fi
 
 cd $HERE
 # not sure why the libvtkmdiympi.so is not included during the build process

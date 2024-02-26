@@ -9,6 +9,7 @@
 ##============================================================================
 
 OPTION (USE_HIP OFF)
+
 if(USE_HIP)
 
 set_source_files_properties(TestFiber.cxx PROPERTIES LANGUAGE "HIP")
@@ -17,6 +18,12 @@ target_link_libraries(TestFiber ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 set_source_files_properties(TestSuperNova.cxx PROPERTIES LANGUAGE "HIP")
 add_executable(TestSuperNova TestSuperNova.cxx ../Fiber.cxx)
+target_link_libraries(TestSuperNova ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
+if(USE_CUDA)
+
+add_executable(TestSuperNova TestSuperNova.cpp)
+set_target_properties(TestSuperNova PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 target_link_libraries(TestSuperNova ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 else()
