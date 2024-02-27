@@ -53,7 +53,7 @@ target_link_libraries(FiberSurfaceExample ${VTKm_LIBRARIES})
 add_executable(DecomposeSuperNovaToEns DecomposeSuperNovaToEns.cxx)
 target_link_libraries(DecomposeSuperNovaToEns ${VTKm_LIBRARIES})
 
-add_executable(TestRedSea TestRedSea.cxx)
+add_executable(TestRedSea TestRedSea.cxx ../Fiber.cxx)
 target_link_libraries(TestRedSea ${VTKm_LIBRARIES})
 
 endif()

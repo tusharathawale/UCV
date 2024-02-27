@@ -5,7 +5,7 @@
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
 #include <vtkm/cont/Algorithm.h>
-#include "../worklet/ExtractingMinMax.hpp"
+#include "../worklet/ExtractingMinMaxFromMeanDev.hpp"
 
 #include "../Fiber.h"
 #include <vtkm/io/VTKDataSetReader.h>
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 
     // the name of the file is mistyped, the value is actually the curl
     std::string MeanCurlFile = dataFolder + "/curlZ/meanVol/meanVorticity.vtk";
-    std::string DevDevFile = dataFolder + "/curlZ/devVol/devVorticity.vtk";
+    std::string DevCurlFile = dataFolder + "/curlZ/devVol/devVorticity.vtk";
 
     std::string MeanVorFile = dataFolder + "/vorticityMagnitude/meanVol/meanVorticity.vtk";
     std::string DevVorFile = dataFolder + "/vorticityMagnitude/devVol/devVorticity.vtk";
@@ -56,11 +56,12 @@ int main(int argc, char *argv[])
     std::cout << "point dim: " << pointDims[0] << " " << pointDims[1] << " " << pointDims[2] << std::endl;
 
     // get dev for the curl
-    vtkm::io::VTKDataSetReader DevCurlReader(DevDevFile);
+    vtkm::io::VTKDataSetReader DevCurlReader(DevCurlFile);
     vtkm::cont::DataSet DevCurlData = DevCurlReader.ReadDataSet();
 
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> DevCurlDataArray;
     vtkm::cont::ArrayCopyShallowIfPossible(DevCurlData.GetField("devVorticity").GetData(), DevCurlDataArray);
+
 
     // get mean for the vorticity
     vtkm::io::VTKDataSetReader MeanVorReader(MeanVorFile);
@@ -71,8 +72,74 @@ int main(int argc, char *argv[])
 
     // get dev for the vorticity
     vtkm::io::VTKDataSetReader DevVorReader(DevVorFile);
-    vtkm::cont::DataSet DevVorData = MeanVorReader.ReadDataSet();
+    vtkm::cont::DataSet DevVorData = DevVorReader.ReadDataSet();
 
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> DevVorDataArray;
     vtkm::cont::ArrayCopyShallowIfPossible(DevVorData.GetField("devVorticity").GetData(), DevVorDataArray);
+
+    // compute the min and max for the curl
+    vtkm::cont::Invoker invoke;
+
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> minField1;
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> maxField1;
+
+    invoke(ExtractingMinMaxFromMeanDev{}, MeanCurlDataArray, DevCurlDataArray, minField1, maxField1);
+
+    // compute the min and max for the vorticity
+
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> minField2;
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> maxField2;
+    invoke(ExtractingMinMaxFromMeanDev{}, MeanVorDataArray, DevVorDataArray, minField2, maxField2);
+
+    // user specify the field
+    vtkm::filter::uncertainty::Fiber filter;
+    // curlz -15 -1
+    // vorticity 1 15
+    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-15.0, 1.0);
+    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(1.0, 15.0);
+
+    filter.SetMinAxis(minAxisValue);
+    filter.SetMaxAxis(maxAxisValue);
+
+    // create the data based on min and max array
+    const vtkm::Id3 dims(pointDims[0], pointDims[1], pointDims[2]);
+    vtkm::cont::DataSetBuilderUniform dataSetBuilder;
+    vtkm::cont::DataSet dataSetForFilter = dataSetBuilder.Create(dims);
+
+    // TODO, update spacing based on the original dataset
+
+    dataSetForFilter.AddPointField("ensemble_min_one", minField1);
+    dataSetForFilter.AddPointField("ensemble_max_one", maxField1);
+
+    dataSetForFilter.AddPointField("ensemble_min_two", minField2);
+    dataSetForFilter.AddPointField("ensemble_max_two", maxField2);
+
+    // call the fiber filter
+    filter.SetMinOne("ensemble_min_one");
+    filter.SetMaxOne("ensemble_max_one");
+    filter.SetMinTwo("ensemble_min_two");
+    filter.SetMaxTwo("ensemble_max_two");
+
+    vtkm::cont::Timer timer{initResult.Device};
+    std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
+
+    // run filter five times
+    for (int i = 1; i <= 1; i++)
+    {
+        std::cout << "------" << std::endl;
+        std::cout << std::to_string(i) << "th run" << std::endl;
+        timer.Start();
+        vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
+        timer.Synchronize();
+        timer.Stop();
+        vtkm::Float64 elapsedTime = timer.GetElapsedTime();
+        std::cout << "total elapsedTime:" << elapsedTime << std::endl;
+
+        if (i == 1)
+        {
+            vtkm::io::VTKDataSetWriter writer("./out_fiber_redsea_uncertainty_" + initResult.Device.GetName() + ".vtk");
+            writer.WriteDataSet(output);
+        }
+    }
+    
 }
