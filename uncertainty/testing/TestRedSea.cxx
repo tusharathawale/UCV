@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
     std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
 
     // run filter five times
-    for (int i = 1; i <= 1; i++)
+    for (int i = 1; i <= 5; i++)
     {
         std::cout << "------" << std::endl;
         std::cout << std::to_string(i) << "th run" << std::endl;

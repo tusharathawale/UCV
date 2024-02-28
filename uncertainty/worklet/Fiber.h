@@ -103,14 +103,14 @@ namespace vtkm
           // Trait Coordinates (X1,Y1) & (X2,Y2)
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
           thrust::minstd_rand rng;
-          thrust::uniform_real_distribution<vtkm::FloatDefault> distX(X1, X2);
-          thrust::uniform_real_distribution<vtkm::FloatDefault> distY(Y1, Y2);
+          thrust::uniform_real_distribution<vtkm::FloatDefault> distX(X3, X4);
+          thrust::uniform_real_distribution<vtkm::FloatDefault> distY(Y3, Y4);
 
-          for (vtkm::IdComponent i = 0; i < NumSample; i++)
+          for (vtkm::IdComponent i = 0; i < this->NumSamples; i++)
           {
             N1 = distX(rng);
             N2 = distY(rng);
-            if ((N1 > X3) && (N1 < X4) && (N2 > Y3) && (N2 < Y4))
+            if ((N1 > X1) && (N1 < X2) && (N2 > Y1) && (N2 < Y2))
             {
               NonZeroCases++;
             }

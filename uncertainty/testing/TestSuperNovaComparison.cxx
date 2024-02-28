@@ -6,6 +6,7 @@
 #include <vtkm/cont/DataSetBuilderUniform.h>
 #include <vtkm/cont/Algorithm.h>
 #include "../worklet/ExtractingMinMax.hpp"
+#include "../worklet/ComputeDiff.hpp"
 
 #include "../Fiber.h"
 #include <vtkm/io/VTKDataSetReader.h>
@@ -19,14 +20,15 @@ int main(int argc, char *argv[])
       argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
   std::cout << "initResult.Device: " << initResult.Device.GetName() << std::endl;
 
-  if (argc != 3)
+  if (argc != 4)
   {
-    std::cout << "<executable> <DataFolder> <NumEns>" << std::endl;
+    std::cout << "<executable> <DataFolder> <NumEns> <NumSamples>" << std::endl;
     exit(0);
   }
 
   std::string dataFolder = std::string(argv[1]);
   int NumEns = std::stoi(argv[2]);
+  int NumSamples = std::stoi(argv[3]);
 
   std::string Field1 = "Iron";
   std::string Field2 = "Nickel";
@@ -122,7 +124,7 @@ int main(int argc, char *argv[])
   // user specify the field
   vtkm::filter::uncertainty::Fiber filter;
   vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(0.2, 0.2);
-  vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(0.3, 0.3);
+  vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(0.5, 0.5);
 
   filter.SetMaxAxis(maxAxisValue);
   filter.SetMinAxis(minAxisValue);
@@ -150,24 +152,35 @@ int main(int argc, char *argv[])
   vtkm::cont::Timer timer{initResult.Device};
   std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
   timer.Start();
-  vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
+  vtkm::cont::DataSet output1 = filter.Execute(dataSetForFilter);
   timer.Stop();
   std::cout << "total elapsedTime:" << timer.GetElapsedTime() << std::endl;
 
   vtkm::io::VTKDataSetWriter writer("./out_fiber_supernova_uncertainty_closedform_" + initResult.Device.GetName() + ".vtk");
-  writer.WriteDataSet(output);
+  writer.WriteDataSet(output1);
 
   filter.SetApproach("MonteCarlo");
-  vtkm::Id NumSamples = 2000;
   filter.SetNumSamples(NumSamples);
 
   timer.Start();
-  output = filter.Execute(dataSetForFilter);
+  auto output2 = filter.Execute(dataSetForFilter);
   timer.Stop();
   std::cout << "total elapsedTime:" << timer.GetElapsedTime() << std::endl;
 
   vtkm::io::VTKDataSetWriter writerMCarlo("./out_fiber_supernova_uncertainty_montecarlo_" + std::to_string(NumSamples) + "_" + initResult.Device.GetName() + ".vtk");
-  writerMCarlo.WriteDataSet(output);
+  writerMCarlo.WriteDataSet(output2);
+
+  // compute the difference between two output
+
+  vtkm::cont::ArrayHandle<vtkm::FloatDefault> diff;
+
+  auto prob1 = output1.GetField("OutputProbability").GetData().AsArrayHandle<vtkm::cont::ArrayHandle<vtkm::FloatDefault>>();
+  auto prob2 = output2.GetField("OutputProbability").GetData().AsArrayHandle<vtkm::cont::ArrayHandle<vtkm::FloatDefault>>();
+
+  invoke(ComputeDiff{}, prob1, prob2, diff);
+  vtkm::FloatDefault MaxDiff = vtkm::cont::Algorithm::Reduce(diff, 0.0, vtkm::Maximum());
+
+  std::cout << "MaxDiff is for samples " << NumSamples << " is " << MaxDiff << std::endl;
 
   return 0;
 }

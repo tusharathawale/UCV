@@ -20,6 +20,10 @@ set_source_files_properties(TestSuperNova.cxx PROPERTIES LANGUAGE "HIP")
 add_executable(TestSuperNova TestSuperNova.cxx ../Fiber.cxx)
 target_link_libraries(TestSuperNova ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
+set_source_files_properties(TestSuperNovaComparison.cxx PROPERTIES LANGUAGE "HIP")
+add_executable(TestSuperNovaComparison TestSuperNovaComparison.cxx ../Fiber.cxx)
+target_link_libraries(TestSuperNovaComparison ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
 elseif(USE_CUDA)
 
 message("---use cuda build---")

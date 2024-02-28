@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
   // user specify the field
   vtkm::filter::uncertainty::Fiber filter;
   vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(0.2, 0.2);
-  vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(0.3, 0.3);
+  vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(0.5, 0.5);
 
   filter.SetMaxAxis(maxAxisValue);
   filter.SetMinAxis(minAxisValue);
