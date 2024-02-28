@@ -71,22 +71,12 @@ namespace vtkm
           X2 = static_cast<vtkm::FloatDefault>(InputMaxAxis.first);
           vtkm::FloatDefault Y2 = 0.0;
           Y2 = static_cast<vtkm::FloatDefault>(InputMaxAxis.second);
-          vtkm::FloatDefault TraitArea = (X2 - X1) * (Y2 - Y1);
-
-          vtkm::FloatDefault X5 = 0.0;
-          vtkm::FloatDefault X6 = 0.0;
-          vtkm::FloatDefault Y5 = 0.0;
-          vtkm::FloatDefault Y6 = 0.0;
+          //vtkm::FloatDefault TraitArea = (X2 - X1) * (Y2 - Y1);
 
           vtkm::FloatDefault X3 = 0.0;
           vtkm::FloatDefault Y3 = 0.0;
           vtkm::FloatDefault X4 = 0.0;
           vtkm::FloatDefault Y4 = 0.0;
-
-          vtkm::FloatDefault IntersectionArea = 0.0;
-          vtkm::FloatDefault IntersectionProbablity = 0.0;
-          vtkm::FloatDefault IntersectionHeight = 0.0;
-          vtkm::FloatDefault IntersectionWidth = 0.0;
 
           vtkm::FloatDefault N1 = 0.0;
           vtkm::FloatDefault N2 = 0.0;
@@ -98,6 +88,13 @@ namespace vtkm
           X4 = static_cast<vtkm::FloatDefault>(EnsembleMaxOne);
           Y3 = static_cast<vtkm::FloatDefault>(EnsembleMinTwo);
           Y4 = static_cast<vtkm::FloatDefault>(EnsembleMaxTwo);
+
+          // if data rectangle is zero, there is no uncertainty, return zero
+          if (abs(X3 - X4) < 0.000001 && abs(Y3 - Y4) < 0.000001)
+          {
+            probability = 0.0;
+            return;
+          }
 
           // Monte Carlo
           // Trait Coordinates (X1,Y1) & (X2,Y2)
@@ -128,15 +125,15 @@ namespace vtkm
             N1 = GenerateN1(gen);
             N2 = GenerateN2(gen);
             // increase the case number when the data is located in user rectangle
-            if ((N1 > X1) and (N1 < X2) and (N2 > Y1) and (N2 < Y2))
+            if ((N1 > X1) && (N1 < X2) && (N2 > Y1) && (N2 < Y2))
             {
               NonZeroCases++;
             }
           }
 
 #endif
-          //printf("NonZeroCases %d this->NumSamples %d\n", NonZeroCases, this->NumSamples);
-          // printf("X1 %f Y1 %f X2 %f Y2 %f X3 %f X4 %f Y3 %f Y4 %f NonZeroCases %d\n",X1,Y1,X2,Y2,X3,X4,Y3,Y4,NonZeroCases);
+          // printf("NonZeroCases %d this->NumSamples %d\n", NonZeroCases, this->NumSamples);
+          //  printf("X1 %f Y1 %f X2 %f Y2 %f X3 %f X4 %f Y3 %f Y4 %f NonZeroCases %d\n",X1,Y1,X2,Y2,X3,X4,Y3,Y4,NonZeroCases);
           MCProbability = 1.0 * NonZeroCases / (1.0 * this->NumSamples);
           probability = MCProbability;
 
@@ -189,7 +186,7 @@ namespace vtkm
           X2 = static_cast<vtkm::FloatDefault>(InputMaxAxis.first);
           vtkm::FloatDefault Y2 = 0.0;
           Y2 = static_cast<vtkm::FloatDefault>(InputMaxAxis.second);
-          vtkm::FloatDefault TraitArea = (X2 - X1) * (Y2 - Y1);
+          //vtkm::FloatDefault TraitArea = (X2 - X1) * (Y2 - Y1);
 
           vtkm::FloatDefault X5 = 0.0;
           vtkm::FloatDefault X6 = 0.0;
@@ -205,12 +202,6 @@ namespace vtkm
           vtkm::FloatDefault IntersectionProbablity = 0.0;
           vtkm::FloatDefault IntersectionHeight = 0.0;
           vtkm::FloatDefault IntersectionWidth = 0.0;
-
-          vtkm::FloatDefault N1 = 0.0;
-          vtkm::FloatDefault N2 = 0.0;
-          vtkm::IdComponent NonZeroCases = 0;
-          vtkm::IdComponent NumSample = 500;
-          vtkm::FloatDefault MCProbability = 0.0;
 
           // data rectangle
           X3 = static_cast<vtkm::FloatDefault>(EnsembleMinOne);
@@ -229,7 +220,7 @@ namespace vtkm
 
           vtkm::FloatDefault DataArea = (X4 - X3) * (Y4 - Y3);
 
-          if ((IntersectionHeight > 0) and (IntersectionWidth > 0) and (X5 < X6) and (Y5 < Y6))
+          if ((IntersectionHeight > 0) && (IntersectionWidth > 0) && (X5 < X6) && (Y5 < Y6))
           {
             IntersectionArea = IntersectionHeight * IntersectionWidth;
             // the portion of trait

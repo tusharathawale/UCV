@@ -8,12 +8,15 @@
 struct ComputeDiff: public vtkm::worklet::WorkletMapField
 {
     using ControlSignature = void(FieldIn, FieldIn, FieldOut);
-    using ExecutionSignature = void(_1, _2, _3);
+    using ExecutionSignature = void(_1, _2, _3, WorkIndex);
     template <typename TypeIn, typename TypeOut>
     VTKM_EXEC void operator()(
-        const TypeIn &input1, const TypeIn &input2, TypeOut &diff) const
+        const TypeIn &input1, const TypeIn &input2, TypeOut &diff, vtkm::Id workIndex) const
     {
         diff = vtkm::Abs(input1-input2);
+        if(diff > 0.5){
+            printf("index %d\n",workIndex);
+        }
         return;
     }
 };

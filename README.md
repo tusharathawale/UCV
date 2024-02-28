@@ -22,3 +22,5 @@ Associated paper is this one
 https://diglib.eg.org/bitstream/handle/10.2312/evs20211053/043-047.pdf?sequence=1&isAllowed=y
 
 Get the performance number for GPU on andes machine maybe, show that it can run on different backend (andes has a low gpu version)
+
+Fix the issues, when ens_one min max equals to ens_two min max, the output between closed form and monte carlo are different (one is zero (closed form) and another is 1 (montecarlo))

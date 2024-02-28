@@ -133,6 +133,7 @@ int main(int argc, char *argv[])
     filter.SetMaxOne("ensemble_max_one");
     filter.SetMinTwo("ensemble_min_two");
     filter.SetMaxTwo("ensemble_max_two");
+    filter.SetApproach("ClosedForm");
 
     vtkm::cont::Timer timer{initResult.Device};
     std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;

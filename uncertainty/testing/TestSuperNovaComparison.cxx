@@ -151,10 +151,26 @@ int main(int argc, char *argv[])
   filter.SetApproach("ClosedForm");
   vtkm::cont::Timer timer{initResult.Device};
   std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
+  
+  timer.Start();
+  vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
+  timer.Stop();
+  std::cout << "total elapsedTime 1:" << timer.GetElapsedTime() << std::endl;
+
+  timer.Start();
+  output = filter.Execute(dataSetForFilter);
+  timer.Stop();
+  std::cout << "total elapsedTime 1:" << timer.GetElapsedTime() << std::endl;
+
   timer.Start();
   vtkm::cont::DataSet output1 = filter.Execute(dataSetForFilter);
   timer.Stop();
-  std::cout << "total elapsedTime:" << timer.GetElapsedTime() << std::endl;
+  std::cout << "total elapsedTime 2:" << timer.GetElapsedTime() << std::endl;
+
+  timer.Start();
+  output1 = filter.Execute(dataSetForFilter);
+  timer.Stop();
+  std::cout << "total elapsedTime 2:" << timer.GetElapsedTime() << std::endl;
 
   vtkm::io::VTKDataSetWriter writer("./out_fiber_supernova_uncertainty_closedform_" + initResult.Device.GetName() + ".vtk");
   writer.WriteDataSet(output1);
