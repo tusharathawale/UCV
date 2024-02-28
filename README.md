@@ -13,6 +13,9 @@ Run fiber exp
 ./mac/install/UCV/uncertainty/testing/TestSuperNova ./supernova_25_data 64
 
 TODO:
+
+Divide the Fiber into two filter, one is the closedForm another is MonteCarlo
+
 Run on readsea data, using mean+-stdev to get min and max
 
 Associated paper is this one

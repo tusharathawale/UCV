@@ -147,22 +147,27 @@ int main(int argc, char *argv[])
   filter.SetMaxTwo("ensemble_max_two");
 
   filter.SetApproach("ClosedForm");
-
   vtkm::cont::Timer timer{initResult.Device};
   std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
+  timer.Start();
+  vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
+  timer.Stop();
+  std::cout << "total elapsedTime:" << timer.GetElapsedTime() << std::endl;
 
-  // run filter five times
-  for (int i = 1; i <= 5; i++)
-  {
-    std::cout << "------" << std::endl;
-    std::cout << std::to_string(i) << "th run" << std::endl;
-    timer.Start();
-    vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
-    timer.Synchronize();
-    timer.Stop();
-    vtkm::Float64 elapsedTime = timer.GetElapsedTime();
-    std::cout << "total elapsedTime:" << elapsedTime << std::endl;
-  }
+  vtkm::io::VTKDataSetWriter writer("./out_fiber_supernova_uncertainty_closedform_" + initResult.Device.GetName() + ".vtk");
+  writer.WriteDataSet(output);
+
+  filter.SetApproach("MonteCarlo");
+  vtkm::Id NumSamples = 2000;
+  filter.SetNumSamples(NumSamples);
+
+  timer.Start();
+  output = filter.Execute(dataSetForFilter);
+  timer.Stop();
+  std::cout << "total elapsedTime:" << timer.GetElapsedTime() << std::endl;
+
+  vtkm::io::VTKDataSetWriter writerMCarlo("./out_fiber_supernova_uncertainty_montecarlo_" + std::to_string(NumSamples) + "_" + initResult.Device.GetName() + ".vtk");
+  writerMCarlo.WriteDataSet(output);
 
   return 0;
 }

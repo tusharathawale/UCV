@@ -32,8 +32,7 @@ namespace vtkm
         vtkm::cont::Field EnsembleMaxTwo = this->GetFieldFromDataSet(3, input);
 
         // Output Field
-        vtkm::cont::UnknownArrayHandle OutputMonteCarloProbability;
-        vtkm::cont::UnknownArrayHandle OutputInteriorProbability;
+        vtkm::cont::UnknownArrayHandle OutputProbability;
 
         timer.Stop();
         std::cout << "filter 1 " << timer.GetElapsedTime() << std::endl;
@@ -55,35 +54,49 @@ namespace vtkm
           vtkm::cont::ArrayCopyShallowIfPossible(EnsembleMaxTwo.GetData(), ConcreteEnsembleMaxTwo);
 
           // Temporary Output Variable
-          vtkm::cont::ArrayHandle<ValueType> ConcreteMonteCarloProbability;
-          vtkm::cont::ArrayHandle<ValueType> ConcreteInteriorProbability;
+          vtkm::cont::ArrayHandle<ValueType> Probability;
           timer.Stop();
           std::cout << "filter 2 " << timer.GetElapsedTime() << std::endl;
           timer.Start();
 
           // Invoker
-          // this->IsoValue
-          this->Invoke(vtkm::worklet::detail::Fiber{this->minAxis, this->maxAxis},
-                       ConcreteEnsembleMinOne,
-                       ConcreteEnsembleMaxOne,
-                       ConcreteEnsembleMinTwo,
-                       ConcreteEnsembleMaxTwo,
-                       ConcreteMonteCarloProbability,
-                       ConcreteInteriorProbability);
+
+          if (this->Approach == "MonteCarlo")
+          {
+            std::cout << "Adopt monte carlo with numsamples " << this->NumSamples << std::endl;
+            this->Invoke(vtkm::worklet::detail::FiberMonteCarlo{this->minAxis, this->maxAxis, this->NumSamples},
+                         ConcreteEnsembleMinOne,
+                         ConcreteEnsembleMaxOne,
+                         ConcreteEnsembleMinTwo,
+                         ConcreteEnsembleMaxTwo,
+                         Probability);
+          }
+          else if (this->Approach == "ClosedForm")
+          {
+            std::cout << "Adopt ClosedForm" << std::endl;
+            this->Invoke(vtkm::worklet::detail::FiberClosedForm{this->minAxis, this->maxAxis},
+                         ConcreteEnsembleMinOne,
+                         ConcreteEnsembleMaxOne,
+                         ConcreteEnsembleMinTwo,
+                         ConcreteEnsembleMaxTwo,
+                         Probability);
+          }
+          else
+          {
+            throw std::runtime_error("unsupported approach:" + this->Approach);
+          }
 
           // From Temporary Output Variable to Output Variable
-          OutputMonteCarloProbability = ConcreteMonteCarloProbability;
-          OutputInteriorProbability = ConcreteInteriorProbability;
+          OutputProbability = Probability;
           timer.Stop();
           std::cout << "filter 3 " << timer.GetElapsedTime() << std::endl;
         };
         this->CastAndCallScalarField(EnsembleMinOne, resolveType);
-        
+
         // Creating Result
         timer.Start();
         vtkm::cont::DataSet result = this->CreateResult(input);
-        result.AddPointField("OutputMonteCarloProbability", OutputMonteCarloProbability);
-        result.AddPointField("OutputInteriorProbability", OutputInteriorProbability);
+        result.AddPointField("OutputProbability", OutputProbability);
         timer.Stop();
         std::cout << "filter 4 " << timer.GetElapsedTime() << std::endl;
 

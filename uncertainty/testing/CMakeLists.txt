@@ -47,6 +47,9 @@ target_link_libraries(TestFiber ${VTKm_LIBRARIES})
 add_executable(TestSuperNova TestSuperNova.cxx ../Fiber.cxx)
 target_link_libraries(TestSuperNova ${VTKm_LIBRARIES})
 
+add_executable(TestSuperNovaComparison TestSuperNovaComparison.cxx ../Fiber.cxx)
+target_link_libraries(TestSuperNovaComparison ${VTKm_LIBRARIES})
+
 add_executable(FiberSurfaceExample FiberSurfaceExample.cxx ../Fiber.cxx)
 target_link_libraries(FiberSurfaceExample ${VTKm_LIBRARIES})
 

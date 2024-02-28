@@ -12,8 +12,8 @@ struct ExtractingMinMaxFromMeanDev : public vtkm::worklet::WorkletMapField
     VTKM_EXEC void operator()(
         const InputType &mean, const InputType &dev, OutputType &minValue, OutputType &maxValue) const
     {
-        minValue = mean - 3*dev;
-        maxValue = mean + 3*dev;
+        minValue = mean - 1*dev;
+        maxValue = mean + 1*dev;
     }
 };
 

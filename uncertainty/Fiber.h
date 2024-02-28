@@ -23,6 +23,8 @@ class Fiber : public vtkm::filter::Filter
 {
   vtkm::Pair<vtkm::Float64, vtkm::Float64> minAxis;
   vtkm::Pair<vtkm::Float64, vtkm::Float64> maxAxis;
+  std::string Approach = "MonteCarlo"; //MonteCarlo or ClosedForm
+  vtkm::Id NumSamples = 500;
 
 public:
   VTKM_CONT void SetMinAxis(const vtkm::Pair<vtkm::Float64, vtkm::Float64>& minCoordinate)
@@ -50,6 +52,17 @@ public:
   {
     this->SetActiveField(3, fieldName, vtkm::cont::Field::Association::Points);
   }
+
+  VTKM_CONT void SetNumSamples(const vtkm::Id& numSamples)
+  {
+    this->NumSamples=numSamples;
+  }
+
+   VTKM_CONT void SetApproach(const std::string& approach)
+  {
+    this->Approach=approach;
+  } 
+
 
 private:
   VTKM_CONT vtkm::cont::DataSet DoExecute(const vtkm::cont::DataSet& input) override;
