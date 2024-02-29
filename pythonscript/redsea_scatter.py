@@ -7,7 +7,8 @@ import math
 from vtkmodules.vtkCommonDataModel import vtkStructuredPoints
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-
+import matplotlib.patches as patches
+from matplotlib.patches import Rectangle
 
 def readDS(fname) :
     reader = vtk.vtkDataSetReader()
@@ -31,13 +32,19 @@ if __name__ == "__main__":
     vtkarray_vort=ds_vort.GetPointData().GetArray("meanVorticity")
     nparray_vort = numpy_support.vtk_to_numpy(vtkarray_vort)
 
-    fig, ax = plt.subplots(figsize=(7,5))
+    fig, ax = plt.subplots(figsize=(6,5))
     plt.scatter(nparray_curl, nparray_vort, s=0.5, alpha=0.1)
     #plt.hist2d(nparray_n,nparray_i,bins=100)
     ax.set_xlabel('curlZ',  fontsize=20)
     ax.set_ylabel('vorticityMagnitude', fontsize=20)
     ax.tick_params(axis='x', labelsize=20)
     ax.tick_params(axis='y', labelsize=20)
+
+    # Create a Rectangle patch
+    rect = Rectangle((-15,0.6),14.7,14.4,linewidth=2,edgecolor='r',facecolor='none')
+
+    # Add the patch to the Axes
+    ax.add_patch(rect)
 
     plt.savefig("redsea_scatter.png",bbox_inches='tight')
 

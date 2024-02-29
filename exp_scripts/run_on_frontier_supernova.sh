@@ -22,33 +22,26 @@ ln -s $CURRDIR/../install_scripts/frontier_gpu/install/UCV/uncertainty/testing/T
 export OMP_NUM_THREADS=1
 
 # serial
-#./TestSuperNova --vtkm-device serial $DATADIR/supernova_25_data 64 &> supernova_25_serial.log
 
-#./TestSuperNova --vtkm-device serial $DATADIR/supernova_50_data 64 &> supernova_50_serial.log
+./TestSuperNova --vtkm-device serial $DATADIR/supernova_100_data 64 ClosedForm 5000 &> supernova_100_cf_serial.log
 
-./TestSuperNova --vtkm-device serial $DATADIR/supernova_100_data 64 &> supernova_100_serial.log
+./TestSuperNova --vtkm-device serial $DATADIR/supernova_100_data 64 MonteCarlo 5000 &> supernova_100_mc_serial.log
+
 
 # kokkos
-#./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_25_data 64 &> supernova_25_kokkos_1.log
 
-#./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_25_data 64 &> supernova_25_kokkos_2.log
+./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_100_data 64 ClosedForm 5000 &> supernova_100_cf_kokkos.log
 
-#./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_50_data 64 &> supernova_50_kokkos_1.log
+./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_100_data 64 MonteCarlo 5000 &> supernova_100_mc_kokkos.log
 
-#./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_50_data 64 &> supernova_50_kokkos_2.log
-
-#./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_100_data 64 &> supernova_100_kokkos_1.log
-
-./TestSuperNova --vtkm-device kokkos $DATADIR/supernova_100_data 64 &> supernova_100_kokkos.log
 
 # openmp
 export OMP_NUM_THREADS=64
 
-#./TestSuperNova --vtkm-device openmp $DATADIR/supernova_25_data 64 &> supernova_25_openmp.log
+./TestSuperNova --vtkm-device openmp $DATADIR/supernova_100_data 64 ClosedForm 5000 &> supernova_100_cf_openmp.log
 
-#./TestSuperNova --vtkm-device openmp $DATADIR/supernova_50_data 64 &> supernova_50_openmp.log
+./TestSuperNova --vtkm-device openmp $DATADIR/supernova_100_data 64 MonteCarlo 5000 &> supernova_100_mc_openmp.log
 
-./TestSuperNova --vtkm-device openmp $DATADIR/supernova_100_data 64 &> supernova_100_openmp.log
 
 # Testing comparison
 
@@ -61,4 +54,7 @@ export OMP_NUM_THREADS=64
 ./TestSuperNovaComparison --vtkm-device kokkos $DATADIR/supernova_100_data 64 4000 &> supernova_100_comp_samples_4000.log
 
 ./TestSuperNovaComparison --vtkm-device kokkos $DATADIR/supernova_100_data 64 5000 &> supernova_100_comp_samples_5000.log
+
+./TestSuperNovaComparison --vtkm-device Serial $DATADIR/supernova_100_data 64 5000 &> supernova_100_comp_samples_5000_serial.log
+
 

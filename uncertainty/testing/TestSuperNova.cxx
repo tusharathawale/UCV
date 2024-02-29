@@ -19,14 +19,25 @@ int main(int argc, char *argv[])
       argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
   std::cout << "initResult.Device: " << initResult.Device.GetName() << std::endl;
 
-  if (argc != 3)
+  if (argc != 5)
   {
-    std::cout << "<executable> <DataFolder> <NumEns>" << std::endl;
+    std::cout << "<executable> <DataFolder> <NumEns> <approach> <samples>" << std::endl;
     exit(0);
   }
 
   std::string dataFolder = std::string(argv[1]);
   int NumEns = std::stoi(argv[2]);
+  std::string Approach = std::string(argv[3]);
+  int NumSamples = std::stoi(argv[4]); // this only work when appraoch is MonteCarlo
+
+  if (Approach == "MonteCarlo" || Approach == "ClosedForm" )
+  {
+  }
+  else
+  {
+    std::cout << "Approach should be MonteCarlo or ClosedFrom" << std::endl;
+    exit(0);
+  }
 
   std::string Field1 = "Iron";
   std::string Field2 = "Nickel";
@@ -148,7 +159,11 @@ int main(int argc, char *argv[])
   filter.SetMinTwo("ensemble_min_two");
   filter.SetMaxTwo("ensemble_max_two");
 
-  filter.SetApproach("ClosedForm");
+  filter.SetApproach(Approach);
+  if (Approach == "MonteCarlo")
+  {
+    filter.SetNumSamples(NumSamples);
+  }
 
   vtkm::cont::Timer timer{initResult.Device};
   std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;

@@ -77,4 +77,7 @@ target_link_libraries(DecomposeSuperNovaToEns ${VTKm_LIBRARIES})
 add_executable(TestRedSea TestRedSea.cxx ../Fiber.cxx)
 target_link_libraries(TestRedSea ${VTKm_LIBRARIES})
 
+add_executable(TestRedSeaComparison TestRedSeaComparison.cxx ../Fiber.cxx)
+target_link_libraries(TestRedSeaComparison ${VTKm_LIBRARIES})
+
 endif()

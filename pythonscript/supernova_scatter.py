@@ -7,6 +7,7 @@ import math
 from vtkmodules.vtkCommonDataModel import vtkStructuredPoints
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+from matplotlib.patches import Rectangle
 
 
 def readDS(fname) :
@@ -47,13 +48,19 @@ if __name__ == "__main__":
         nparray_summ_n=np.add(nparray_summ_n,nparray_n)
         nparray_summ_i=np.add(nparray_summ_i,nparray_i)
 
-    fig, ax = plt.subplots(figsize=(7,5))
+    fig, ax = plt.subplots(figsize=(6,5))
     plt.scatter(np.divide(nparray_summ_i, ens_num), np.divide(nparray_summ_n,ens_num), s=0.5, alpha=0.1)
     #plt.hist2d(nparray_n,nparray_i,bins=100)
     ax.set_xlabel('Iron',  fontsize=20)
     ax.set_ylabel('Nickel', fontsize=20)
     ax.tick_params(axis='x', labelsize=20)
     ax.tick_params(axis='y', labelsize=20)
+
+    # Create a Rectangle patch
+    rect = Rectangle((0.1,0.1),0.4,0.2,linewidth=2,edgecolor='r',facecolor='none')
+
+    # Add the patch to the Axes
+    ax.add_patch(rect)
 
     plt.savefig("supernova_scatter.png",bbox_inches='tight')
 
