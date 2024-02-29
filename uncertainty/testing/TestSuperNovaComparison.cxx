@@ -123,8 +123,13 @@ int main(int argc, char *argv[])
 
   // user specify the field
   vtkm::filter::uncertainty::Fiber filter;
-  vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(0.2, 0.2);
-  vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(0.5, 0.5);
+  //  std::string Field1 = "Iron";
+  // std::string Field2 = "Nickel";
+  // maybe choosing high nickel and low iron range
+  // iron 0.1 to 0.5
+  // nicle 0.1 5o 0.3 seems like a good vis result
+  vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(0.1, 0.1);
+  vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(0.5, 0.3);
 
   filter.SetMaxAxis(maxAxisValue);
   filter.SetMinAxis(minAxisValue);

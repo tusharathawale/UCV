@@ -5,3 +5,4 @@ install/
 *_data/
 .vscode/
 *.tar.gz
+*.png
