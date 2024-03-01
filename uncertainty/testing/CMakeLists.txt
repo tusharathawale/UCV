@@ -80,4 +80,7 @@ target_link_libraries(TestRedSea ${VTKm_LIBRARIES})
 add_executable(TestRedSeaComparison TestRedSeaComparison.cxx ../Fiber.cxx)
 target_link_libraries(TestRedSeaComparison ${VTKm_LIBRARIES})
 
+add_executable(temp temp.cxx)
+target_link_libraries(temp ${VTKm_LIBRARIES})
+
 endif()
