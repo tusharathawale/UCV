@@ -19,14 +19,26 @@ int main(int argc, char *argv[])
         argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
     std::cout << "initResult.Device: " << initResult.Device.GetName() << std::endl;
 
-    if (argc != 2)
+    if (argc != 4)
     {
-        std::cout << "<executable> <DataFolder>" << std::endl;
+        std::cout << "<executable> <DataFolder> <Approach> <NumSamples>" << std::endl;
         exit(0);
     }
 
     std::string dataFolder = std::string(argv[1]);
     int NumEns = 20;
+
+    std::string Approach = std::string(argv[2]);
+    int NumSamples = std::stoi(argv[3]); // this only work when appraoch is MonteCarlo
+
+    if (Approach == "MonteCarlo" || Approach == "ClosedForm")
+    {
+    }
+    else
+    {
+        std::cout << "Approach should be MonteCarlo or ClosedFrom" << std::endl;
+        exit(0);
+    }
 
     // compute the min and max through the mean+-stdev for two variables
     std::string CurlField = "curlZ";
@@ -133,7 +145,12 @@ int main(int argc, char *argv[])
     filter.SetMaxOne("ensemble_max_one");
     filter.SetMinTwo("ensemble_min_two");
     filter.SetMaxTwo("ensemble_max_two");
-    filter.SetApproach("ClosedForm");
+
+    filter.SetApproach(Approach);
+    if (Approach == "MonteCarlo")
+    {
+        filter.SetNumSamples(NumSamples);
+    }
 
     vtkm::cont::Timer timer{initResult.Device};
     std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
