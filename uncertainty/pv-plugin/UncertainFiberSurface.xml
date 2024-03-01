@@ -1,0 +1,139 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="FiberSurfaceWithUniformUncertainty"
+                 class="vtkFiberSurfaceUncertain"
+                 label="Fiber Surface With Uniform Uncertainty">
+      <Documentation
+          long_help="Find the probability of each location being inside a closed fiber surface."
+          short_help="Find a fiber surface with uniform uncertainty." />
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <InputArrayDomain attribute_type="point"
+                          name="input_array"
+                          number_of_components="1"
+                          data_type="vtkDataSet" />
+      </InputProperty>
+      <!-- For the input field selections, the default_values specifies the input index. -->
+      <StringVectorProperty animateable="0"
+                            command="SetInputArrayToProcess"
+                            element_types="int int int int str"
+                            default_values="0"
+                            label="Axis 1 Minimum Value"
+                            name="SelectAxis1Minimum"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Scalars" name="array_list">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+      </StringVectorProperty>
+      <StringVectorProperty animateable="0"
+                            command="SetInputArrayToProcess"
+                            element_types="int int int int str"
+                            default_values="1"
+                            label="Axis 1 Maximum Value"
+                            name="SelectAxis1Maximum"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Scalars" name="array_list">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+      </StringVectorProperty>
+      <StringVectorProperty animateable="0"
+                            command="SetInputArrayToProcess"
+                            element_types="int int int int str"
+                            default_values="2"
+                            label="Axis 2 Minimum Value"
+                            name="SelectAxis2Minimum"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Scalars" name="array_list">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+      </StringVectorProperty>
+      <StringVectorProperty animateable="0"
+                            command="SetInputArrayToProcess"
+                            element_types="int int int int str"
+                            default_values="3"
+                            label="Axis 2 Maximum Value"
+                            name="SelectAxis2Maximum"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Scalars" name="array_list">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+      </StringVectorProperty>
+      <DoubleVectorProperty command="SetAxis1Minimum"
+                            default_values="0"
+                            name="Axis1Minimum"
+                            number_of_elements="1">
+        <ArrayRangeDomain name="range" default_mode="mid">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ArraySelection" name="SelectAxis1Minimum" />
+          </RequiredProperties>
+        </ArrayRangeDomain>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetAxis1Maximum"
+                            default_values="0"
+                            name="Axis1Maximum"
+                            number_of_elements="1">
+        <ArrayRangeDomain name="range" default_mode="mid">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ArraySelection" name="SelectAxis1Maximum" />
+          </RequiredProperties>
+        </ArrayRangeDomain>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetAxis2Minimum"
+                            default_values="0"
+                            name="Axis2Minimum"
+                            number_of_elements="1">
+        <ArrayRangeDomain name="range" default_mode="mid">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ArraySelection" name="SelectAxis2Minimum" />
+          </RequiredProperties>
+        </ArrayRangeDomain>
+      </DoubleVectorProperty>
+      <DoubleVectorProperty command="SetAxis2Maximum"
+                            default_values="0"
+                            name="Axis2Maximum"
+                            number_of_elements="1">
+        <ArrayRangeDomain name="range" default_mode="mid">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+            <Property function="ArraySelection" name="SelectAxis2Maximum" />
+          </RequiredProperties>
+        </ArrayRangeDomain>
+      </DoubleVectorProperty>
+      <IntVectorProperty command="SetApproach"
+                         default_values="0"
+                         name="Approach"
+                         number_of_elements="1">
+        <EnumerationDomain name="enum">
+          <Entry text="Monte Carlo" value="0" />
+          <Entry text="Closed Form" value="1" />
+        </EnumerationDomain>
+      </IntVectorProperty>
+      <IntVectorProperty command="SetNumSamples"
+                         default_values="500"
+                         name="Num Samples"
+                         number_of_elements="1"
+                         panel_visibility="advanced" />
+      <Hints>
+        <ShowInMenu category="Uncertainty" />
+      </Hints>
+    </SourceProxy>
+
+  </ProxyGroup>
+</ServerManagerConfiguration>

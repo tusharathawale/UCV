@@ -1,0 +1,5 @@
+NAME
+  UncertainFiberSurface
+DESCRIPTION
+  A plugin containing filters to compute the probable locations of fiber
+  surfaces given uncertainty in the data.

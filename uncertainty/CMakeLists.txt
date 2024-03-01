@@ -8,36 +8,46 @@
 ##  PURPOSE.  See the above copyright notice for more information.
 ##============================================================================
 
-# set(uncertainty_headers
-#   Fiber.h
-#   )
-# set(uncertainty_sources_device
-#   Fiber.cxx
-#   )
+set(uncertainty_headers
+  Fiber.h
+  )
+set(uncertainty_sources_device
+  Fiber.cxx
+  )
 
-# vtkm_library(
-#   NAME vtkm_filter_uncertainty
-#   HEADERS ${uncertainty_headers}
-#   DEVICE_SOURCES ${uncertainty_sources_device}
-#   USE_VTKM_JOB_POOL
-# )
+add_library(filter_uncertainty
+  ${uncertainty_sources_device}
+  )
 
-# set_property(TARGET
-#    vtkm_filter_uncertainty
-#    PROPERTY MODIFY_CUDA_FLAGS TRUE
-#    )
+target_include_directories(filter_uncertainty
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+target_link_libraries(filter_uncertainty
+  PUBLIC vtkm::filter_core
+  )
 
-# vtkm_add_target_information(vtkm_filter_uncertainty
-#    DEVICE_SOURCES ContourUncertainUniform.cxx
-#    DROP_UNUSED_SYMBOLS MODIFY_CUDA_FLAGS
-#   )
-
-# # vtkm_add_instantiations(instantiation_files
-# #   INSTANTIATIONS_FILE worklet/EntropyUniform.h
-# #   INSTANTIATIONS_FILE ContourUncertainUniform.h
-# #   )
-# # list(APPEND uncertainty_sources_device ${instantiation_files})
-
-# target_link_libraries(vtkm_filter PUBLIC INTERFACE vtkm_filter_uncertainty)
+vtkm_add_target_information(filter_uncertainty
+   DEVICE_SOURCES ${uncertainty_sources_device}
+   DROP_UNUSED_SYMBOLS MODIFY_CUDA_FLAGS
+  )
 
 add_subdirectory(testing)
+
+if(BUILD_PARAVIEW_PLUGIN)
+  # ParaView plugins need this included to be built.
+  # (Why don't they just include themselves?)
+  include(GNUInstallDirs)
+
+  # ParaView plugins need to be packaged in a shared library
+  set(BUILD_SHARED_LIBS ON)
+
+  paraview_plugin_scan(
+    PLUGIN_FILES ${CMAKE_CURRENT_SOURCE_DIR}/pv-plugin/paraview.plugin
+    PROVIDES_PLUGINS plugins
+    ENABLE_BY_DEFAULT ON
+    HIDE_PLUGINS_FROM_CACHE ON
+    )
+
+  # Note: this will call subdirectory for pv-plugin so we don't have to.
+  paraview_plugin_build(PLUGINS ${plugins})
+endif()
