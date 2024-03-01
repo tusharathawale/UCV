@@ -1,0 +1,12 @@
+NAME
+  UncertainFiberSurfaceVTKFilters
+LIBRARY_NAME
+  vtkUncertainFiberSurfaceFilters
+DESCRIPTION
+  Filters to compute the probable locations of fiber surfaces given
+  uncertainty in the data.
+DEPENDS
+  VTK::AcceleratorsVTKmCore
+  VTK::AcceleratorsVTKmDataModel
+  VTK::CommonExecutionModel
+  VTK::FiltersCore
