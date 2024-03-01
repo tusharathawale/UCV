@@ -59,7 +59,7 @@ target_link_libraries(TestRedSea fiber)
 set_target_properties(TestRedSea PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 add_executable(temp temp.cxx)
-target_link_libraries(temp)
+target_link_libraries(temp ${VTKm_LIBRARIES})
 set_target_properties(temp PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 else()
