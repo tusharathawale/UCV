@@ -43,6 +43,7 @@ set_source_files_properties(../worklet/ExtractingMinMax.hpp PROPERTIES LANGUAGE 
 set_source_files_properties(TestSuperNova.cxx PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(TestRedSea.cxx PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(../Fiber.cxx PROPERTIES LANGUAGE "CUDA")
+set_source_files_properties(temp.cxx PROPERTIES LANGUAGE "CUDA")
 
 add_library(fiber ../Fiber.cxx)
 target_link_libraries(fiber ${VTKm_LIBRARIES})
@@ -56,6 +57,10 @@ set_target_properties(TestSuperNova PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 add_executable(TestRedSea TestRedSea.cxx)
 target_link_libraries(TestRedSea fiber)
 set_target_properties(TestRedSea PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+add_executable(temp temp.cxx)
+target_link_libraries(temp)
+set_target_properties(temp PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 else()
 
