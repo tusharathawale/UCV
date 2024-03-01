@@ -23,14 +23,14 @@ ln -s $CURRDIR/../install_scripts/frontier_gpu/install/UCV/uncertainty/testing/T
 export OMP_NUM_THREADS=1
 
 # serial
-./TestRedSea --vtkm-device serial $DATADIR/redsea ClosedFrom 5000 &> redsea_cf_serial.log
+./TestRedSea --vtkm-device serial $DATADIR/redsea ClosedForm 5000 &> redsea_cf_serial.log
 
 ./TestRedSea --vtkm-device serial $DATADIR/redsea MonteCarlo 5000 &> redsea_mc_serial.log
 
 
 # kokkos
 
-./TestRedSea --vtkm-device kokkos $DATADIR/redsea ClosedFrom 5000 &> redsea_cf_kokkos.log
+./TestRedSea --vtkm-device kokkos $DATADIR/redsea ClosedForm 5000 &> redsea_cf_kokkos.log
 
 ./TestRedSea --vtkm-device kokkos $DATADIR/redsea MonteCarlo 5000 &> redsea_mc_kokkos.log
 
@@ -38,7 +38,7 @@ export OMP_NUM_THREADS=1
 # openmp
 export OMP_NUM_THREADS=64
 
-./TestRedSea --vtkm-device openmp $DATADIR/redsea ClosedFrom 5000 &> redsea_cf_openmp.log
+./TestRedSea --vtkm-device openmp $DATADIR/redsea ClosedForm 5000 &> redsea_cf_openmp.log
 
 ./TestRedSea --vtkm-device openmp $DATADIR/redsea MonteCarlo 5000 &> redsea_mc_openmp.log
 
