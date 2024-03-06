@@ -7,4 +7,6 @@
 3.1 necessary operation before sorting
 maybe using a smaller scale as the input for testing (using 5 by 5 data set with 3 ens) [ok for both 5*5 and 50*50]
 
-update the printed log do not print log info based on compiled macro
+update the printed log do not print log info based on compiled macro[ok]
+
+test on frontier for parallel version

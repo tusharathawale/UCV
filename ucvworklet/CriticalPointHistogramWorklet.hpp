@@ -48,7 +48,7 @@ public:
         }
         
         //init minProb
-        minProb=0;
+        minProb=0.0;
 
         // go through all combinations of bins for five points
         // assuming each of them have same number of bins
@@ -86,7 +86,7 @@ public:
                             vtkm::FloatDefault a5 = histEdgesVec.Get(-1, 0, 0)[m];
                             vtkm::FloatDefault b5 = histEdgesVec.Get(-1, 0, 0)[m + 1];
 
-                            // get density vec
+                            // get density vec (weight of each bin)
                             vtkm::FloatDefault p1 = histDensityVec.Get(0, 0, 0)[i];
                             vtkm::FloatDefault p2 = histDensityVec.Get(0, 1, 0)[j];
                             vtkm::FloatDefault p3 = histDensityVec.Get(0, -1, 0)[k];

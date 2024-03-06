@@ -284,7 +284,8 @@ namespace EASYLINALG
 
             if (eigenValues[i] < 0)
             {
-                if (fabs(eigenValues[i]) < 0.0002)
+                //TODO: handle case where there is 0 in the matrix, this might introduce negative eigen
+                if (fabs(eigenValues[i]) < 0.001)
                 {
                     // make sure all value is >0 and we can compute sqrt for it
                     // there are some numerical errors for computing the eigen values

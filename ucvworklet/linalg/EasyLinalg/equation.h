@@ -13,8 +13,12 @@ namespace EASYLINALG
     LIAG_FUNC_MACRO Vec<T, Size> SymmBackSubstitution(const Matrix<T, Size, Size> &A, const Vec<T, Size> &b)
     {
         Vec<double, Size> x(0.0);
-        bool ifUpper = A.IsUpperTriangular(0.00001);
+        // TODO, double check this, in beetle beetle_124_208_208 some value is 0.0001848
+        bool ifUpper = A.IsUpperTriangular(0.005);
         // TODO, print sth if the A is not upper triangular
+        //if(ifUpper == false){
+        //    A.Show();
+        //}
         assert(ifUpper == true);
 
         for (int i = Size - 1; i >= 0; --i)

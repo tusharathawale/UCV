@@ -56,7 +56,7 @@ fi
     -DVTKm_USE_64BIT_IDS=OFF \
     -DCMAKE_INSTALL_PREFIX=${VTKM_INSTALL_DIR} \
     -DVTKm_ENABLE_MPI=ON \
-    -DVTKm_ENABLE_OPENMP=OFF \
+    -DVTKm_ENABLE_TBB=ON \
     -DVTKm_ENABLE_LOGGING=ON \
     -DVTKm_ENABLE_TESTING=OFF \
     -DVTKm_ENABLE_RENDERING=OFF 
@@ -114,7 +114,7 @@ rm -rf $UCV_INSTALL_DIR
     # comment out paraview dir if not install plugin
     # if using paraview plugin build, just comment out the vtkm dir
     cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
-    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_SHARED_LIBS=ON \
     -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.1 
 
