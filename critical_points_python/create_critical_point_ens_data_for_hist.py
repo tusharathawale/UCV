@@ -50,8 +50,9 @@ def add_Gaussian_noise(field, noise_level, numMembers):
         
     return ensemble
 
-x = np.linspace(-5, 5)
-y = np.linspace(-5, 5)
+num_dim = 100
+x = np.linspace(-5, 5, num_dim)
+y = np.linspace(-5, 5, num_dim)
 x, y = np.meshgrid(x, y) # get 2D variables instead of 1D
 z1 = gaus2d(x, y, 2.5, 2.5, 0.3,0.3)
 z2 = gaus2d(x, y, -2.5, -2.5, 0.3,0.3)
@@ -62,8 +63,8 @@ plt.savefig("demo_truth_dataset.png")
 
 plt.clf()
 
-x = np.linspace(-5, 5)
-y = np.linspace(-5, 5)
+x = np.linspace(-5, 5, num_dim)
+y = np.linspace(-5, 5, num_dim)
 x, y = np.meshgrid(x, y) # get 2D variables instead of 1D
 z1 = gaus2d(x, y, -2.5, 2.5, 0.3, 0.3)
 z2 = gaus2d(x, y, 2.5, -2.5, 0.3, 0.3)
@@ -100,7 +101,7 @@ plt.savefig("demo_critial_point_hist.png")
 print("all ens shape", ensemble.shape)
 print("each ens shape", ensemble[:,:,0].shape)
 
-dir_name="critical_point_ens_data_hist_50by50"
+dir_name="critical_point_ens_data_hist_"+str(num_dim)+"by"+str(num_dim)
 
 isExist = os.path.exists(dir_name)
 if not isExist:
@@ -109,14 +110,14 @@ if not isExist:
 #xdim=50
 #ydim=50
 
-xdim=50
-ydim=50
+xdim=num_dim
+ydim=num_dim
 zdim=1
 count=50
 
 for ensid in range(count):
     #print("create ensid", ensid)
-    output_filename=dir_name+"/critical_point_ens_data_hist_50by50_"+str(ensid)+".vtk"
+    output_filename=dir_name+"/ens_"+str(ensid)+".vtk"
     print("ensid",ensid)
     #print(ensemble[:,:,ensid])
     writeVTKDataFromArray(xdim,ydim,zdim,output_filename,ensemble[:,:,ensid])

@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     // using pointNeighborhood worklet to process the data
     callCriticalPointWorklet(vtkmDataSet);
 
-    std::string outputFileName = "MinProb_" + std::to_string(dimx) + "_" + std::to_string(dimy) + ".vtk";
+    std::string outputFileName = "MinProb_Uniform" + std::to_string(dimx) + "_" + std::to_string(dimy) + ".vtk";
     vtkm::io::VTKDataSetWriter writeCross(outputFileName);
     writeCross.WriteDataSet(vtkmDataSet);
 
