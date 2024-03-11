@@ -1,5 +1,5 @@
-#ifndef UCV_CRITICAL_POINT_h
-#define UCV_CRITICAL_POINT_h
+#ifndef UCV_CRITICAL_POINT_AVOID_OVERFLOW_h
+#define UCV_CRITICAL_POINT_AVOID_OVERFLOW_h
 
 #include <vtkm/worklet/WorkletPointNeighborhood.h>
 
@@ -9,10 +9,10 @@
 #define LOG(x)
 #endif
 
-struct CriticalPointWorklet : public vtkm::worklet::WorkletPointNeighborhood
+struct CriticalPointWorkletAvoidOverflow : public vtkm::worklet::WorkletPointNeighborhood
 {
 public:
-    CriticalPointWorklet(){};
+    CriticalPointWorkletAvoidOverflow(){};
 
     using ControlSignature = void(CellSetIn, FieldInNeighborhood, FieldInNeighborhood, FieldOut);
 
@@ -72,12 +72,30 @@ public:
         vtkm::FloatDefault b5 = maxValue.Get(-1, 0, 0);
 
         LOG(printf("check input a1 %f b1 %f a2 %f b2 %f a3 %f b3 %f a4 %f b4 %f a5 %f b5 %f\n", a1, b1, a2, b2, a3, b3, a4, b4, a5, b5));
+       
+        //do the preprocessing to avoid the data overflow
+        vtkm::FloatDefault a1N = (a1-a1)*this->m_ScaleNum;
+        vtkm::FloatDefault b1N = (b1-a1)*this->m_ScaleNum;
+
+        vtkm::FloatDefault a2N = (a2-a1)*this->m_ScaleNum;
+        vtkm::FloatDefault b2N = (b2-a1)*this->m_ScaleNum;
+
+        vtkm::FloatDefault a3N = (a3-a1)*this->m_ScaleNum;
+        vtkm::FloatDefault b3N = (b3-a1)*this->m_ScaleNum;
+
+        vtkm::FloatDefault a4N = (a4-a1)*this->m_ScaleNum;
+        vtkm::FloatDefault b4N = (b4-a1)*this->m_ScaleNum;
+        
+        vtkm::FloatDefault a5N = (a5-a1)*this->m_ScaleNum;
+        vtkm::FloatDefault b5N = (b5-a1)*this->m_ScaleNum;
+
+        LOG(printf("check transformed input a1 %f b1 %f a2 %f b2 %f a3 %f b3 %f a4 %f b4 %f a5 %f b5 %f\n", a1N, b1N, a2N, b2N, a3N, b3N, a4N, b4N, a5N, b5N));
 
         // compute bmin
-        vtkm::FloatDefault bMin = vtkm::Min(b1, vtkm::Min(b2, vtkm::Min(b3, vtkm::Min(b4, b5))));
+        vtkm::FloatDefault bMin = vtkm::Min(b1N, vtkm::Min(b2N, vtkm::Min(b3N, vtkm::Min(b4N, b5N))));
         LOG(printf("bmin %f\n", bMin));
 
-        if (bMin <= a1)
+        if (bMin <= a1N)
         {
             minProb = 0;
             return;
@@ -87,11 +105,11 @@ public:
         // order = np.argsort(startPointList)
         // interval, first is value second is actual index from 0 to 4
         vtkm::Vec<vtkm::Pair<vtkm::Float64, vtkm::Float64>, 5> interval;
-        interval[0] = {a1, b1};
-        interval[1] = {a2, b2};
-        interval[2] = {a3, b3};
-        interval[3] = {a4, b4};
-        interval[4] = {a5, b5};
+        interval[0] = {a1N, b1N};
+        interval[1] = {a2N, b2N};
+        interval[2] = {a3N, b3N};
+        interval[3] = {a4N, b4N};
+        interval[4] = {a5N, b5N};
         // vtkm::Vec<vtkm::Id, 5> sotedIndex = ArgSort<5>(interval);
         ArgSort<5>(interval);
         LOG(printf("sorted a [%f %f %f %f %f]\n", interval[0].first, interval[1].first, interval[2].first, interval[3].first, interval[4].first));
@@ -123,7 +141,7 @@ public:
         vtkm::Id indexa1 = -1;
         for (vtkm::Id i = 0; i < 6; i++)
         {
-            if (vtkm::Abs(x1Limit[i] - a1) < 0.0000001)
+            if (vtkm::Abs(x1Limit[i] - a1N) < 0.0000001)
             {
                 indexa1 = i;
                 break;
@@ -138,7 +156,7 @@ public:
             return;
         }
 
-        vtkm::FloatDefault w1 = b1 - a1;
+        vtkm::FloatDefault w1 = b1N - a1N;
         // call superOptimizedCase
         minProb = SuperOptimizedCase(indexa1, x1Limit, interval, w1);
         return;
@@ -285,6 +303,7 @@ public:
 
 private:
     int m_neighborhoodSize = 1;
+    double m_ScaleNum = 1000;
 };
 
 #endif // UCV_CRITICAL_POINT_h

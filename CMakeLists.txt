@@ -10,6 +10,10 @@ message("debug vtkm_source:" ${vtkm_source})
 message("debug VTKm_DIR ${VTKm_DIR}")
 set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::io)
 
+
+SET(CMAKE_CXX_FLAGS "-DUSE_LOG")
+
+
 #Find MPI
 find_package(MPI REQUIRED)
 
@@ -45,6 +49,12 @@ target_link_libraries(LoadEnsAndProcessByUniform ${VTKm_LIBRARIES})
 
 add_executable(LoadEnsAndProcessByHistogram LoadEnsAndProcessByHistogram.cpp)
 target_link_libraries(LoadEnsAndProcessByHistogram ${VTKm_LIBRARIES})
+
+add_executable(LoadWeatherProcessByUniform LoadWeatherProcessByUniform.cpp)
+target_link_libraries(LoadWeatherProcessByUniform ${VTKm_LIBRARIES})
+
+
+
 
 endif()
 

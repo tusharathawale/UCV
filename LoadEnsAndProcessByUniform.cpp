@@ -21,8 +21,8 @@ void callCriticalPointWorklet(vtkm::cont::DataSet& vtkmDataSet)
         vtkm::cont::ArrayHandle<vtkm::FloatDefault> fieldMax;
         invoke(ExtractMinMaxOfPoint{}, concreteArray, fieldMin, fieldMax);
 
-        printSummary_ArrayHandle(fieldMin, std::cout, true);
-        printSummary_ArrayHandle(fieldMax, std::cout, true);
+        //printSummary_ArrayHandle(fieldMin, std::cout, true);
+        //printSummary_ArrayHandle(fieldMax, std::cout, true);
 
         vtkm::cont::ArrayHandle<vtkm::FloatDefault> outMinProb;
         // Use point neighborhood to go through data
@@ -109,12 +109,12 @@ int main(int argc, char *argv[])
     }
 
     vtkmDataSet.AddPointField("ensembles", runtimeVecArray);
-    // printSummary_ArrayHandle(runtimeVecArray, std::cout);
+    printSummary_ArrayHandle(runtimeVecArray, std::cout);
 
     // using pointNeighborhood worklet to process the data
     callCriticalPointWorklet(vtkmDataSet);
 
-    std::string outputFileName = "MinProb_Uniform" + std::to_string(dimx) + "_" + std::to_string(dimy) + ".vtk";
+    std::string outputFileName = "MinProb_Uniform" + std::to_string(dimx) + "_" + std::to_string(dimy) + "ens_" + std::to_string(numEnsembles) + ".vtk";
     vtkm::io::VTKDataSetWriter writeCross(outputFileName);
     writeCross.WriteDataSet(vtkmDataSet);
 
