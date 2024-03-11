@@ -11,7 +11,7 @@ message("debug VTKm_DIR ${VTKm_DIR}")
 set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::io)
 
 
-SET(CMAKE_CXX_FLAGS "-DUSE_LOG")
+#SET(CMAKE_CXX_FLAGS "-DUSE_LOG")
 
 
 #Find MPI

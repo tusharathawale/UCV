@@ -7,6 +7,7 @@
 #include <vtkm/cont/ArrayHandleRuntimeVec.h>
 #include <vtkm/cont/Timer.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
+#include <vtkm/cont/Algorithm.h>
 
 #include "ucvworklet/ExtractMinMaxByErr.hpp"
 #include "ucvworklet/CriticalPointWorklet.hpp"
@@ -76,8 +77,6 @@ int main(int argc, char *argv[])
 
     vtkm::Float64 err = std::stod(argv[6]);
 
-    std::cout << "estimation error is " << err << std::endl;
-
     const vtkm::Id3 dims(dimx, dimy, dimz);
     // vtkm::cont::DataSetBuilderUniform dataSetBuilder;
     // vtkm::cont::DataSet vtkmDataSet = dataSetBuilder.Create(dims);
@@ -86,10 +85,17 @@ int main(int argc, char *argv[])
     vtkm::io::VTKDataSetReader reader(fileName);
     vtkm::cont::DataSet inData = reader.ReadDataSet();
 
-    //inData.PrintSummary(std::cout);
+    // inData.PrintSummary(std::cout);
 
+    // get the global min and max
+    auto inTestArray = inData.GetField("TestField").GetData().AsArrayHandle<vtkm::cont::ArrayHandle<vtkm::Float32>>();
+    auto gloablMaxValue = vtkm::cont::Algorithm::Reduce(inTestArray, 0, vtkm::Maximum());
+    auto gloablMinValue = vtkm::cont::Algorithm::Reduce(inTestArray, vtkm::Infinity64(), vtkm::Minimum());
+    // the absolute eb = 1e-2 * (maxv- minv)
+    std::cout << "gloablMinValue is " << gloablMinValue << " and gloablMaxValue is " << gloablMaxValue << " estimated err is " << err * (gloablMaxValue - gloablMinValue) << std::endl;
+    vtkm::Float64 updatedError = err * (gloablMaxValue - gloablMinValue);
     // using pointNeighborhood worklet to process the data
-    callCriticalPointWorklet(inData, err);
+    callCriticalPointWorklet(inData, updatedError);
 
     std::string outputFileName = "MinProb_Uniform_Weather" + std::to_string(dimx) + "_" + std::to_string(dimy) + ".vtk";
     vtkm::io::VTKDataSetWriter writeCross(outputFileName);

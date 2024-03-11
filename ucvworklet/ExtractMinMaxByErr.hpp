@@ -16,13 +16,13 @@ struct ExtractMinMaxByErr : public vtkm::worklet::WorkletMapField
         const OriginalValuesType &originalValues, OutputType &minValue, OutputType &maxValue, vtkm::Id WorkIndex) const
     {
 
-        minValue = vtkm::Float64(originalValues * 1.0) - 2.0 * this->Error;
-        maxValue = vtkm::Float64(originalValues * 1.0) + 2.0 * this->Error;
-        if (WorkIndex >=0 && WorkIndex <=10)
-        {
-            printf("err is %lf %lf %lf\n",this->Error, minValue, vtkm::Float64(originalValues * 1.0) - 2.0 * this->Error);
-            printf("debug %.6f %.6f %.6f\n", originalValues, minValue, maxValue);
-        }
+        minValue = vtkm::Float64(originalValues * 1.0) - this->Error/2.0;
+        maxValue = vtkm::Float64(originalValues * 1.0) + this->Error/2.0;
+        //if (WorkIndex >=0 && WorkIndex <=10)
+        //{
+        //    printf("err is %lf %lf %lf\n",this->Error, minValue, vtkm::Float64(originalValues * 1.0) - 2.0 * this->Error);
+        //    printf("debug %.6f %.6f %.6f\n", originalValues, minValue, maxValue);
+        //}
     }
 
     vtkm::Float64 Error = 0.0;
