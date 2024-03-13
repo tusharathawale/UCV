@@ -15,7 +15,8 @@ struct ExtractMinMaxOfPoint : public vtkm::worklet::WorkletMapField
         const OriginalValuesType &originalValues, OutputType &minValue, OutputType &maxValue) const
     {
         vtkm::FloatDefault boxMin = DBL_MAX;
-        vtkm::FloatDefault boxMax = 0;
+        //the data can be a negative number
+        vtkm::FloatDefault boxMax = vtkm::NegativeInfinity64();
 
         for (vtkm::IdComponent index = 0;
              index < originalValues.GetNumberOfComponents(); index++)

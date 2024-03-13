@@ -53,6 +53,9 @@ target_link_libraries(LoadEnsAndProcessByHistogram ${VTKm_LIBRARIES})
 add_executable(LoadWeatherProcessByUniform LoadWeatherProcessByUniform.cpp)
 target_link_libraries(LoadWeatherProcessByUniform ${VTKm_LIBRARIES})
 
+add_executable(LoadEnsAndProcessByMC LoadEnsAndProcessByMC.cpp)
+target_link_libraries(LoadEnsAndProcessByMC ${VTKm_LIBRARIES})
+
 
 
 

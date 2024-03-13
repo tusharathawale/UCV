@@ -59,8 +59,9 @@ def load_ensemble(name="matVelocity"):
         A tuple of realizations
 
     """
-    base_name = "data/" + name
+    base_name = "" + name
     files = glob("{}/*.mat".format(base_name))
+    print(files)
     uncertain_realizations = []
     for filename in files:
         token = filename.rsplit("/", 1)[1].split(".")[0]

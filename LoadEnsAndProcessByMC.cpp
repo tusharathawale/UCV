@@ -4,33 +4,31 @@
 #include <vtkm/cont/Initialize.h>
 #include <vtkm/cont/ArrayHandleRuntimeVec.h>
 #include <vtkm/cont/ArrayCopy.h>
+#include <vtkm/cont/ArrayHandleRuntimeVec.h>
 #include <vtkm/cont/Timer.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
 
-#include "ucvworklet/ExtractHistogramForPointValues.hpp"
-#include "ucvworklet/CriticalPointHistogramWorklet.hpp"
+#include "ucvworklet/ExtractMinMaxOfPoint.hpp"
+#include "ucvworklet/CriticalPointMonteCarlo.hpp"
 
-void callCriticalPointWorklet(vtkm::cont::DataSet &vtkmDataSet, int numHistBin)
+void callCriticalPointWorklet(vtkm::cont::DataSet& vtkmDataSet)
 {
     auto resolveType = [&](auto &concreteArray)
     {
         vtkm::cont::Invoker invoke;
-        // Create runtime vec for storing the histogram
-        vtkm::cont::ArrayHandleRuntimeVec<vtkm::FloatDefault> runtimeHistDensity(numHistBin);
-        vtkm::cont::ArrayHandleRuntimeVec<vtkm::FloatDefault> runtimeHistEdges(numHistBin+1);
+        // Get min and max for each point
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> fieldMin;
+        vtkm::cont::ArrayHandle<vtkm::FloatDefault> fieldMax;
+        invoke(ExtractMinMaxOfPoint{}, concreteArray, fieldMin, fieldMax);
 
-        invoke(ExtractHistogramForPointValues{numHistBin}, concreteArray, runtimeHistDensity,runtimeHistEdges);
-        
-        //checking computation results of runtimeHistDensity
-        //printSummary_ArrayHandle(runtimeHistDensity, std::cout, true);
-        //printSummary_ArrayHandle(runtimeHistEdges, std::cout, true);
+        //printSummary_ArrayHandle(fieldMin, std::cout, true);
+        //printSummary_ArrayHandle(fieldMax, std::cout, true);
 
         vtkm::cont::ArrayHandle<vtkm::FloatDefault> outMinProb;
-
         // Use point neighborhood to go through data
-        invoke(CriticalPointHistogramWorklet{numHistBin}, vtkmDataSet.GetCellSet(), runtimeHistDensity, runtimeHistEdges, outMinProb);
-        //std::cout << "debug outMinProb:" << std::endl;
-        //printSummary_ArrayHandle(outMinProb, std::cout, true);
+        invoke(CriticalPointMonteCarloWorklet{1000}, vtkmDataSet.GetCellSet(), fieldMin, fieldMax, outMinProb);
+        // std::cout << "debug outMinProb:" << std::endl;
+        // printSummary_ArrayHandle(outMinProb, std::cout, true);
         vtkmDataSet.AddPointField("MinProb", outMinProb);
     };
 
@@ -47,10 +45,10 @@ int main(int argc, char *argv[])
         argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
     vtkm::cont::Timer timer{initResult.Device};
 
-    if (argc != 8)
+    if (argc != 7)
     {
         //./test_syntheticdata_el_sequence /Users/zw1/Documents/cworkspace/src/UCV/exp_scripts/create_dataset/RawdataPointScalar TestField 300 0.8 1000
-        std::cout << "<executable> <SyntheticDataSuffix> <FieldName> <Dimx> <Dimy> <Dimz> <num of ensembles> <num of bins>" << std::endl;
+        std::cout << "<executable> <SyntheticDataSuffix> <FieldName> <Dimx> <Dimy> <Dimz> <num of ensembles>" << std::endl;
         exit(0);
     }
 
@@ -64,7 +62,6 @@ int main(int argc, char *argv[])
     int dimz = std::stoi(argv[5]);
 
     int numEnsembles = std::stoi(argv[6]);
-    int numHistBin = std::stoi(argv[7]);
 
     const vtkm::Id3 dims(dimx, dimy, dimz);
     vtkm::cont::DataSetBuilderUniform dataSetBuilder;
@@ -90,7 +87,7 @@ int main(int argc, char *argv[])
         dataArray.push_back(fieldDataArray);
     }
 
-    //std::cout << "ok to load the data at the first step" << std::endl;
+    std::cout << "ok to load the data at the first step" << std::endl;
 
     // using all ensembles
     vtkm::cont::ArrayHandleRuntimeVec<vtkm::FloatDefault> runtimeVecArray(numEnsembles);
@@ -112,15 +109,12 @@ int main(int argc, char *argv[])
     }
 
     vtkmDataSet.AddPointField("ensembles", runtimeVecArray);
-    // printSummary_ArrayHandle(runtimeVecArray, std::cout);
+    printSummary_ArrayHandle(runtimeVecArray, std::cout);
 
     // using pointNeighborhood worklet to process the data
-    timer.Start();
-    callCriticalPointWorklet(vtkmDataSet, numHistBin);
-    timer.Stop();
-    std::cout << "execution time of callCriticalPointWorklet is " << timer.GetElapsedTime() << std::endl;
+    callCriticalPointWorklet(vtkmDataSet);
 
-    std::string outputFileName = "MinProb_hist_" + std::to_string(dimx) + "_" + std::to_string(dimy) + ".vtk";
+    std::string outputFileName = "MinProb_MC" + std::to_string(dimx) + "_" + std::to_string(dimy) + "ens_" + std::to_string(numEnsembles) + ".vtk";
     vtkm::io::VTKDataSetWriter writeCross(outputFileName);
     writeCross.WriteDataSet(vtkmDataSet);
 
