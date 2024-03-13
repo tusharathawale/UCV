@@ -11,7 +11,7 @@
 #include "ucvworklet/ExtractMinMaxOfPoint.hpp"
 #include "ucvworklet/CriticalPointMonteCarlo.hpp"
 
-void callCriticalPointWorklet(vtkm::cont::DataSet& vtkmDataSet)
+void callCriticalPointWorklet(vtkm::cont::DataSet& vtkmDataSet, vtkm::Id numSamples)
 {
     auto resolveType = [&](auto &concreteArray)
     {
@@ -26,7 +26,7 @@ void callCriticalPointWorklet(vtkm::cont::DataSet& vtkmDataSet)
 
         vtkm::cont::ArrayHandle<vtkm::FloatDefault> outMinProb;
         // Use point neighborhood to go through data
-        invoke(CriticalPointMonteCarloWorklet{1000}, vtkmDataSet.GetCellSet(), fieldMin, fieldMax, outMinProb);
+        invoke(CriticalPointMonteCarloWorklet{numSamples}, vtkmDataSet.GetCellSet(), fieldMin, fieldMax, outMinProb);
         // std::cout << "debug outMinProb:" << std::endl;
         // printSummary_ArrayHandle(outMinProb, std::cout, true);
         vtkmDataSet.AddPointField("MinProb", outMinProb);
@@ -45,10 +45,10 @@ int main(int argc, char *argv[])
         argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
     vtkm::cont::Timer timer{initResult.Device};
 
-    if (argc != 7)
+    if (argc != 8)
     {
         //./test_syntheticdata_el_sequence /Users/zw1/Documents/cworkspace/src/UCV/exp_scripts/create_dataset/RawdataPointScalar TestField 300 0.8 1000
-        std::cout << "<executable> <SyntheticDataSuffix> <FieldName> <Dimx> <Dimy> <Dimz> <num of ensembles>" << std::endl;
+        std::cout << "<executable> <SyntheticDataSuffix> <FieldName> <Dimx> <Dimy> <Dimz> <num of ensembles> <num of samples>" << std::endl;
         exit(0);
     }
 
@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
     int dimz = std::stoi(argv[5]);
 
     int numEnsembles = std::stoi(argv[6]);
+    int numSamples = std::stoi(argv[7]);
 
     const vtkm::Id3 dims(dimx, dimy, dimz);
     vtkm::cont::DataSetBuilderUniform dataSetBuilder;
@@ -112,7 +113,7 @@ int main(int argc, char *argv[])
     printSummary_ArrayHandle(runtimeVecArray, std::cout);
 
     // using pointNeighborhood worklet to process the data
-    callCriticalPointWorklet(vtkmDataSet);
+    callCriticalPointWorklet(vtkmDataSet, numSamples);
 
     std::string outputFileName = "MinProb_MC" + std::to_string(dimx) + "_" + std::to_string(dimy) + "ens_" + std::to_string(numEnsembles) + ".vtk";
     vtkm::io::VTKDataSetWriter writeCross(outputFileName);

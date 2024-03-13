@@ -54,14 +54,8 @@ public:
             return;
         }
 
-
-
         vtkm::FloatDefault a1 = minValue.Get(0, 0, 0);
         vtkm::FloatDefault b1 = maxValue.Get(0, 0, 0);
-
-        if(fabs(a1+8.075548718)<0.000001){
-            printf("debug index %d\n",WorkIndex);
-        }
 
         vtkm::FloatDefault a2 = minValue.Get(0, 1, 0);
         vtkm::FloatDefault b2 = maxValue.Get(0, 1, 0);
@@ -75,12 +69,27 @@ public:
         vtkm::FloatDefault a5 = minValue.Get(-1, 0, 0);
         vtkm::FloatDefault b5 = maxValue.Get(-1, 0, 0);
 
-        if (WorkIndex==69){
-            printf("%f %f %f %f %f %f %f %f %f %f\n",a1,b1,a2,b2,a3,b3,a4,b4,a5,b5);
-        }
-
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
+        thrust::minstd_rand rng;
+        thrust::uniform_real_distribution<vtkm::FloatDefault> GenerateV1(a1, b1);
+        thrust::uniform_real_distribution<vtkm::FloatDefault> GenerateV2(a2, b2);
+        thrust::uniform_real_distribution<vtkm::FloatDefault> GenerateV3(a3, b3);
+        thrust::uniform_real_distribution<vtkm::FloatDefault> GenerateV4(a4, b4);
+        thrust::uniform_real_distribution<vtkm::FloatDefault> GenerateV5(a5, b5);
+        vtkm::Id NumMinCase = 0;
+        for (vtkm::Id i = 0; i < this->m_NumSamples; i++)
+        {
+            vtkm::FloatDefault V1 = GenerateV1(rng);
+            vtkm::FloatDefault V2 = GenerateV2(rng);
+            vtkm::FloatDefault V3 = GenerateV3(rng);
+            vtkm::FloatDefault V4 = GenerateV4(rng);
+            vtkm::FloatDefault V5 = GenerateV5(rng);
 
+            if (V1 < V2 && V1 < V3 && V1 < V4 && V1 < V5)
+            {
+                NumMinCase++;
+            }
+        }
 #else
         std::random_device rd;
         std::mt19937 gen(rd());
