@@ -11,7 +11,7 @@
 
 #include "ucvworklet/ExtractMinMaxByErr.hpp"
 #include "ucvworklet/CriticalPointWorklet.hpp"
-#include "ucvworklet/CriticalPointWorkletAvoidOverflow.hpp"
+#include "ucvworklet/CriticalPointMonteCarlo.hpp"
 
 using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::Float64,
@@ -23,7 +23,7 @@ using SupportedTypes = vtkm::List<vtkm::Float32,
                                   vtkm::UInt32,
                                   vtkm::Id>;
 
-void callCriticalPointWorklet(vtkm::cont::DataSet &vtkmDataSet, vtkm::Float64 err)
+void callCriticalPointWorklet(vtkm::cont::DataSet &vtkmDataSet, vtkm::Float64 err, vtkm::Id numSamples)
 {
 
     auto concreteArray = vtkmDataSet.GetField("TestField")
@@ -45,7 +45,7 @@ void callCriticalPointWorklet(vtkm::cont::DataSet &vtkmDataSet, vtkm::Float64 er
     vtkm::cont::ArrayHandle<vtkm::Float64> outMinProb;
     // Use point neighborhood to go through data
     // invoke(CriticalPointWorklet{}, vtkmDataSet.GetCellSet(), fieldMin, fieldMax, outMinProb);
-    invoke(CriticalPointWorkletAvoidOverflow{}, vtkmDataSet.GetCellSet(), fieldMin, fieldMax, outMinProb);
+    invoke(CriticalPointMonteCarloWorklet{numSamples}, vtkmDataSet.GetCellSet(), fieldMin, fieldMax, outMinProb);
     // std::cout << "debug outMinProb:" << std::endl;
     // printSummary_ArrayHandle(outMinProb, std::cout, true);
     vtkmDataSet.AddPointField("MinProb", outMinProb);
@@ -59,10 +59,10 @@ int main(int argc, char *argv[])
         argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
     vtkm::cont::Timer timer{initResult.Device};
 
-    if (argc != 7)
+    if (argc != 8)
     {
         //./test_syntheticdata_el_sequence /Users/zw1/Documents/cworkspace/src/UCV/exp_scripts/create_dataset/RawdataPointScalar TestField 300 0.8 1000
-        std::cout << "<executable> <filename> <FieldName> <Dimx> <Dimy> <Dimz> <err>" << std::endl;
+        std::cout << "<executable> <filename> <FieldName> <Dimx> <Dimy> <Dimz> <err> <num samples>" << std::endl;
         exit(0);
     }
 
@@ -76,6 +76,7 @@ int main(int argc, char *argv[])
     int dimz = std::stoi(argv[5]);
 
     vtkm::Float64 err = std::stod(argv[6]);
+    vtkm::Id numSamples = std::stod(argv[7]);
 
     const vtkm::Id3 dims(dimx, dimy, dimz);
     // vtkm::cont::DataSetBuilderUniform dataSetBuilder;
@@ -96,11 +97,11 @@ int main(int argc, char *argv[])
     vtkm::Float64 updatedError = err * (gloablMaxValue - gloablMinValue);
     // using pointNeighborhood worklet to process the data
     timer.Start();
-    callCriticalPointWorklet(inData, updatedError);
+    callCriticalPointWorklet(inData, updatedError, numSamples);
     timer.Stop();
     std::cout << "filter execution time: " << timer.GetElapsedTime() << std::endl;
 
-    std::string outputFileName = "MinProb_Uniform_Weather" + std::to_string(dimx) + "_" + std::to_string(dimy) + ".vtk";
+    std::string outputFileName = "MinProb_MC_Weather" + std::to_string(dimx) + "_" + std::to_string(dimy) + "_" + std::to_string(numSamples) + ".vtk";
     vtkm::io::VTKDataSetWriter writeCross(outputFileName);
     writeCross.WriteDataSet(inData);
 

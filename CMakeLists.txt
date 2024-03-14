@@ -31,6 +31,14 @@ set_source_files_properties(LoadEnsAndProcessByHistogram.cpp PROPERTIES LANGUAGE
 add_executable(LoadEnsAndProcessByHistogram LoadEnsAndProcessByHistogram.cpp)
 target_link_libraries(LoadEnsAndProcessByHistogram ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
+set_source_files_properties(LoadWeatherProcessByUniform.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(LoadWeatherProcessByUniform LoadWeatherProcessByUniform.cpp)
+target_link_libraries(LoadWeatherProcessByUniform ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
+set_source_files_properties(LoadWeatherProcessByMC.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(LoadWeatherProcessByMC LoadWeatherProcessByMC.cpp)
+target_link_libraries(LoadWeatherProcessByMC ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
 elseif(USE_CUDA)
 
 set_source_files_properties(./ucvworklet/CriticalPointHistogramWorklet.hpp PROPERTIES LANGUAGE "CUDA")
@@ -56,6 +64,8 @@ target_link_libraries(LoadWeatherProcessByUniform ${VTKm_LIBRARIES})
 add_executable(LoadEnsAndProcessByMC LoadEnsAndProcessByMC.cpp)
 target_link_libraries(LoadEnsAndProcessByMC ${VTKm_LIBRARIES})
 
+add_executable(LoadWeatherProcessByMC LoadWeatherProcessByMC.cpp)
+target_link_libraries(LoadWeatherProcessByMC ${VTKm_LIBRARIES})
 
 
 
