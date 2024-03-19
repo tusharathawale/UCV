@@ -8,7 +8,7 @@ find_package(VTKm REQUIRED)
 #NOMPI version
 message("debug vtkm_source:" ${vtkm_source})
 message("debug VTKm_DIR ${VTKm_DIR}")
-set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::io)
+set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::io vtkm_filter_uncertainty)
 
 
 #SET(CMAKE_CXX_FLAGS "-DUSE_LOG")
@@ -16,7 +16,12 @@ set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::io)
 
 #Find MPI
 
+add_executable(LoadEnsAndProcessByHistogram LoadEnsAndProcessByHistogram.cpp)
+target_link_libraries(LoadEnsAndProcessByHistogram ${VTKm_LIBRARIES})
+
 OPTION (USE_HIP OFF)
+
+add_subdirectory(ucvfilter)
 
 if(USE_HIP)
 
@@ -25,10 +30,6 @@ message ("Build messages: Using HIP GPU to build the project%%%")
 set_source_files_properties(LoadEnsAndProcessByUniform.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(LoadEnsAndProcessByUniform LoadEnsAndProcessByUniform.cpp)
 target_link_libraries(LoadEnsAndProcessByUniform ${VTKm_LIBRARIES} MPI::MPI_CXX)
-
-set_source_files_properties(LoadEnsAndProcessByHistogram.cpp PROPERTIES LANGUAGE "HIP")
-add_executable(LoadEnsAndProcessByHistogram LoadEnsAndProcessByHistogram.cpp)
-target_link_libraries(LoadEnsAndProcessByHistogram ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 set_source_files_properties(LoadWeatherProcessByUniform.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(LoadWeatherProcessByUniform LoadWeatherProcessByUniform.cpp)
@@ -40,11 +41,9 @@ target_link_libraries(LoadWeatherProcessByMC ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 elseif(USE_CUDA)
 
-set_source_files_properties(./ucvworklet/CriticalPointHistogramWorklet.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(./ucvworklet/CriticalPointMonteCarlo.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(./ucvworklet/CriticalPointWorklet.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(./ucvworklet/CriticalPointWorkletAvoidOverflow.hpp PROPERTIES LANGUAGE "CUDA")
-set_source_files_properties(./ucvworklet/ExtractHistogramForPointValues.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(./ucvworklet/ExtractMinMaxByErr.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(./ucvworklet/ExtractMinMaxOfPoint.hpp PROPERTIES LANGUAGE "CUDA")
 set_source_files_properties(LoadWeatherProcessByMC.cpp PROPERTIES LANGUAGE "CUDA")
@@ -62,9 +61,6 @@ else()
 
 add_executable(LoadEnsAndProcessByUniform LoadEnsAndProcessByUniform.cpp)
 target_link_libraries(LoadEnsAndProcessByUniform ${VTKm_LIBRARIES})
-
-add_executable(LoadEnsAndProcessByHistogram LoadEnsAndProcessByHistogram.cpp)
-target_link_libraries(LoadEnsAndProcessByHistogram ${VTKm_LIBRARIES})
 
 add_executable(LoadWeatherProcessByUniform LoadWeatherProcessByUniform.cpp)
 target_link_libraries(LoadWeatherProcessByUniform ${VTKm_LIBRARIES})
