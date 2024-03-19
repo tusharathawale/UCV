@@ -46,9 +46,25 @@ public:
             minProb = 0;
             return;
         }
+
+        //TODO, checking land boundry for redsea
+        //use edge to filter out the min and max
+        vtkm::FloatDefault ma1 = histEdgesVec.Get(0, 0, 0)[0];
+
+        vtkm::FloatDefault ma2 = histEdgesVec.Get(0, 1, 0)[0];
+
+        vtkm::FloatDefault ma3 = histEdgesVec.Get(0, -1, 0)[0];
+
+        vtkm::FloatDefault ma4 = histEdgesVec.Get(1, 0, 0)[0];
+
+        vtkm::FloatDefault ma5 = histEdgesVec.Get(-1, 0, 0)[0];
         
         //init minProb
         minProb=0.0;
+
+        if (abs(ma2-0.0)<0.0000001 || abs(ma3-0.0)<0.0000001 || abs(ma4-0.0)<0.0000001 || abs(ma5-0.0)<0.0000001 ){
+            return;
+        }
 
         // go through all combinations of bins for five points
         // assuming each of them have same number of bins

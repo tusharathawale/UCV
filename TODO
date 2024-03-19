@@ -1,12 +1,5 @@
 
 
-1 Output python format ensemble data into vtk file [ok]
-2 load the vtk file through c++ program [ok]
-3 adapts python code for integration into cpp version [ok]
+Try to look at subsequent python functions in python: 
 
-3.1 necessary operation before sorting
-maybe using a smaller scale as the input for testing (using 5 by 5 data set with 3 ens) [ok for both 5*5 and 50*50]
-
-update the printed log do not print log info based on compiled macro[ok]
-
-test on frontier for parallel version
+epanechnikovLocalMinimumProbabilitiesAnalytical = anlyticalLocalMinimaProbabilityIndependentEpanechnikovWithBoundaryNotHandled(ensemble)

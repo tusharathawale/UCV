@@ -1,5 +1,5 @@
-#ifndef UCV_CRITICAL_POINT_AVOID_OVER_UNDER_FLOW_h
-#define UCV_CRITICAL_POINT_AVOID_OVER_UNDER_FLOW_h
+#ifndef UCV_CRITICAL_POINT_EPANECH_AOUF_h
+#define UCV_CRITICAL_POINT_EPANECH_AOUF_h
 
 #include <vtkm/worklet/WorkletPointNeighborhood.h>
 
@@ -9,10 +9,11 @@
 #define LOG(x)
 #endif
 
-struct CriticalPointWorkletAvoidOverUnderflow : public vtkm::worklet::WorkletPointNeighborhood
+// Epanech kernel and also avoid the over/under flow
+struct CriticalPointWorkletEpanechAOUF : public vtkm::worklet::WorkletPointNeighborhood
 {
 public:
-    CriticalPointWorkletAvoidOverUnderflow(){};
+    CriticalPointWorkletEpanechAOUF(){};
 
     using ControlSignature = void(CellSetIn, FieldInNeighborhood, FieldInNeighborhood, FieldOut);
 
@@ -46,15 +47,6 @@ public:
             minProb = 0;
             return;
         }
-        // for testing
-        // minProb=1;
-        // get a1-a5 b1-b5
-        //  a1 b1 self
-        //  a2 b2 i+1 j
-        //  a3 b3 i-1 j
-        //  a4 b4 i,j+1
-        //  a5 b5 i,j-1
-        // in vtkm the i and j is inverted compared with python
 
         vtkm::FloatDefault a1 = minValue.Get(0, 0, 0);
         vtkm::FloatDefault b1 = maxValue.Get(0, 0, 0);
@@ -72,8 +64,16 @@ public:
         vtkm::FloatDefault b5 = maxValue.Get(-1, 0, 0);
 
         LOG(printf("check input a1 %f b1 %f a2 %f b2 %f a3 %f b3 %f a4 %f b4 %f a5 %f b5 %f\n", a1, b1, a2, b2, a3, b3, a4, b4, a5, b5));
-       
+
+        //filter out regions with zero values in it
+        if (abs(a2-0.0)<0.0000001 || abs(a3-0.0)<0.0000001 || abs(a4-0.0)<0.0000001 || abs(a5-0.0)<0.0000001 ){
+            minProb = 0.0;
+            return;
+        }
+
+        //if it is not under the region with zeros
         //do the preprocessing to avoid the data overflow
+        //offset by a1 and scale it a little bit
         vtkm::FloatDefault a1N = (a1-a1)*this->m_ScaleNum;
         vtkm::FloatDefault b1N = (b1-a1)*this->m_ScaleNum;
 
@@ -90,7 +90,9 @@ public:
         vtkm::FloatDefault b5N = (b5-a1)*this->m_ScaleNum;
 
         LOG(printf("check transformed input a1 %f b1 %f a2 %f b2 %f a3 %f b3 %f a4 %f b4 %f a5 %f b5 %f\n", a1N, b1N, a2N, b2N, a3N, b3N, a4N, b4N, a5N, b5N));
-
+        
+        // the logic in superOptimizedAnlyticalLocalMinimumProbabilityComputationEpanechnikov:
+  
         // compute bmin
         vtkm::FloatDefault bMin = vtkm::Min(b1N, vtkm::Min(b2N, vtkm::Min(b3N, vtkm::Min(b4N, b5N))));
         LOG(printf("bmin %f\n", bMin));
@@ -111,6 +113,7 @@ public:
         interval[3] = {a4N, b4N};
         interval[4] = {a5N, b5N};
         // vtkm::Vec<vtkm::Id, 5> sotedIndex = ArgSort<5>(interval);
+        // sort the arg and associated value together
         ArgSort<5>(interval);
         LOG(printf("sorted a [%f %f %f %f %f]\n", interval[0].first, interval[1].first, interval[2].first, interval[3].first, interval[4].first));
 
@@ -157,8 +160,9 @@ public:
         }
 
         vtkm::FloatDefault w1 = b1N - a1N;
-        // call superOptimizedCase
-        minProb = SuperOptimizedCase(indexa1, x1Limit, interval, w1);
+        vtkm::FloatDefault m1 = (b1N+a1N)/2.0;
+        // call SuperOptimizedCaseEpanechnikov
+        minProb = SuperOptimizedCaseEpanechnikov(indexa1, x1Limit, interval, w1, m1);
         return;
     }
     // ascending
@@ -182,12 +186,13 @@ public:
         return;
     }
     //        minimaProb = superOptimizedCase(indexOfa1,x1Limits, sortedI, w1)
-    VTKM_EXEC inline vtkm::Float64 SuperOptimizedCase(vtkm::Id indexOfa1,
+    VTKM_EXEC inline vtkm::Float64 SuperOptimizedCaseEpanechnikov(vtkm::Id indexOfa1,
                                                       vtkm::Vec<vtkm::Float64, 6> x1Limits,
                                                       vtkm::Vec<vtkm::Pair<vtkm::Float64, vtkm::Float64>, 5> interval,
-                                                      vtkm::Float64 w1) const
+                                                      vtkm::Float64 w1,vtkm::Float64 m1) const
     {
-        LOG(printf("---debug SuperOptimizedCase indexOfa1 %d w1 %f \n", indexOfa1, w1));
+        //TODO, this function need to be updated according to the python code
+        LOG(printf("---debug SuperOptimizedCaseEpanechnikov indexOfa1 %d w1 %f m1 %f\n", indexOfa1, w1, m1));
         LOG(printf("---debug x1Limits\n"));
         for (int i = 0; i < 6; i++)
         {
@@ -263,35 +268,35 @@ public:
         // printf("check if nan %d %d %d\n",isnan(h3), isnan(h4),isnan(h5));
         vtkm::Float64 normalizingFactor = 1.0 / (n1 * n2 * n3 * n4 * n5);
 
-        if ((!ln) && (!hn) && (h2n ) && (h3n) && (h4n) && (h5n))
+        if ((!ln) && (!hn) && (h2n) && (h3n) && (h4n) && (h5n))
         {
             LOG(printf("---c1\n"));
             intUp = normalizingFactor * h;
             intDown = normalizingFactor * l;
         }
 
-        if ((!ln) && (!hn ) && (!h2n) && (h3n) && (h4n) && (h5n))
+        if ((!ln) && (!hn) && (!h2n) && (h3n) && (h4n) && (h5n))
         {
             LOG(printf("---c2\n"));
             intUp = normalizingFactor * (h2 * h - h * h / 2);
             intDown = normalizingFactor * (h2 * l - l * l / 2);
         }
 
-        if ((!ln) && (!hn ) && (!h2n ) && (!h3n) && (h4n) && (h5n))
+        if ((!ln) && (!hn) && (!h2n) && (!h3n) && (h4n) && (h5n))
         {
             LOG(printf("---c3\n"));
             intUp = normalizingFactor * (h3 * h2 * h - (h3 + h2) * h * h / 2 + h * h * h / 3);
             intDown = normalizingFactor * (h3 * h2 * l - (h3 + h2) * l * l / 2 + l * l * l / 3);
         }
 
-        if ((!ln ) && (!hn ) && (!h2n ) && (!h3n) && (!h4n) && (h5n))
+        if ((!ln) && (!hn) && (!h2n) && (!h3n) && (!h4n) && (h5n))
         {
             LOG(printf("---c4\n"));
             intUp = normalizingFactor * (h4 * h3 * h2 * h - (h2 * h3 + h2 * h4 + h3 * h4) * (h * h / 2) + (h2 + h3 + h4) * (h * h * h / 3) - h * h * h * h / 4);
             intDown = normalizingFactor * (h4 * h3 * h2 * l - (h2 * h3 + h2 * h4 + h3 * h4) * (l * l / 2) + (h2 + h3 + h4) * (l * l * l / 3) - l * l * l * l / 4);
         }
 
-        if ((!ln) && (!hn) && (!h2n) && (!h3n ) && (!h4n) && (!h5n))
+        if ((!ln) && (!hn) && (!h2n) && (!h3n) && (!h4n) && (!h5n))
         {
             LOG(printf("---c5\n"));
             intUp = normalizingFactor * (h5 * h4 * h3 * h2 * h - (h2 * h3 * h4 + h2 * h3 * h5 + h2 * h4 * h5 + h3 * h4 * h5) * (h * h / 2) + (h2 * h3 + h2 * h4 + h2 * h5 + h3 * h4 + h3 * h5 + h4 * h5) * (h * h * h / 3) - (h2 + h3 + h4 + h5) * (h * h * h * h / 4) + h * h * h * h * h / 5);
@@ -300,10 +305,8 @@ public:
 
         return (intUp - intDown);
     }
-
-private:
-    int m_neighborhoodSize = 1;
-    double m_ScaleNum = 1000;
 };
 
-#endif // UCV_CRITICAL_POINT_AVOID_OVER_UNDER_FLOW_h
+private:
+    double m_ScaleNum = 10000;
+#endif // UCV_CRITICAL_POINT_h

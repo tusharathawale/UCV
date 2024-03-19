@@ -17,20 +17,20 @@ void callCriticalPointWorklet(vtkm::cont::DataSet &vtkmDataSet, int numHistBin)
         vtkm::cont::Invoker invoke;
         // Create runtime vec for storing the histogram
         vtkm::cont::ArrayHandleRuntimeVec<vtkm::FloatDefault> runtimeHistDensity(numHistBin);
-        vtkm::cont::ArrayHandleRuntimeVec<vtkm::FloatDefault> runtimeHistEdges(numHistBin+1);
+        vtkm::cont::ArrayHandleRuntimeVec<vtkm::FloatDefault> runtimeHistEdges(numHistBin + 1);
 
-        invoke(ExtractHistogramForPointValues{numHistBin}, concreteArray, runtimeHistDensity,runtimeHistEdges);
-        
-        //checking computation results of runtimeHistDensity
-        //printSummary_ArrayHandle(runtimeHistDensity, std::cout, true);
-        //printSummary_ArrayHandle(runtimeHistEdges, std::cout, true);
+        invoke(ExtractHistogramForPointValues{numHistBin}, concreteArray, runtimeHistDensity, runtimeHistEdges);
+
+        // checking computation results of runtimeHistDensity
+        // printSummary_ArrayHandle(runtimeHistDensity, std::cout, true);
+        // printSummary_ArrayHandle(runtimeHistEdges, std::cout, true);
 
         vtkm::cont::ArrayHandle<vtkm::FloatDefault> outMinProb;
 
         // Use point neighborhood to go through data
         invoke(CriticalPointHistogramWorklet{numHistBin}, vtkmDataSet.GetCellSet(), runtimeHistDensity, runtimeHistEdges, outMinProb);
-        //std::cout << "debug outMinProb:" << std::endl;
-        //printSummary_ArrayHandle(outMinProb, std::cout, true);
+        // std::cout << "debug outMinProb:" << std::endl;
+        // printSummary_ArrayHandle(outMinProb, std::cout, true);
         vtkmDataSet.AddPointField("MinProb", outMinProb);
     };
 
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
         dataArray.push_back(fieldDataArray);
     }
 
-    //std::cout << "ok to load the data at the first step" << std::endl;
+    // std::cout << "ok to load the data at the first step" << std::endl;
 
     // using all ensembles
     vtkm::cont::ArrayHandleRuntimeVec<vtkm::FloatDefault> runtimeVecArray(numEnsembles);
@@ -114,13 +114,18 @@ int main(int argc, char *argv[])
     vtkmDataSet.AddPointField("ensembles", runtimeVecArray);
     // printSummary_ArrayHandle(runtimeVecArray, std::cout);
 
+    // output dataset for testing
+    // std::string testOutputFileName = "DataSetForTestingCriticalHistogram.vtk";
+    // vtkm::io::VTKDataSetWriter writeTest(testOutputFileName);
+    // writeTest.WriteDataSet(vtkmDataSet);
+
     // using pointNeighborhood worklet to process the data
     timer.Start();
     callCriticalPointWorklet(vtkmDataSet, numHistBin);
     timer.Stop();
     std::cout << "execution time of callCriticalPointWorklet is " << timer.GetElapsedTime() << std::endl;
 
-    std::string outputFileName = "MinProb_hist_" + std::to_string(dimx) + "_" + std::to_string(dimy) + ".vtk";
+    std::string outputFileName = "MinProb_hist_bin" + std::to_string(numHistBin) + "_" + std::to_string(dimx) + "_" + std::to_string(dimy) + ".vtk";
     vtkm::io::VTKDataSetWriter writeCross(outputFileName);
     writeCross.WriteDataSet(vtkmDataSet);
 

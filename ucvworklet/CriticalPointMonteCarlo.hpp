@@ -69,6 +69,11 @@ public:
         vtkm::FloatDefault a5 = minValue.Get(-1, 0, 0);
         vtkm::FloatDefault b5 = maxValue.Get(-1, 0, 0);
 
+        if (abs(a2-0.0)<0.0000001 || abs(a3-0.0)<0.0000001 || abs(a4-0.0)<0.0000001 || abs(a5-0.0)<0.0000001 ){
+            minProb = 0;
+            return;
+        }
+
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
         thrust::minstd_rand rng;
         thrust::uniform_real_distribution<vtkm::FloatDefault> GenerateV1(a1, b1);

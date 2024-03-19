@@ -33,7 +33,7 @@ struct ExtractHistogramForPointValues : public vtkm::worklet::WorkletMapField
 
         // extract min and max of input and output
         vtkm::FloatDefault min = DBL_MAX;
-        vtkm::FloatDefault max = 0;
+        vtkm::FloatDefault max = vtkm::NegativeInfinity64();
 
         for (vtkm::IdComponent index = 0;
              index < originalValues.GetNumberOfComponents(); index++)

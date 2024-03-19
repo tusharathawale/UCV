@@ -71,76 +71,83 @@ public:
         vtkm::FloatDefault a5 = minValue.Get(-1, 0, 0);
         vtkm::FloatDefault b5 = maxValue.Get(-1, 0, 0);
 
-        LOG(printf("check input a1 %f b1 %f a2 %f b2 %f a3 %f b3 %f a4 %f b4 %f a5 %f b5 %f\n", a1, b1, a2, b2, a3, b3, a4, b4, a5, b5));
-
-        // compute bmin
-        vtkm::FloatDefault bMin = vtkm::Min(b1, vtkm::Min(b2, vtkm::Min(b3, vtkm::Min(b4, b5))));
-        LOG(printf("bmin %f\n", bMin));
-
-        if (bMin <= a1)
+        // TODO, only for redsea
+        if (a2 != 0 && a3 != 0 && a4 != 0 && a5 != 0)
         {
-            minProb = 0;
-            return;
-        }
+            LOG(printf("check input a1 %f b1 %f a2 %f b2 %f a3 %f b3 %f a4 %f b4 %f a5 %f b5 %f\n", a1, b1, a2, b2, a3, b3, a4, b4, a5, b5));
 
-        // startPointList = [a1, a2, a3, a4, a5]
-        // order = np.argsort(startPointList)
-        // interval, first is value second is actual index from 0 to 4
-        vtkm::Vec<vtkm::Pair<vtkm::Float64, vtkm::Float64>, 5> interval;
-        interval[0] = {a1, b1};
-        interval[1] = {a2, b2};
-        interval[2] = {a3, b3};
-        interval[3] = {a4, b4};
-        interval[4] = {a5, b5};
-        // vtkm::Vec<vtkm::Id, 5> sotedIndex = ArgSort<5>(interval);
-        ArgSort<5>(interval);
-        LOG(printf("sorted a [%f %f %f %f %f]\n", interval[0].first, interval[1].first, interval[2].first, interval[3].first, interval[4].first));
+            // compute bmin
+            vtkm::FloatDefault bMin = vtkm::Min(b1, vtkm::Min(b2, vtkm::Min(b3, vtkm::Min(b4, b5))));
+            LOG(printf("bmin %f\n", bMin));
 
-        // find interval contain bMin
-        // the interval vector is sorted now
-        vtkm::Id tartgetIndex;
-        for (tartgetIndex = 4; tartgetIndex > 0; tartgetIndex--)
-        {
-            auto intervalFromEnd = interval[tartgetIndex];
-            if ((bMin >= intervalFromEnd.first) && (bMin <= intervalFromEnd.second))
+            if (bMin <= a1)
             {
-                break;
+                minProb = 0;
+                return;
             }
-        }
-        LOG(printf("---endInterval %d\n", tartgetIndex));
 
-        // create x1 limit, init it as negative value
-        vtkm::Vec<vtkm::Float64, 6> x1Limit(vtkm::Nan64());
-        vtkm::Id index;
-        for (index = 0; index < tartgetIndex + 1; index++)
-        {
-            x1Limit[index] = interval[index].first;
-        }
-        // add bMin as the last element
-        x1Limit[index] = bMin;
+            // startPointList = [a1, a2, a3, a4, a5]
+            // order = np.argsort(startPointList)
+            // interval, first is value second is actual index from 0 to 4
+            vtkm::Vec<vtkm::Pair<vtkm::Float64, vtkm::Float64>, 5> interval;
+            interval[0] = {a1, b1};
+            interval[1] = {a2, b2};
+            interval[2] = {a3, b3};
+            interval[3] = {a4, b4};
+            interval[4] = {a5, b5};
+            // vtkm::Vec<vtkm::Id, 5> sotedIndex = ArgSort<5>(interval);
+            ArgSort<5>(interval);
+            LOG(printf("sorted a [%f %f %f %f %f]\n", interval[0].first, interval[1].first, interval[2].first, interval[3].first, interval[4].first));
 
-        // find the a1
-        vtkm::Id indexa1 = -1;
-        for (vtkm::Id i = 0; i < 6; i++)
-        {
-            if (vtkm::Abs(x1Limit[i] - a1) < 0.0000001)
+            // find interval contain bMin
+            // the interval vector is sorted now
+            vtkm::Id tartgetIndex;
+            for (tartgetIndex = 4; tartgetIndex > 0; tartgetIndex--)
             {
-                indexa1 = i;
-                break;
+                auto intervalFromEnd = interval[tartgetIndex];
+                if ((bMin >= intervalFromEnd.first) && (bMin <= intervalFromEnd.second))
+                {
+                    break;
+                }
             }
+            LOG(printf("---endInterval %d\n", tartgetIndex));
+
+            // create x1 limit, init it as negative value
+            vtkm::Vec<vtkm::Float64, 6> x1Limit(vtkm::Nan64());
+            vtkm::Id index;
+            for (index = 0; index < tartgetIndex + 1; index++)
+            {
+                x1Limit[index] = interval[index].first;
+            }
+            // add bMin as the last element
+            x1Limit[index] = bMin;
+
+            // find the a1
+            vtkm::Id indexa1 = -1;
+            for (vtkm::Id i = 0; i < 6; i++)
+            {
+                if (vtkm::Abs(x1Limit[i] - a1) < 0.0000001)
+                {
+                    indexa1 = i;
+                    break;
+                }
+            }
+
+            if (indexa1 == -1)
+            {
+                // run time error
+                printf("error, the indexa1 is not supposed to be -1");
+                minProb = 0;
+                return;
+            }
+
+            vtkm::FloatDefault w1 = b1 - a1;
+            // call superOptimizedCase
+            minProb = SuperOptimizedCase(indexa1, x1Limit, interval, w1);
+        }else{
+            minProb = 0.0;
         }
 
-        if (indexa1 == -1)
-        {
-            // run time error
-            printf("error, the indexa1 is not supposed to be -1");
-            minProb = 0;
-            return;
-        }
-
-        vtkm::FloatDefault w1 = b1 - a1;
-        // call superOptimizedCase
-        minProb = SuperOptimizedCase(indexa1, x1Limit, interval, w1);
         return;
     }
     // ascending
@@ -245,35 +252,35 @@ public:
         // printf("check if nan %d %d %d\n",isnan(h3), isnan(h4),isnan(h5));
         vtkm::Float64 normalizingFactor = 1.0 / (n1 * n2 * n3 * n4 * n5);
 
-        if ((!ln) && (!hn) && (h2n ) && (h3n) && (h4n) && (h5n))
+        if ((!ln) && (!hn) && (h2n) && (h3n) && (h4n) && (h5n))
         {
             LOG(printf("---c1\n"));
             intUp = normalizingFactor * h;
             intDown = normalizingFactor * l;
         }
 
-        if ((!ln) && (!hn ) && (!h2n) && (h3n) && (h4n) && (h5n))
+        if ((!ln) && (!hn) && (!h2n) && (h3n) && (h4n) && (h5n))
         {
             LOG(printf("---c2\n"));
             intUp = normalizingFactor * (h2 * h - h * h / 2);
             intDown = normalizingFactor * (h2 * l - l * l / 2);
         }
 
-        if ((!ln) && (!hn ) && (!h2n ) && (!h3n) && (h4n) && (h5n))
+        if ((!ln) && (!hn) && (!h2n) && (!h3n) && (h4n) && (h5n))
         {
             LOG(printf("---c3\n"));
             intUp = normalizingFactor * (h3 * h2 * h - (h3 + h2) * h * h / 2 + h * h * h / 3);
             intDown = normalizingFactor * (h3 * h2 * l - (h3 + h2) * l * l / 2 + l * l * l / 3);
         }
 
-        if ((!ln ) && (!hn ) && (!h2n ) && (!h3n) && (!h4n) && (h5n))
+        if ((!ln) && (!hn) && (!h2n) && (!h3n) && (!h4n) && (h5n))
         {
             LOG(printf("---c4\n"));
             intUp = normalizingFactor * (h4 * h3 * h2 * h - (h2 * h3 + h2 * h4 + h3 * h4) * (h * h / 2) + (h2 + h3 + h4) * (h * h * h / 3) - h * h * h * h / 4);
             intDown = normalizingFactor * (h4 * h3 * h2 * l - (h2 * h3 + h2 * h4 + h3 * h4) * (l * l / 2) + (h2 + h3 + h4) * (l * l * l / 3) - l * l * l * l / 4);
         }
 
-        if ((!ln) && (!hn) && (!h2n) && (!h3n ) && (!h4n) && (!h5n))
+        if ((!ln) && (!hn) && (!h2n) && (!h3n) && (!h4n) && (!h5n))
         {
             LOG(printf("---c5\n"));
             intUp = normalizingFactor * (h5 * h4 * h3 * h2 * h - (h2 * h3 * h4 + h2 * h3 * h5 + h2 * h4 * h5 + h3 * h4 * h5) * (h * h / 2) + (h2 * h3 + h2 * h4 + h2 * h5 + h3 * h4 + h3 * h5 + h4 * h5) * (h * h * h / 3) - (h2 + h3 + h4 + h5) * (h * h * h * h / 4) + h * h * h * h * h / 5);

@@ -45,7 +45,7 @@ void callCriticalPointWorklet(vtkm::cont::DataSet &vtkmDataSet, vtkm::Float64 er
     vtkm::cont::ArrayHandle<vtkm::Float64> outMinProb;
     // Use point neighborhood to go through data
     // invoke(CriticalPointWorklet{}, vtkmDataSet.GetCellSet(), fieldMin, fieldMax, outMinProb);
-    invoke(CriticalPointWorkletAvoidOverflow{}, vtkmDataSet.GetCellSet(), fieldMin, fieldMax, outMinProb);
+    invoke(CriticalPointWorkletAvoidOverUnderflow{}, vtkmDataSet.GetCellSet(), fieldMin, fieldMax, outMinProb);
     // std::cout << "debug outMinProb:" << std::endl;
     // printSummary_ArrayHandle(outMinProb, std::cout, true);
     vtkmDataSet.AddPointField("MinProb", outMinProb);
