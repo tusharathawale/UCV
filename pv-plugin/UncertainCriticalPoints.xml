@@ -1,0 +1,98 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="filters">
+    <SourceProxy name="EnsembleFieldToHistogramField"
+                 class="vtkEnsembleFieldToHistogramField"
+                 label="Ensemble Field To Histogram Field">
+      <Documentation
+          long_help="Convert a field containing tuples of ensemble members to uncertain values modeled with histograms."
+          short_help="Convert a field of ensemble members to histograms." />
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources" />
+          <Group name="filters" />
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkDataSet" />
+        </DataTypeDomain>
+        <InputArrayDomain name="input_array"
+                          data_type="vtkDataSet" />
+      </InputProperty>
+      <!-- For the input field selections, the default_values specifies the input index. -->
+      <StringVectorProperty animateable="0"
+                            command="SetInputArrayToProcess"
+                            element_types="int int int int str"
+                            default_values="0"
+                            label="Ensemble Member Field"
+                            name="EnsembleMemberField"
+                            number_of_elements="5">
+        <ArrayListDomain attribute_type="Scalars" name="array_list">
+          <RequiredProperties>
+            <Property function="Input" name="Input" />
+          </RequiredProperties>
+        </ArrayListDomain>
+      </StringVectorProperty>
+      <IntVectorProperty command="SetNumberOfBins"
+                         default_values="0"
+                         name="Number Of Bins"
+                         number_of_elements="1" />
+      <Hints>
+        <ShowInMenu category="Uncertainty" />
+      </Hints>
+    </SourceProxy>
+
+  <SourceProxy name="CriticalPointsHistogram"
+               class="vtkCriticalPointsHistogram"
+               label="Uncertain Critical Points using Histograms">
+    <Documentation
+        long_help="Find the probable location of critical points in an uncertain field modeled with histograms."
+        short_help="Probable location of critical points in an uncertain field." />
+    <InputProperty name="Input" command="SetInputConnection">
+      <ProxyGroupDomain name="groups">
+        <Group name="sources" />
+        <Group name="filters" />
+      </ProxyGroupDomain>
+      <DataTypeDomain name="input_type">
+        <DataType value="vtkDataSet" />
+      </DataTypeDomain>
+      <InputArrayDomain attribute_type="point"
+                        name="input_array"
+                        data_type="vtkImageData" />
+    </InputProperty>
+    <!-- For the input field selections, the default_values specifies the input index. -->
+    <StringVectorProperty animateable="0"
+                          command="SetInputArrayToProcess"
+                          element_types="int int int int str"
+                          default_values="0"
+                          label="Histogram Density"
+                          name="HistogramDensity"
+                          number_of_elements="5">
+      <ArrayListDomain attribute_type="Scalars" name="array_list">
+        <RequiredProperties>
+          <Property function="Input" name="Input" />
+        </RequiredProperties>
+      </ArrayListDomain>
+    </StringVectorProperty>
+    <StringVectorProperty animateable="0"
+                          command="SetInputArrayToProcess"
+                          element_types="int int int int str"
+                          default_values="1"
+                          label="Histogram Edges"
+                          name="HistogramEdges"
+                          number_of_elements="5">
+      <ArrayListDomain attribute_type="Scalars" name="array_list">
+        <RequiredProperties>
+          <Property function="Input" name="Input" />
+        </RequiredProperties>
+      </ArrayListDomain>
+    </StringVectorProperty>
+    <IntVectorProperty command="SetNumberOfBins"
+                       default_values="5"
+                       name="Number Of Bins"
+                       number_of_elements="1" />
+    <Hints>
+      <ShowInMenu category="Uncertainty" />
+    </Hints>
+  </SourceProxy>
+
+  </ProxyGroup>
+</ServerManagerConfiguration>

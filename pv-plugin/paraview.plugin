@@ -1,0 +1,5 @@
+NAME
+  UncertainCriticalPoints
+DESCRIPTION
+  A plugin containing filters to compute the probable locations of critical
+  points given uncertainty in the data.
