@@ -65,34 +65,35 @@ public:
 
         LOG(printf("check input a1 %f b1 %f a2 %f b2 %f a3 %f b3 %f a4 %f b4 %f a5 %f b5 %f\n", a1, b1, a2, b2, a3, b3, a4, b4, a5, b5));
 
-        //filter out regions with zero values in it
-        if (abs(a2-0.0)<0.0000001 || abs(a3-0.0)<0.0000001 || abs(a4-0.0)<0.0000001 || abs(a5-0.0)<0.0000001 ){
+        // filter out regions with zero values in it
+        if (abs(a2 - 0.0) < 0.0000001 || abs(a3 - 0.0) < 0.0000001 || abs(a4 - 0.0) < 0.0000001 || abs(a5 - 0.0) < 0.0000001)
+        {
             minProb = 0.0;
             return;
         }
 
-        //if it is not under the region with zeros
-        //do the preprocessing to avoid the data overflow
-        //offset by a1 and scale it a little bit
-        vtkm::FloatDefault a1N = (a1-a1)*this->m_ScaleNum;
-        vtkm::FloatDefault b1N = (b1-a1)*this->m_ScaleNum;
+        // if it is not under the region with zeros
+        // do the preprocessing to avoid the data overflow
+        // offset by a1 and scale it a little bit
+        vtkm::FloatDefault a1N = (a1 - a1) * this->m_ScaleNum;
+        vtkm::FloatDefault b1N = (b1 - a1) * this->m_ScaleNum;
 
-        vtkm::FloatDefault a2N = (a2-a1)*this->m_ScaleNum;
-        vtkm::FloatDefault b2N = (b2-a1)*this->m_ScaleNum;
+        vtkm::FloatDefault a2N = (a2 - a1) * this->m_ScaleNum;
+        vtkm::FloatDefault b2N = (b2 - a1) * this->m_ScaleNum;
 
-        vtkm::FloatDefault a3N = (a3-a1)*this->m_ScaleNum;
-        vtkm::FloatDefault b3N = (b3-a1)*this->m_ScaleNum;
+        vtkm::FloatDefault a3N = (a3 - a1) * this->m_ScaleNum;
+        vtkm::FloatDefault b3N = (b3 - a1) * this->m_ScaleNum;
 
-        vtkm::FloatDefault a4N = (a4-a1)*this->m_ScaleNum;
-        vtkm::FloatDefault b4N = (b4-a1)*this->m_ScaleNum;
-        
-        vtkm::FloatDefault a5N = (a5-a1)*this->m_ScaleNum;
-        vtkm::FloatDefault b5N = (b5-a1)*this->m_ScaleNum;
+        vtkm::FloatDefault a4N = (a4 - a1) * this->m_ScaleNum;
+        vtkm::FloatDefault b4N = (b4 - a1) * this->m_ScaleNum;
+
+        vtkm::FloatDefault a5N = (a5 - a1) * this->m_ScaleNum;
+        vtkm::FloatDefault b5N = (b5 - a1) * this->m_ScaleNum;
 
         LOG(printf("check transformed input a1 %f b1 %f a2 %f b2 %f a3 %f b3 %f a4 %f b4 %f a5 %f b5 %f\n", a1N, b1N, a2N, b2N, a3N, b3N, a4N, b4N, a5N, b5N));
-        
+
         // the logic in superOptimizedAnlyticalLocalMinimumProbabilityComputationEpanechnikov:
-  
+
         // compute bmin
         vtkm::FloatDefault bMin = vtkm::Min(b1N, vtkm::Min(b2N, vtkm::Min(b3N, vtkm::Min(b4N, b5N))));
         LOG(printf("bmin %f\n", bMin));
@@ -160,7 +161,7 @@ public:
         }
 
         vtkm::FloatDefault w1 = b1N - a1N;
-        vtkm::FloatDefault m1 = (b1N+a1N)/2.0;
+        vtkm::FloatDefault m1 = (b1N + a1N) / 2.0;
         // call SuperOptimizedCaseEpanechnikov
         minProb = SuperOptimizedCaseEpanechnikov(indexa1, x1Limit, interval, w1, m1);
         return;
@@ -187,11 +188,11 @@ public:
     }
     //        minimaProb = superOptimizedCase(indexOfa1,x1Limits, sortedI, w1)
     VTKM_EXEC inline vtkm::Float64 SuperOptimizedCaseEpanechnikov(vtkm::Id indexOfa1,
-                                                      vtkm::Vec<vtkm::Float64, 6> x1Limits,
-                                                      vtkm::Vec<vtkm::Pair<vtkm::Float64, vtkm::Float64>, 5> interval,
-                                                      vtkm::Float64 w1,vtkm::Float64 m1) const
+                                                                  vtkm::Vec<vtkm::Float64, 6> x1Limits,
+                                                                  vtkm::Vec<vtkm::Pair<vtkm::Float64, vtkm::Float64>, 5> interval,
+                                                                  vtkm::Float64 w1, vtkm::Float64 m1) const
     {
-        //TODO, this function need to be updated according to the python code
+        // TODO, this function need to be updated according to the python code
         LOG(printf("---debug SuperOptimizedCaseEpanechnikov indexOfa1 %d w1 %f m1 %f\n", indexOfa1, w1, m1));
         LOG(printf("---debug x1Limits\n"));
         for (int i = 0; i < 6; i++)
@@ -206,20 +207,31 @@ public:
         }
         LOG(printf("\n"));
         vtkm::Float64 minProb = 0;
-        // upLimits = [0,None,None,None,None,None]
-        // normalizerWidths = [0, w1, 1,1,1,1]
+
         vtkm::Vec<vtkm::Float64, 6> upLimits({0, vtkm::Nan64(), vtkm::Nan64(), vtkm::Nan64(), vtkm::Nan64(), vtkm::Nan64()});
-        vtkm::Vec<vtkm::Float64, 6> normalizerWidths({0, w1, 1, 1, 1, 1});
+        vtkm::Vec<vtkm::Float64, 6> normalizerFactors({0, 3.0 / (2.0 * w1), 1, 1, 1, 1});
+        // midpoints = [0, m1, None, None, None, None]
+        // intervalHalfWidths = [0, w1/2, None,None,None,None]
+        vtkm::Vec<vtkm::Float64, 6> midpoints({0, m1, vtkm::Nan64(), vtkm::Nan64(), vtkm::Nan64(), vtkm::Nan64()});
+        vtkm::Vec<vtkm::Float64, 6> intervalHalfWidths({0, w1 / 2.0, vtkm::Nan64(), vtkm::Nan64(), vtkm::Nan64(), vtkm::Nan64()});
 
         for (vtkm::Id k = 0; k < indexOfa1; k++)
         {
             auto tempInterval = interval[k];
             upLimits[k + 2] = tempInterval.second;
-            normalizerWidths[k + 2] = tempInterval.second - tempInterval.first;
+            normalizerFactors[k + 2] = 3.0 / (2.0 * (tempInterval.second - tempInterval.first));
+            intervalHalfWidths[k + 2] = (tempInterval.second - tempInterval.first) / 2.0;
+            midpoints[k + 2] = (tempInterval.second + tempInterval.first) / 2.0;
         }
 
         // computing cases before indexOfa1
-        minProb = minProb + ComputeIntegral(x1Limits[indexOfa1], x1Limits[indexOfa1 + 1], upLimits[2], upLimits[3], upLimits[4], upLimits[5], normalizerWidths[1], normalizerWidths[2], normalizerWidths[3], normalizerWidths[4], normalizerWidths[5]);
+        minProb = minProb + computeIntegralEpanechnikov(
+                                x1Limits[indexOfa1], x1Limits[indexOfa1 + 1],
+                                upLimits[2], upLimits[3], upLimits[4], upLimits[5],
+                                normalizerFactors[1], normalizerFactors[2], normalizerFactors[3], normalizerFactors[4], normalizerFactors[5],
+                                midpoints[1], midpoints[2], midpoints[3], midpoints[4], midpoints[5],
+                                intervalHalfWidths[1], intervalHalfWidths[2], intervalHalfWidths[3], intervalHalfWidths[4], intervalHalfWidths[5]);
+
         LOG(printf("----debug minProb first case %f\n", minProb));
         // computing cases after indexOfa1
         for (vtkm::Id i = indexOfa1 + 1; i < 5; i++)
@@ -231,23 +243,41 @@ public:
             }
             auto tempInterval = interval[i];
             upLimits[i + 1] = tempInterval.second;
-            normalizerWidths[i + 1] = tempInterval.second - tempInterval.first;
-            minProb = minProb + ComputeIntegral(x1Limits[i], x1Limits[i + 1], upLimits[2], upLimits[3], upLimits[4], upLimits[5], normalizerWidths[1], normalizerWidths[2], normalizerWidths[3], normalizerWidths[4], normalizerWidths[5]);
+            normalizerFactors[i + 1] = 3.0 / (2.0 * (tempInterval.second - tempInterval.first));
+            intervalHalfWidths[i + 1] = (tempInterval.second - tempInterval.first) / 2.0;
+            midpoints[i + 1] = (tempInterval.second + tempInterval.first) / 2.0;
+            minProb = minProb + computeIntegralEpanechnikov(
+                x1Limits[i], x1Limits[i + 1], 
+                upLimits[2], upLimits[3], upLimits[4], upLimits[5], 
+                normalizerFactors[1], normalizerFactors[2], normalizerFactors[3], normalizerFactors[4], normalizerFactors[5],
+                midpoints[1], midpoints[2], midpoints[3], midpoints[4], midpoints[5],
+                intervalHalfWidths[1], intervalHalfWidths[2], intervalHalfWidths[3], intervalHalfWidths[4], intervalHalfWidths[5]   
+                );
         }
         return minProb;
     }
 
-    VTKM_EXEC inline vtkm::Float64 ComputeIntegral(vtkm::Float64 l,
-                                                   vtkm::Float64 h,
-                                                   vtkm::Float64 h2,
-                                                   vtkm::Float64 h3,
-                                                   vtkm::Float64 h4,
-                                                   vtkm::Float64 h5,
-                                                   vtkm::Float64 n1,
-                                                   vtkm::Float64 n2,
-                                                   vtkm::Float64 n3,
-                                                   vtkm::Float64 n4,
-                                                   vtkm::Float64 n5) const
+    VTKM_EXEC inline vtkm::Float64 computeIntegralEpanechnikov(vtkm::Float64 l,
+                                                               vtkm::Float64 h,
+                                                               vtkm::Float64 h2,
+                                                               vtkm::Float64 h3,
+                                                               vtkm::Float64 h4,
+                                                               vtkm::Float64 h5,
+                                                               vtkm::Float64 n1,
+                                                               vtkm::Float64 n2,
+                                                               vtkm::Float64 n3,
+                                                               vtkm::Float64 n4,
+                                                               vtkm::Float64 n5,
+                                                               vtkm::Float64 mid1,
+                                                               vtkm::Float64 mid2,
+                                                               vtkm::Float64 mid3,
+                                                               vtkm::Float64 mid4,
+                                                               vtkm::Float64 mid5,
+                                                               vtkm::Float64 wid1,
+                                                               vtkm::Float64 wid2,
+                                                               vtkm::Float64 wid3,
+                                                               vtkm::Float64 wid4,
+                                                               vtkm::Float64 wid5) const
     {
         LOG(printf("---debug ComputeIntegral input %f %f %f %f %f %f %f %f %f %f %f\n", l, h, h2, h3, h4, h5, n1, n2, n3, n4, n5));
         vtkm::Float64 intUp = 0;
@@ -308,5 +338,5 @@ public:
 };
 
 private:
-    double m_ScaleNum = 10000;
+double m_ScaleNum = 10000;
 #endif // UCV_CRITICAL_POINT_h
