@@ -1,0 +1,12 @@
+NAME
+  UncertainCriticalPointsVTKFilters
+LIBRARY_NAME
+  vtkUncertainCriticalPointsFilters
+DESCRIPTION
+  Filters to compute the probable locations of critical points given
+  uncertainty in the data.
+DEPENDS
+  VTK::AcceleratorsVTKmCore
+  VTK::AcceleratorsVTKmDataModel
+  VTK::CommonExecutionModel
+  VTK::FiltersCore

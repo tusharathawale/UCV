@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.12...3.15 FATAL_ERROR)
 project(ucv LANGUAGES C CXX)
 add_compile_options(-std=c++17)
 
+option(BUILD_PARAVIEW_PLUGIN
+  "Build a plugin for ParaView that makes uncertainty filters available."
+  OFF
+  )
+if(BUILD_PARAVIEW_PLUGIN)
+  find_package(ParaView REQUIRED)
+endif()
+
 #Find the VTK-m package
 find_package(VTKm REQUIRED)
 #set(VTKm_LIBRARIES vtkm::cont vtkm::filter vtkm::source vtkm::vtkmdiympi vtkm::io)
@@ -75,3 +83,21 @@ target_link_libraries(LoadWeatherProcessByMC ${VTKm_LIBRARIES})
 
 endif()
 
+if(BUILD_PARAVIEW_PLUGIN)
+  # ParaView plugins need this included to be built.
+  # (Why don't they just include themselves?)
+  include(GNUInstallDirs)
+
+  # ParaView plugins need to be packaged in a shared library
+  set(BUILD_SHARED_LIBS ON)
+
+  paraview_plugin_scan(
+    PLUGIN_FILES ${CMAKE_CURRENT_SOURCE_DIR}/pv-plugin/paraview.plugin
+    PROVIDES_PLUGINS plugins
+    ENABLE_BY_DEFAULT ON
+    HIDE_PLUGINS_FROM_CACHE ON
+    )
+
+  # Note: this will call subdirectory for pv-plugin so we don't have to.
+  paraview_plugin_build(PLUGINS ${plugins})
+endif()
