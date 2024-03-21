@@ -75,6 +75,10 @@ target_link_libraries(LoadEnsAndProcessByMC ${VTKm_LIBRARIES})
 add_executable(LoadWeatherProcessByMC LoadWeatherProcessByMC.cpp)
 target_link_libraries(LoadWeatherProcessByMC ${VTKm_LIBRARIES})
 
+add_executable(LoadEnsAndProcessByEpanech LoadEnsAndProcessByEpanech.cpp)
+target_link_libraries(LoadEnsAndProcessByEpanech ${VTKm_LIBRARIES})
+
+
 
 
 endif()

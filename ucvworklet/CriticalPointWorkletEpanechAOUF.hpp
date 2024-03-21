@@ -24,11 +24,11 @@ public:
                               const InPointField &maxValue,
                               OutPointField &minProb,
                               const vtkm::exec::BoundaryState &boundary,
-                              vtkm::Id WorkIndex) const
+                              vtkm::Id LOG(WorkIndex)) const
     {
         // resluts is the coordinates of three dims
-        auto minIndices = boundary.MinNeighborIndices(this->m_neighborhoodSize);
-        auto maxIndices = boundary.MaxNeighborIndices(this->m_neighborhoodSize);
+        auto minIndices = boundary.MinNeighborIndices(1);
+        auto maxIndices = boundary.MaxNeighborIndices(1);
 
         // minIndices is supposed to be -1
         // maxIndices is supposed to be 1
@@ -247,12 +247,11 @@ public:
             intervalHalfWidths[i + 1] = (tempInterval.second - tempInterval.first) / 2.0;
             midpoints[i + 1] = (tempInterval.second + tempInterval.first) / 2.0;
             minProb = minProb + computeIntegralEpanechnikov(
-                x1Limits[i], x1Limits[i + 1], 
-                upLimits[2], upLimits[3], upLimits[4], upLimits[5], 
-                normalizerFactors[1], normalizerFactors[2], normalizerFactors[3], normalizerFactors[4], normalizerFactors[5],
-                midpoints[1], midpoints[2], midpoints[3], midpoints[4], midpoints[5],
-                intervalHalfWidths[1], intervalHalfWidths[2], intervalHalfWidths[3], intervalHalfWidths[4], intervalHalfWidths[5]   
-                );
+                                    x1Limits[i], x1Limits[i + 1],
+                                    upLimits[2], upLimits[3], upLimits[4], upLimits[5],
+                                    normalizerFactors[1], normalizerFactors[2], normalizerFactors[3], normalizerFactors[4], normalizerFactors[5],
+                                    midpoints[1], midpoints[2], midpoints[3], midpoints[4], midpoints[5],
+                                    intervalHalfWidths[1], intervalHalfWidths[2], intervalHalfWidths[3], intervalHalfWidths[4], intervalHalfWidths[5]);
         }
         return minProb;
     }
@@ -279,64 +278,82 @@ public:
                                                                vtkm::Float64 wid4,
                                                                vtkm::Float64 wid5) const
     {
-        LOG(printf("---debug ComputeIntegral input %f %f %f %f %f %f %f %f %f %f %f\n", l, h, h2, h3, h4, h5, n1, n2, n3, n4, n5));
-        vtkm::Float64 intUp = 0;
-        vtkm::Float64 intDown = 0;
+        LOG(printf("---debug ComputeIntegral input %f %f %f %f %f %f, %f %f %f %f %f, %f %f %f %f %f, %f %f %f %f %f\n",
+                   l, h, h2, h3, h4, h5, n1, n2, n3, n4, n5, mid1, mid2, mid3, mid4, mid5, wid1, wid2, wid3, wid4, wid5));
+        vtkm::Float64 intUp = 0.0;
+        vtkm::Float64 intDown = 0.0;
 
+        vtkm::Float64 normalizingFactor = n1 * n2 * n3 * n4 * n5;
+
+        // ln is none
         bool ln = isnan(l);
         bool hn = isnan(h);
+
         bool h2n = isnan(h2);
         bool h3n = isnan(h3);
         bool h4n = isnan(h4);
         bool h5n = isnan(h5);
+
         bool n1n = isnan(n1);
         bool n2n = isnan(n2);
         bool n3n = isnan(n3);
         bool n4n = isnan(n4);
         bool n5n = isnan(n5);
 
-        // printf("check if nan %d %d %d\n",isnan(h3), isnan(h4),isnan(h5));
-        vtkm::Float64 normalizingFactor = 1.0 / (n1 * n2 * n3 * n4 * n5);
-
+        // integral 1
         if ((!ln) && (!hn) && (h2n) && (h3n) && (h4n) && (h5n))
         {
-            LOG(printf("---c1\n"));
-            intUp = normalizingFactor * h;
-            intDown = normalizingFactor * l;
+            intUp = normalizingFactor * (h - vtkm::Pow((h - mid1), 3) / (3 * wid1 * wid1));
+            intDown = normalizingFactor * (l - vtkm::Pow((l - mid1), 3) / (3 * wid1 * wid1));
         }
-
+        // integral 2
         if ((!ln) && (!hn) && (!h2n) && (h3n) && (h4n) && (h5n))
         {
-            LOG(printf("---c2\n"));
-            intUp = normalizingFactor * (h2 * h - h * h / 2);
-            intDown = normalizingFactor * (h2 * l - l * l / 2);
+            vtkm::Float64 k2 = h2 - (vtkm::Pow((h2 - mid2), 3) / (3 * (vtkm::Pow(wid2, 2))));
+            intUp = normalizingFactor * (h * (-15 * mid1 * mid1 * (12 * k2 * (wid2)*wid2 - 4 * vtkm::Pow(mid2, 3) + 6 * mid2 * mid2 * h - 4 * mid2 * h * h - 6 * h * (wid2)*wid2 + h * h * h) + 6 * mid1 * h * (30 * k2 * (wid2)*wid2 - 10 * mid2 * mid2 * mid2 + 20 * mid2 * mid2 * h - 15 * mid2 * h * h + 4 * h * (h * h - 5 * (wid2)*wid2)) + 5 * (-12 * k2 * (wid2)*wid2 * (h * h - 3 * (wid1)*wid1) + 3 * h * (wid1)*wid1 * (h * h - 6 * (wid2)*wid2) + 9 * h * h * h * (wid2)*wid2 - 2 * vtkm::Pow(h, 5)) + 20 * mid2 * mid2 * mid2 * (h * h - 3 * (wid1)*wid1) - 45 * mid2 * mid2 * (h * h * h - 2 * h * (wid1)*wid1) + mid2 * (36 * vtkm::Pow(h, 4) - 60 * h * h * (wid1)*wid1))) / (180 * (wid1)*wid1 * (wid2)*wid2);
+            intDown = normalizingFactor * (l * (-15 * mid1 * mid1 * (12 * k2 * (wid2)*wid2 - 4 * vtkm::Pow(mid2, 3) + 6 * mid2 * mid2 * l - 4 * mid2 * l * l - 6 * l * (wid2)*wid2 + l * l * l) + 6 * mid1 * l * (30 * k2 * (wid2)*wid2 - 10 * mid2 * mid2 * mid2 + 20 * mid2 * mid2 * l - 15 * mid2 * l * l + 4 * l * (l * l - 5 * (wid2)*wid2)) + 5 * (-12 * k2 * (wid2)*wid2 * (l * l - 3 * (wid1)*wid1) + 3 * l * (wid1)*wid1 * (l * l - 6 * (wid2)*wid2) + 9 * l * l * l * (wid2)*wid2 - 2 * vtkm::Pow(l, 5)) + 20 * mid2 * mid2 * mid2 * (l * l - 3 * (wid1)*wid1) - 45 * mid2 * mid2 * (l * l * l - 2 * l * (wid1)*wid1) + mid2 * (36 * vtkm::Pow(l, 4) - 60 * l * l * (wid1)*wid1))) / (180 * (wid1)*wid1 * (wid2)*wid2);
         }
-
+        // integral 3
         if ((!ln) && (!hn) && (!h2n) && (!h3n) && (h4n) && (h5n))
         {
-            LOG(printf("---c3\n"));
-            intUp = normalizingFactor * (h3 * h2 * h - (h3 + h2) * h * h / 2 + h * h * h / 3);
-            intDown = normalizingFactor * (h3 * h2 * l - (h3 + h2) * l * l / 2 + l * l * l / 3);
-        }
+            vtkm::Float64 k2 = h2 - (vtkm::Pow((h2 - mid2), 3) / (3 * (wid2 * wid2)));
+            vtkm::Float64 k3 = h3 - (vtkm::Pow((h3 - mid3), 3) / (3 * (wid3 * wid3)));
 
+            vtkm::Float64 f = (-1.0) * (1.0 / (22680 * wid1 * wid1 * wid2 * wid2 * wid3 * wid3));
+            vtkm::Float64 f9 = f * 280.0;
+            vtkm::Float64 f8 = f * (-945 * mid3 - 945 * mid2 - 630 * mid1);
+            vtkm::Float64 f7 = f * (-1080 * wid3 * wid3 - 1080 * wid2 * wid2 - 360 * wid1 * wid1 + 1080 * mid3 * mid3 + (3240 * mid2 + 2160 * mid1) * mid3 + 1080 * mid2 * mid2 + 2160 * mid1 * mid2 + 360 * mid1 * mid1);
+            vtkm::Float64 f6 = f * ((3780 * mid2 + 2520 * mid1 + 1260 * k3) * wid3 * wid3 + (3780 * mid3 + 2520 * mid1 + 1260 * k2) * wid2 * wid2 + (1260 * mid3 + 1260 * mid2) * wid1 * wid1 - 420 * mid3 * mid3 * mid3 + (-3780 * mid2 - 2520 * mid1) * mid3 * mid3 + (-3780 * mid2 * mid2 - 7560 * mid1 * mid2 - 1260 * mid1 * mid1) * mid3 - 420 * mid2 * mid2 * mid2 - 2520 * mid1 * mid2 * mid2 - 1260 * mid1 * mid1 * mid2);
+            vtkm::Float64 f5 = f * ((4536 * wid2 * wid2 + 1512 * wid1 * wid1 - 4536 * mid2 * mid2 + (-9072 * mid1 - 4536 * k3) * mid2 - 1512 * mid1 * mid1 - 3024 * k3 * mid1) * wid3 * wid3 + (1512 * wid1 * wid1 - 4536 * mid3 * mid3 + (-9072 * mid1 - 4536 * k2) * mid3 - 1512 * mid1 * mid1 - 3024 * k2 * mid1) * wid2 * wid2 + (-1512 * mid3 * mid3 - 4536 * mid2 * mid3 - 1512 * mid2 * mid2) * wid1 * wid1 + (1512 * mid2 + 1008 * mid1) * mid3 * mid3 * mid3 + (4536 * mid2 * mid2 + 9072 * mid1 * mid2 + 1512 * mid1 * mid1) * mid3 * mid3 + (1512 * mid2 * mid2 * mid2 + 9072 * mid1 * mid2 * mid2 + 4536 * mid1 * mid1 * mid2) * mid3 + 1008 * mid1 * mid2 * mid2 * mid2 + 1512 * mid1 * mid1 * mid2 * mid2);
+            vtkm::Float64 f4 = f * (((-11340 * mid1 - 5670 * k3 - 5670 * k2) * wid2 * wid2 + (-5670 * mid2 - 1890 * k3) * wid1 * wid1 + 1890 * mid2 * mid2 * mid2 + (11340 * mid1 + 5670 * k3) * mid2 * mid2 + (5670 * mid1 * mid1 + 11340 * k3 * mid1) * mid2 + 1890 * k3 * mid1 * mid1) * wid3 * wid3 + ((-5670 * mid3 - 1890 * k2) * wid1 * wid1 + 1890 * mid3 * mid3 * mid3 + (11340 * mid1 + 5670 * k2) * mid3 * mid3 + (5670 * mid1 * mid1 + 11340 * k2 * mid1) * mid3 + 1890 * k2 * mid1 * mid1) * wid2 * wid2 + (630 * mid3 * mid3 * mid3 + 5670 * mid2 * mid3 * mid3 + 5670 * mid2 * mid2 * mid3 + 630 * mid2 * mid2 * mid2) * wid1 * wid1 + (-1890 * mid2 * mid2 - 3780 * mid1 * mid2 - 630 * mid1 * mid1) * mid3 * mid3 * mid3 + (-1890 * mid2 * mid2 * mid2 - 11340 * mid1 * mid2 * mid2 - 5670 * mid1 * mid1 * mid2) * mid3 * mid3 * mid3 + (-3780 * mid1 * mid2 * mid2 * mid2 - 5670 * mid1 * mid1 * mid2 * mid2) * mid3 - 630 * mid1 * mid1 * mid2 * mid2 * mid2);
+            vtkm::Float64 f3 = f * (((-7560 * wid1 * wid1 + 7560 * mid1 * mid1 + (15120 * k3 + 15120 * k2) * mid1 + 7560 * k2 * k3) * wid2 * wid2 + (7560 * mid2 * mid2 + 7560 * k3 * mid2) * wid1 * wid1 + (-5040 * mid1 - 2520 * k3) * mid2 * mid2 * mid2 + (-7560 * mid1 * mid1 - 15120 * k3 * mid1) * mid2 * mid2 - 7560 * k3 * mid1 * mid1 * mid2) * wid3 * wid3 + ((7560 * mid3 * mid3 + 7560 * k2 * mid3) * wid1 * wid1 + (-5040 * mid1 - 2520 * k2) * mid3 * mid3 * mid3 + (-7560 * mid1 * mid1 - 15120 * k2 * mid1) * mid3 * mid3 - 7560 * k2 * mid1 * mid1 * mid3) * wid2 * wid2 + (-2520 * mid2 * mid3 * mid3 * mid3 - 7560 * mid2 * mid2 * mid3 * mid3 - 2520 * mid2 * mid2 * mid3) * wid1 * wid1 + (840 * mid2 * mid2 * mid2 + 5040 * mid1 * mid2 * mid2 + 2520 * mid1 * mid1 * mid2) * mid3 * mid3 * mid3 + (5040 * mid1 * mid2 * mid2 * mid2 + 7560 * mid1 * mid1 * mid2 * mid2) * mid3 * mid3 + 2520 * mid1 * mid1 * mid2 * mid2 * mid2 * mid3);
+            vtkm::Float64 f2 = f * ((((11340 * k3 + 11340 * k2) * wid1 * wid1 + (-11340 * k3 - 11340 * k2) * mid1 * mid1 - 22680 * k2 * k3 * mid1) * wid2 * wid2 + (-3780 * mid2 * mid2 * mid2 - 11340 * k3 * mid2 * mid2) * wid1 * wid1 + (3780 * mid1 * mid1 + 7560 * k3 * mid1) * mid2 * mid2 * mid2 + 11340 * k3 * mid1 * mid1 * mid2 * mid2) * wid3 * wid3 + ((-3780 * mid3 * mid3 * mid3 - 11340 * k2 * mid3 * mid3) * wid1 * wid1 + (3780 * mid1 * mid1 + 7560 * k2 * mid1) * mid3 * mid3 * mid3 + 11340 * k2 * mid1 * mid1 * mid3 * mid3) * wid2 * wid2 + (3780 * mid2 * mid2 * mid3 * mid3 * mid3 + 3780 * mid2 * mid2 * mid2 * mid3 * mid3) * wid1 * wid1 + (-2520 * mid1 * mid2 * mid2 * mid2 - 3780 * mid1 * mid1 * mid2 * mid2) * mid3 * mid3 * mid3 - 3780 * mid1 * mid1 * mid2 * mid2 * mid2 * mid3 * mid3);
+            vtkm::Float64 f1 = f * (((22680 * k2 * k3 * mid1 * mid1 - 22680 * k2 * k3 * wid1 * wid1) * wid2 * wid2 + 7560 * k3 * mid2 * mid2 * mid2 * wid1 * wid1 - 7560 * k3 * mid1 * mid1 * mid2 * mid2 * mid2) * wid3 * wid3 + (7560 * k2 * mid3 * mid3 * mid3 * wid1 * wid1 - 7560 * k2 * mid1 * mid1 * mid3 * mid3 * mid3) * wid2 * wid2 - 2520 * mid2 * mid2 * mid2 * mid3 * mid3 * mid3 * wid1 * wid1 + 2520 * mid1 * mid1 * mid2 * mid2 * mid2 * mid3 * mid3 * mid3);
+
+            intUp = normalizingFactor * (f9 * vtkm::Pow(h, 9) + f8 * vtkm::Pow(h, 8) + f7 * vtkm::Pow(h, 7) + f6 * vtkm::Pow(h, 6) + f5 * vtkm::Pow(h, 5) + f4 * vtkm::Pow(h, 4) + f3 * vtkm::Pow(h, 3) + f2 * h * h + f1 * h);
+            intDown = normalizingFactor * (f9 * vtkm::Pow(l, 9) + f8 * vtkm::Pow(l, 8) + f7 * vtkm::Pow(l, 7) + f6 * vtkm::Pow(l, 6) + f5 * vtkm::Pow(l, 5) + f4 * vtkm::Pow(l, 4) + f3 * vtkm::Pow(l, 3) + f2 * l * l + f1 * l);
+
+            if ((intUp - intDown) > 1)
+            {
+                printf("error in integral 3\n");
+            }
+        }
+        // integral 4
         if ((!ln) && (!hn) && (!h2n) && (!h3n) && (!h4n) && (h5n))
         {
-            LOG(printf("---c4\n"));
-            intUp = normalizingFactor * (h4 * h3 * h2 * h - (h2 * h3 + h2 * h4 + h3 * h4) * (h * h / 2) + (h2 + h3 + h4) * (h * h * h / 3) - h * h * h * h / 4);
-            intDown = normalizingFactor * (h4 * h3 * h2 * l - (h2 * h3 + h2 * h4 + h3 * h4) * (l * l / 2) + (h2 + h3 + h4) * (l * l * l / 3) - l * l * l * l / 4);
+            // TODO
         }
-
+        // integral 5
         if ((!ln) && (!hn) && (!h2n) && (!h3n) && (!h4n) && (!h5n))
         {
-            LOG(printf("---c5\n"));
-            intUp = normalizingFactor * (h5 * h4 * h3 * h2 * h - (h2 * h3 * h4 + h2 * h3 * h5 + h2 * h4 * h5 + h3 * h4 * h5) * (h * h / 2) + (h2 * h3 + h2 * h4 + h2 * h5 + h3 * h4 + h3 * h5 + h4 * h5) * (h * h * h / 3) - (h2 + h3 + h4 + h5) * (h * h * h * h / 4) + h * h * h * h * h / 5);
-            intDown = normalizingFactor * (h5 * h4 * h3 * h2 * l - (h2 * h3 * h4 + h2 * h3 * h5 + h2 * h4 * h5 + h3 * h4 * h5) * (l * l / 2) + (h2 * h3 + h2 * h4 + h2 * h5 + h3 * h4 + h3 * h5 + h4 * h5) * (l * l * l / 3) - (h2 + h3 + h4 + h5) * (l * l * l * l / 4) + l * l * l * l * l / 5);
+            // TODO
         }
 
         return (intUp - intDown);
     }
-};
 
 private:
-double m_ScaleNum = 10000;
-#endif // UCV_CRITICAL_POINT_h
+    double m_ScaleNum = 10000;
+};
+
+#endif // UCV_CRITICAL_POINT_EPANECH_AOUF_h
