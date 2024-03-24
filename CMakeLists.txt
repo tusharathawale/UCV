@@ -284,6 +284,9 @@ target_link_libraries(test_syntheticdata_el_combine_data_to_one_ensemble ${VTKm_
 add_executable(ucv_amrex_uni ucv_amrex_uni.cpp)
 target_link_libraries(ucv_amrex_uni ${VTKm_LIBRARIES})
 
+add_executable(ucv_hurrican_data ucv_hurrican_data.cpp)
+target_link_libraries(ucv_hurrican_data ${VTKm_LIBRARIES})
+
 endif()
 
 
