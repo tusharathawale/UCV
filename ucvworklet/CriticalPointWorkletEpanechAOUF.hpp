@@ -341,7 +341,53 @@ public:
         // integral 4
         if ((!ln) && (!hn) && (!h2n) && (!h3n) && (!h4n) && (h5n))
         {
-            // TODO
+            vtkm::Float64 k2 = h2 - (vtkm::Pow((h2 - mid2), 3) / (3 * (wid2 * wid2)));
+            vtkm::Float64 k3 = h3 - (vtkm::Pow((h3 - mid3), 3) / (3 * (wid3 * wid3)));
+            vtkm::Float64 k4 = h4 - (vtkm::Pow((h4 - mid4), 3) / (3 * (wid4 * wid4)));
+
+            // Below is plain multiplication of (w1^2 - (x-m1)^2/(w1^2))*(k2 - x + (x-m2)^3/(3w2^2))*(k3 - x + (x-m3)^3/(3w3^2))
+            // separated into factors f of x^8, x^7.....
+
+            vtkm::Float64 f = 1.0 / (9.0 * wid1 * wid1 * wid2 * wid2 * wid3 * wid3);
+
+            vtkm::Float64 f8 = f * (-1);
+            vtkm::Float64 f7 = f * (2 * mid1 + 3 * mid2 + 3 * mid3);
+            vtkm::Float64 f6 = f * (-mid1 * mid1 - 6 * mid2 * mid1 - 6 * mid3 * mid1 - 3 * mid2 * mid2 - 3 * mid3 * mid3 + wid1 * wid1 + 3 * wid2 * wid2 + 3 * wid3 * wid3 - 9 * mid2 * mid3);
+
+            vtkm::Float64 f5 = f * (mid2 * mid2 * mid2 + 6 * mid1 * mid2 * mid2 + 9 * mid3 * mid2 * mid2 + 3 * mid1 * mid1 * mid2 + 9 * mid3 * mid3 * mid2 - 3 * wid1 * wid1 * mid2 - 9 * wid3 * wid3 * mid2 + 18 * mid1 * mid3 * mid2 + mid3 * mid3 * mid3 + 6 * mid1 * mid3 * mid3 - 3 * mid3 * wid1 * wid1 - 3 * k2 * wid2 * wid2 - 6 * mid1 * wid2 * wid2 - 9 * mid3 * wid2 * wid2 - 3 * k3 * wid3 * wid3 - 6 * mid1 * wid3 * wid3 + 3 * mid1 * mid1 * mid3);
+
+            vtkm::Float64 f4 = f * (-2 * mid1 * mid2 * mid2 * mid2 - 3 * mid3 * mid2 * mid2 * mid2 - 3 * mid1 * mid1 * mid2 * mid2 - 9 * mid3 * mid3 * mid2 * mid2 + 3 * wid1 * wid1 * mid2 * mid2 + 9 * wid3 * wid3 * mid2 * mid2 - 18 * mid1 * mid3 * mid2 * mid2 - 3 * mid3 * mid3 * mid3 * mid2 - 18 * mid1 * mid3 * mid3 * mid2 + 9 * mid3 * wid1 * wid1 * mid2 + 9 * k3 * wid3 * wid3 * mid2 + 18 * mid1 * wid3 * wid3 * mid2 - 9 * mid1 * mid1 * mid3 * mid2 - 2 * mid1 * mid3 * mid3 * mid3 - 3 * mid1 * mid1 * mid3 * mid3 + 3 * mid3 * mid3 * wid1 * wid1 + 3 * mid1 * mid1 * wid2 * wid2 + 9 * mid3 * mid3 * wid2 * wid2 - 3 * wid1 * wid1 * wid2 * wid2 + 6 * k2 * mid1 * wid2 * wid2 + 9 * k2 * mid3 * wid2 * wid2 + 18 * mid1 * mid3 * wid2 * wid2 + 3 * mid1 * mid1 * wid3 * wid3 - 3 * wid1 * wid1 * wid3 * wid3 - 9 * wid2 * wid2 * wid3 * wid3 + 6 * k3 * mid1 * wid3 * wid3);
+
+            vtkm::Float64 f3 = f * (mid1 * mid1 * mid2 * mid2 * mid2 + 3 * mid3 * mid3 * mid2 * mid2 * mid2 - wid1 * wid1 * mid2 * mid2 * mid2 - 3 * wid3 * wid3 * mid2 * mid2 * mid2 + 6 * mid1 * mid3 * mid2 * mid2 * mid2 + 3 * mid3 * mid3 * mid3 * mid2 * mid2 + 18 * mid1 * mid3 * mid3 * mid2 * mid2 - 9 * mid3 * wid1 * wid1 * mid2 * mid2 - 9 * k3 * wid3 * wid3 * mid2 * mid2 - 18 * mid1 * wid3 * wid3 * mid2 * mid2 + 9 * mid1 * mid1 * mid3 * mid2 * mid2 + 6 * mid1 * mid3 * mid3 * mid3 * mid2 + 9 * mid1 * mid1 * mid3 * mid3 * mid2 - 9 * mid3 * mid3 * wid1 * wid1 * mid2 - 9 * mid1 * mid1 * wid3 * wid3 * mid2 + 9 * wid1 * wid1 * wid3 * wid3 * mid2 - 18 * k3 * mid1 * wid3 * wid3 * mid2 + mid1 * mid1 * mid3 * mid3 * mid3 - mid3 * mid3 * mid3 * wid1 * wid1 - 3 * mid3 * mid3 * mid3 * wid2 * wid2 - 3 * k2 * mid1 * mid1 * wid2 * wid2 - 9 * k2 * mid3 * mid3 * mid3 * wid2 * wid2 - 18 * mid1 * mid3 * mid3 * wid2 * wid2 + 3 * k2 * wid1 * wid1 * wid2 * wid2 + 9 * mid3 * wid1 * wid1 * wid2 * wid2 - 9 * mid1 * mid1 * mid3 * wid2 * wid2 - 18 * k2 * mid1 * mid3 * wid2 * wid2 - 3 * k3 * mid1 * mid1 * wid3 * wid3 + 3 * k3 * wid1 * wid1 * wid3 * wid3 + 9 * k2 * wid2 * wid2 * wid3 * wid3 + 9 * k3 * wid2 * wid2 * wid3 * wid3 + 18 * mid1 * wid2 * wid2 * wid3 * wid3);
+
+            vtkm::Float64 f2 = f * (-mid3 * mid3 * mid3 * mid2 * mid2 * mid2 - 6 * mid1 * mid3 * mid3 * mid2 * mid2 * mid2 + 3 * mid3 * wid1 * wid1 * mid2 * mid2 * mid2 + 3 * k3 * wid3 * wid3 * mid2 * mid2 * mid2 + 6 * mid1 * wid3 * wid3 * mid2 * mid2 * mid2 - 3 * mid1 * mid1 * mid3 * mid2 * mid2 * mid2 - 6 * mid1 * mid3 * mid3 * mid3 * mid2 * mid2 - 9 * mid1 * mid1 * mid3 * mid3 * mid2 * mid2 + 9 * mid3 * mid3 * wid1 * wid1 * mid2 * mid2 + 9 * mid1 * mid1 * wid3 * wid3 * mid2 * mid2 - 9 * wid1 * wid1 * wid3 * wid3 * mid2 * mid2 + 18 * k3 * mid1 * wid3 * wid3 * mid2 * mid2 - 3 * mid1 * mid1 * mid3 * mid3 * mid3 * mid2 + 3 * mid3 * mid3 * mid3 * wid1 * wid1 * mid2 + 9 * k3 * mid1 * mid1 * wid3 * wid3 * mid2 - 9 * k3 * wid1 * wid1 * wid3 * wid3 * wid3 * mid2 + 3 * k2 * mid3 * mid3 * mid3 * wid2 * wid2 + 6 * mid1 * mid3 * mid3 * mid3 * wid2 * wid2 + 9 * mid1 * mid1 * mid3 * mid3 * wid2 * wid2 + 18 * k2 * mid1 * mid3 * mid3 * wid2 * wid2 - 9 * mid3 * mid3 * wid1 * wid1 * wid2 * wid2 - 9 * k2 * mid3 * wid1 * wid1 * wid2 * wid2 + 9 * k2 * mid1 * mid1 * mid3 * wid2 * wid2 - 9 * mid1 * mid1 * wid2 * wid2 * wid3 * wid3 + 9 * wid1 * wid1 * wid2 * wid2 * wid3 * wid3 - 9 * k2 * k3 * wid2 * wid2 * wid3 * wid3 - 18 * k2 * mid1 * wid2 * wid2 * wid3 * wid3 - 18 * k3 * mid1 * wid2 * wid2 * wid3 * wid3);
+
+            vtkm::Float64 f1 = f * (2 * mid1 * mid3 * mid3 * mid3 * mid2 * mid2 * mid2 + 3 * mid1 * mid1 * mid3 * mid3 * mid2 * mid2 * mid2 - 3 * mid3 * mid3 * wid1 * wid1 * mid2 * mid2 * mid2 - 3 * mid1 * mid1 * wid3 * wid3 * mid2 * mid2 * mid2 + 3 * wid1 * wid1 * wid3 * wid3 * mid2 * mid2 * mid2 - 6 * k3 * mid1 * wid3 * wid3 * mid2 * mid2 * mid2 + 3 * mid1 * mid1 * mid3 * mid3 * mid3 * mid2 * mid2 - 3 * mid3 * mid3 * mid3 * wid1 * wid1 * mid2 * mid2 - 9 * k3 * mid1 * mid1 * wid3 * wid3 * mid2 * mid2 + 9 * k3 * wid1 * wid1 * wid3 * wid3 * mid2 * mid2 - 3 * mid1 * mid1 * mid3 * mid3 * mid3 * wid2 * wid2 - 6 * k2 * mid1 * mid3 * mid3 * mid3 * wid2 * wid2 - 9 * k2 * mid1 * mid1 * mid3 * mid3 * wid2 * wid2 + 3 * mid3 * mid3 * mid3 * wid1 * wid1 * wid2 * wid2 + 9 * k2 * mid3 * mid3 * wid1 * wid1 * wid2 * wid2 + 9 * k2 * mid1 * mid1 * wid2 * wid2 * wid3 * wid3 + 9 * k3 * mid1 * mid1 * wid2 * wid2 * wid3 * wid3 - 9 * k2 * wid1 * wid1 * wid2 * wid2 * wid3 * wid3 - 9 * k3 * wid1 * wid1 * wid2 * wid2 * wid3 * wid3 + 18 * k2 * k3 * mid1 * wid2 * wid2 * wid3 * wid3);
+            vtkm::Float64 f0 = f * (-mid1 * mid1 * mid2 * mid2 * mid2 * mid3 * mid3 * mid3 + mid2 * mid2 * mid2 * mid3 * mid3 * mid3 * wid1 * wid1 + 3 * k2 * mid1 * mid1 * mid3 * mid3 * mid3 * wid2 * wid2 - 3 * k2 * mid3 * mid3 * mid3 * wid1 * wid1 * wid2 * wid2 + 3 * k3 * mid1 * mid1 * mid2 * mid2 * mid2 * wid3 * wid3 - 3 * k3 * mid2 * mid2 * mid2 * wid1 * wid1 * wid3 * wid3 - 9 * k2 * k3 * mid1 * mid1 * wid2 * wid2 * wid3 * wid3 + 9 * k2 * k3 * wid1 * wid1 * wid2 * wid2 * wid3 * wid3);
+
+            // Below is the integral of (f8*x^8+f7*x^7+..+f0)*(k4 - x + (x-m4)^3/(3w4^2)) calculated and separated into
+            // factors s of x^12, x^11, ..
+            vtkm::Float64 s = 1.0 / (83160 * wid4 * wid4);
+            vtkm::Float64 s12 = s * (2310 * f8);
+            vtkm::Float64 s11 = s * (2520 * f7 - 7560 * f8 * mid4);
+            vtkm::Float64 s10 = s * (-8316 * f8 * wid4 * wid4 + 8316 * f8 * mid4 * mid4 - 8316 * f7 * mid4 + 2772 * f6);
+            vtkm::Float64 s9 = s * ((9240 * f8 * k4 - 9240 * f7) * wid4 * wid4 - 3080 * f8 * mid4 * mid4 * mid4 + 9240 * f7 * mid4 * mid4 - 9240 * f6 * mid4 + 3080 * f5);
+            vtkm::Float64 s8 = s * ((10395 * f7 * k4 - 10395 * f6) * wid4 * wid4 - 3465 * f7 * mid4 * mid4 * mid4 + 10395 * f6 * mid4 * mid4 - 10395 * f5 * mid4 + 3465 * f4);
+            vtkm::Float64 s7 = s * ((11880 * f6 * k4 - 11880 * f5) * wid4 * wid4 - 3960 * f6 * mid4 * mid4 * mid4 + 11880 * f5 * mid4 * mid4 - 11880 * f4 * mid4 + 3960 * f3);
+            vtkm::Float64 s6 = s * ((13860 * f5 * k4 - 13860 * f4) * wid4 * wid4 - 4620 * f5 * mid4 * mid4 * mid4 + 13860 * f4 * mid4 * mid4 - 13860 * f3 * mid4 + 4620 * f2);
+            vtkm::Float64 s5 = s * ((16632 * f4 * k4 - 16632 * f3) * wid4 * wid4 - 5544 * f4 * mid4 * mid4 * mid4 + 16632 * f3 * mid4 * mid4 - 16632 * f2 * mid4 + 5544 * f1);
+            vtkm::Float64 s4 = s * ((20790 * f3 * k4 - 20790 * f2) * wid4 * wid4 - 6930 * f3 * mid4 * mid4 * mid4 + 20790 * f2 * mid4 * mid4 - 20790 * f1 * mid4 + 6930 * f0);
+            vtkm::Float64 s3 = s * ((27720 * f2 * k4 - 27720 * f1) * wid4 * wid4 - 9240 * f2 * mid4 * mid4 * mid4 + 27720 * f1 * mid4 * mid4 - 27720 * f0 * mid4);
+            vtkm::Float64 s2 = s * ((41580 * f1 * k4 - 41580 * f0) * wid4 * wid4 - 13860 * f1 * mid4 * mid4 * mid4 + 41580 * f0 * mid4 * mid4);
+            vtkm::Float64 s1 = s * (83160 * f0 * k4 * wid4 * wid4 - 27720 * f0 * mid4 * mid4 * mid4);
+
+            vtkm::Float64 intUp = normalizingFactor * (s12 * (vtkm::Pow(h, 12)) + s11 * (vtkm::Pow(h, 11)) + s10 * (vtkm::Pow(h, 10)) + s9 * (vtkm::Pow(h, 9)) + s8 * vtkm::Pow(h,8) + s7 * vtkm::Pow(h, 7) + s6 * vtkm::Pow(h, 6) + s5 * vtkm::Pow(h, 5) + s4 * vtkm::Pow(h, 4) + s3 * vtkm::Pow(h, 3) + s2 * h * h + s1 * h);
+            vtkm::Float64 intDown = normalizingFactor * (s12 * (vtkm::Pow(l, 12)) + s11 * (vtkm::Pow(l, 11)) + s10 * (vtkm::Pow(l, 10)) + s9 * (vtkm::Pow(l,9)) + s8 * vtkm::Pow(l, 8) + s7 * vtkm::Pow(l, 7) + s6 * vtkm::Pow(l, 6) + s5 * vtkm::Pow(l, 5) + s4 * vtkm::Pow(l, 4) + s3 * vtkm::Pow(l, 3) + s2 * l * l + s1 * l);
+
+            if ((intUp - intDown) > 1)
+            {
+                printf("error in integral 4");
+            }
         }
         // integral 5
         if ((!ln) && (!hn) && (!h2n) && (!h3n) && (!h4n) && (!h5n))
