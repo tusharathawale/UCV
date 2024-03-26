@@ -78,58 +78,58 @@ VTKM_BUILD_DIR="$SOFTWARE_BUILD_DIR/vtk-m"
 VTKM_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/vtk-m"
 
 # check the install dir
-if [ -d $VTKM_INSTALL_DIR ]; then
-    echo "====> skip, $VTKM_INSTALL_DIR already exists," \
-             "please remove it if you want to reinstall it"
-else
-    echo $VTKM_SRC_DIR
-    echo $VTKM_BUILD_DIR
-    echo $VTKM_INSTALL_DIR
-    # check vktm source dir
-    if [ ! -d $VTKM_SRC_DIR ]; then
-    # clone the source
-    cd $SOFTWARE_SRC_DIR
+#if [ -d $VTKM_INSTALL_DIR ]; then
+#    echo "====> skip, $VTKM_INSTALL_DIR already exists," \
+#             "please remove it if you want to reinstall it"
+#else
+#    echo $VTKM_SRC_DIR
+#    echo $VTKM_BUILD_DIR
+#    echo $VTKM_INSTALL_DIR
+#    # check vktm source dir
+#    if [ ! -d $VTKM_SRC_DIR ]; then
+#    # clone the source
+#    cd $SOFTWARE_SRC_DIR
 
-    git clone $VTKM_REPO
+#    git clone $VTKM_REPO
 
-    cd $VTKM_SRC_DIR
-    git checkout $VTKM_VERSION
-    fi
+#    cd $VTKM_SRC_DIR
+#    git checkout $VTKM_VERSION
+#    fi
     
-    cd $HERE
+#    cd $HERE
 
-    # build and install
-    echo "**** Building vtk-m"
+#    # build and install
+#    echo "**** Building vtk-m"
 
     # do some hack things, comment out the private in kokkos
 
-    cmake -B ${VTKM_BUILD_DIR} -S ${VTKM_SRC_DIR} \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_SHARED_LIBS=ON \
-    -DVTKm_USE_DOUBLE_PRECISION=ON \
-    -DVTKm_USE_64BIT_IDS=OFF \
-    -DCMAKE_INSTALL_PREFIX=${VTKM_INSTALL_DIR} \
-    -DVTKm_ENABLE_MPI=ON \
-    -DVTKm_ENABLE_OPENMP=ON \
-    -DVTKm_ENABLE_LOGGING=ON \
-    -DVTKm_ENABLE_RENDERING=OFF \
-    -DVTKm_ENABLE_CUDA=ON \
-    -DVTKm_ENABLE_TESTING=OFF \
-    -DVTKm_CUDA_Architecture=${GPU_ARCHITECTURE} \
-    -DCMAKE_CUDA_ARCHITECTURES=${GPU_ARCHITECTURE_NUM} \
-    -DVTKm_ENABLE_KOKKOS=ON \
-    -DKokkos_DIR=${kokkos_install_dir}/lib/cmake/Kokkos \
-    -DKokkos_COMPILE_LAUNCHER=${kokkos_install_dir}/bin/kokkos_launch_compiler \
-    -DKokkos_NVCC_WRAPPER=${kokkos_install_dir}/bin/nvcc_wrapper \
-    -DCMAKE_CXX_STANDARD=14 \
-    -DCMAKE_CUDA_HOST_COMPILER=g++-10 \
-    -DCMAKE_CXX_COMPILER=g++-10 -DCMAKE_C_COMPILER=gcc-10 
+#    cmake -B ${VTKM_BUILD_DIR} -S ${VTKM_SRC_DIR} \
+#    -DCMAKE_BUILD_TYPE=Release \
+#    -DBUILD_SHARED_LIBS=ON \
+#    -DVTKm_USE_DOUBLE_PRECISION=ON \
+#    -DVTKm_USE_64BIT_IDS=OFF \
+#    -DCMAKE_INSTALL_PREFIX=${VTKM_INSTALL_DIR} \
+#    -DVTKm_ENABLE_MPI=ON \
+#    -DVTKm_ENABLE_OPENMP=ON \
+#    -DVTKm_ENABLE_LOGGING=ON \
+#    -DVTKm_ENABLE_RENDERING=OFF \
+#    -DVTKm_ENABLE_CUDA=ON \
+#    -DVTKm_ENABLE_TESTING=OFF \
+#    -DVTKm_CUDA_Architecture=${GPU_ARCHITECTURE} \
+#    -DCMAKE_CUDA_ARCHITECTURES=${GPU_ARCHITECTURE_NUM} \
+#    -DVTKm_ENABLE_KOKKOS=ON \
+#    -DKokkos_DIR=${kokkos_install_dir}/lib/cmake/Kokkos \
+#    -DKokkos_COMPILE_LAUNCHER=${kokkos_install_dir}/bin/kokkos_launch_compiler \
+#    -DKokkos_NVCC_WRAPPER=${kokkos_install_dir}/bin/nvcc_wrapper \
+#    -DCMAKE_CXX_STANDARD=14 \
+#    -DCMAKE_CUDA_HOST_COMPILER=g++-10 \
+#    -DCMAKE_CXX_COMPILER=g++-10 -DCMAKE_C_COMPILER=gcc-10 
 
-    cmake --build ${VTKM_BUILD_DIR} -j${build_jobs}
+#    cmake --build ${VTKM_BUILD_DIR} -j${build_jobs}
 
-    echo "**** Installing vtk-m"
-    cmake --install ${VTKM_BUILD_DIR}
-fi
+#    echo "**** Installing vtk-m"
+#    cmake --install ${VTKM_BUILD_DIR}
+#fi
 
 echo "====> Installing vtk-m, ok"
 
@@ -146,18 +146,27 @@ UCV_INSTALL_DIR="$SOFTWARE_INSTALL_DIR/UCV"
 #else
 
     cmake -B ${UCV_INSTALL_DIR} -S ${UCV_SRC_DIR} \
-    -DCMAKE_BUILD_TYPE=Debug \
-    -DBUILD_SHARED_LIBS=OFF \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_PARAVIEW_PLUGIN=ON \
+    -DParaView_DIR=/home/zw1/Documents/cworkspace/build_paraview/lib/cmake/paraview-5.12 \
+    -DVTKm-DIR=/home/zw1/Documents/cworkspace/build_paraview/lib/cmake/paraview-5.12/vtk/vtkm \
+    -DCMAKE_CXX_STANDARD=14 \
+    -DCMAKE_CUDA_ARCHITECTURES=75 \
     -DUSE_CUDA=ON \
     -DVTKm_CUDA_Architecture=${GPU_ARCHITECTURE} \
-    -DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 \
-    -DVTKm_CUDA_Architecture=${GPU_ARCHITECTURE} \
-    -DCMAKE_CUDA_ARCHITECTURES=${GPU_ARCHITECTURE_NUM} \
-    -DKokkos_DIR=${kokkos_install_dir}/lib/cmake/Kokkos \
-    -DKokkos_COMPILE_LAUNCHER=${kokkos_install_dir}/bin/kokkos_launch_compiler \
-    -DKokkos_NVCC_WRAPPER=${kokkos_install_dir}/bin/nvcc_wrapper \
     -DCMAKE_CUDA_HOST_COMPILER=g++-10 \
     -DCMAKE_CXX_COMPILER=g++-10 -DCMAKE_C_COMPILER=gcc-10 
+
+
+    #-DVTKm_DIR=${VTKM_INSTALL_DIR}/lib/cmake/vtkm-2.0 \
+    #-DVTKm_CUDA_Architecture=${GPU_ARCHITECTURE} \
+    #-DCMAKE_CUDA_ARCHITECTURES=${GPU_ARCHITECTURE_NUM} \
+    #-DKokkos_DIR=${kokkos_install_dir}/lib/cmake/Kokkos \
+    #-DKokkos_COMPILE_LAUNCHER=${kokkos_install_dir}/bin/kokkos_launch_compiler \
+    #-DKokkos_NVCC_WRAPPER=${kokkos_install_dir}/bin/nvcc_wrapper \
+    #-DCMAKE_CUDA_HOST_COMPILER=g++-10 \
+    #-DCMAKE_CXX_COMPILER=g++-10 -DCMAKE_C_COMPILER=gcc-10 
         
     cd $HERE
 
