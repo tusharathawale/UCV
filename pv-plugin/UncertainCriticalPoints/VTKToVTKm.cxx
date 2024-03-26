@@ -704,7 +704,7 @@ void ProcessFields(vtkDataSet* input, vtkm::cont::DataSet& dataset)
     dataset.AddField(pfield);
   }
 
-  vtkPointData* cellData = input->GetPointData();
+  vtkCellData* cellData = input->GetCellData();
   for (int i = 0; i < cellData->GetNumberOfArrays(); i++)
   {
     vtkDataArray* array = cellData->GetArray(i);
