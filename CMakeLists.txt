@@ -38,9 +38,9 @@ set_source_files_properties(LoadWeatherProcessByMC.cpp PROPERTIES LANGUAGE "HIP"
 add_executable(LoadWeatherProcessByMC LoadWeatherProcessByMC.cpp)
 target_link_libraries(LoadWeatherProcessByMC ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
-set_source_files_properties(LoadEnsAndProcessByEpanech.cpp PROPERTIES LANGUAGE "HIP")
-add_executable(LoadEnsAndProcessByEpanech LoadEnsAndProcessByEpanech.cpp)
-target_link_libraries(LoadEnsAndProcessByEpanech ${VTKm_LIBRARIES} MPI::MPI_CXX)
+set_source_files_properties(LoadWeatherProcessByEpanech.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(LoadWeatherProcessByEpanech LoadWeatherProcessByEpanech.cpp)
+target_link_libraries(LoadWeatherProcessByEpanech ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
 elseif(USE_CUDA)
 
@@ -78,7 +78,8 @@ target_link_libraries(LoadWeatherProcessByMC ${VTKm_LIBRARIES})
 add_executable(LoadEnsAndProcessByEpanech LoadEnsAndProcessByEpanech.cpp)
 target_link_libraries(LoadEnsAndProcessByEpanech ${VTKm_LIBRARIES})
 
-
+add_executable(LoadWeatherProcessByEpanech LoadWeatherProcessByEpanech.cpp)
+target_link_libraries(LoadWeatherProcessByEpanech ${VTKm_LIBRARIES})
 
 
 endif()
