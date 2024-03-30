@@ -30,6 +30,14 @@ set_source_files_properties(LoadEnsAndProcessByHistogram.cpp PROPERTIES LANGUAGE
 add_executable(LoadEnsAndProcessByHistogram LoadEnsAndProcessByHistogram.cpp)
 target_link_libraries(LoadEnsAndProcessByHistogram ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
+set_source_files_properties(LoadEnsAndProcessByEpanech.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(LoadEnsAndProcessByEpanech LoadEnsAndProcessByEpanech.cpp)
+target_link_libraries(LoadEnsAndProcessByEpanech ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
+set_source_files_properties(LoadEnsAndProcessByMC.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(LoadEnsAndProcessByMC LoadEnsAndProcessByMC.cpp)
+target_link_libraries(LoadEnsAndProcessByMC ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
 set_source_files_properties(LoadWeatherProcessByUniform.cpp PROPERTIES LANGUAGE "HIP")
 add_executable(LoadWeatherProcessByUniform LoadWeatherProcessByUniform.cpp)
 target_link_libraries(LoadWeatherProcessByUniform ${VTKm_LIBRARIES} MPI::MPI_CXX)
