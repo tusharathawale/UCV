@@ -36,5 +36,8 @@ do
 
 python3 $CURRDIR/../compute_diff.py MinProb_MC_Weather960_240_${SAMPLE_NUM}.vtk MinProb_Uniform_Weather960_240.vtk MinProb &> diff_${SAMPLE_NUM}.log 
 
+./LoadWeatherProcessByMC --vtkm-device serial $DATADIR TestField 960 240 1 0.001 $SAMPLE_NUM &> weather_mc_serial_${SAMPLE_NUM}.log
+
+
 done
 
