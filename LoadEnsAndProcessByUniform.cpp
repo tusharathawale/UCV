@@ -112,7 +112,10 @@ int main(int argc, char *argv[])
     printSummary_ArrayHandle(runtimeVecArray, std::cout);
 
     // using pointNeighborhood worklet to process the data
+    timer.Start();
     callCriticalPointWorklet(vtkmDataSet);
+    timer.Stop();
+    std::cout << "filter execution time: " << timer.GetElapsedTime() << std::endl;
 
     std::string outputFileName = "MinProb_Uniform" + std::to_string(dimx) + "_" + std::to_string(dimy) + "ens_" + std::to_string(numEnsembles) + ".vtk";
     vtkm::io::VTKDataSetWriter writeCross(outputFileName);
