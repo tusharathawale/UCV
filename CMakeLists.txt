@@ -50,6 +50,10 @@ set_source_files_properties(LoadWeatherProcessByEpanech.cpp PROPERTIES LANGUAGE 
 add_executable(LoadWeatherProcessByEpanech LoadWeatherProcessByEpanech.cpp)
 target_link_libraries(LoadWeatherProcessByEpanech ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
+set_source_files_properties(LoadEnsAndProcessByMVG.cpp PROPERTIES LANGUAGE "HIP")
+add_executable(LoadEnsAndProcessByMVG LoadEnsAndProcessByMVG.cpp)
+target_link_libraries(LoadEnsAndProcessByMVG ${VTKm_LIBRARIES} MPI::MPI_CXX)
+
 elseif(USE_CUDA)
 
 set_source_files_properties(./ucvworklet/CriticalPointHistogramWorklet.hpp PROPERTIES LANGUAGE "CUDA")

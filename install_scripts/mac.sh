@@ -89,6 +89,13 @@ mkdir -p $EASY_LINALG_INSTALL_DIR
 
 # move files to new dir
 cp EasyLinalg/StaticMemTemplate/include/* $EASY_LINALG_INSTALL_DIR
+
+# update the macro
+echo "EASY_LINALG_INSTALL_DIR: ${EASY_LINALG_INSTALL_DIR}"
+# there are issues for using sed in mac
+# check this https://stackoverflow.com/questions/19456518/error-when-using-sed-with-find-command-on-os-x-invalid-command-code
+sed -i '' -e 's/__attribute__((visibility("default")))/VTKM_EXEC/' $EASY_LINALG_INSTALL_DIR/basic.h
+
 # clean source files
 rm -rf $EASY_LINALG_SRC_DIR
 

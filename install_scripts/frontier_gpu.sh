@@ -115,6 +115,39 @@ echo "====> Installing vtk-m, ok"
 
 echo "vtkm install dir ${VTKM_INSTALL_DIR}"
 
+
+echo "====> Installing EasyLinalg"
+EASY_LINALG_SRC_DIR="$SOFTWARE_SRC_DIR/EasyLinalg"
+EASY_LINALG_INSTALL_DIR="$HERE/../../ucvworklet/linalg/EasyLinalg/"
+
+rm -rf $EASY_LINALG_SRC_DIR
+cd $SOFTWARE_SRC_DIR
+git clone $EASY_LINALG_REPO
+
+# move include dir to correct place
+
+# clean old dir if it exist
+if [ -d $EASY_LINALG_INSTALL_DIR ]; then
+    rm -rf $EASY_LINALG_INSTALL_DIR
+fi
+
+mkdir -p $EASY_LINALG_INSTALL_DIR
+
+# move files to new dir
+cp EasyLinalg/StaticMemTemplate/include/* $EASY_LINALG_INSTALL_DIR
+
+# update the macro
+echo "EASY_LINALG_INSTALL_DIR: ${EASY_LINALG_INSTALL_DIR}"
+# there are issues for using sed in mac
+# check this https://stackoverflow.com/questions/19456518/error-when-using-sed-with-find-command-on-os-x-invalid-command-code
+sed -i 's/__attribute__((visibility("default")))/VTKM_EXEC/' $EASY_LINALG_INSTALL_DIR/basic.h
+
+# clean source files
+rm -rf $EASY_LINALG_SRC_DIR
+
+echo "====> Installing EasyLinalg, ok"
+
+
 echo "====> build UCV"
 # the only have build dir without the install dir
 # the install dir is same with the build dir

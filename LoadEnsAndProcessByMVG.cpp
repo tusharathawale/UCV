@@ -10,14 +10,14 @@
 
 #include "ucvworklet/CriticalPointMVGaussian.hpp"
 
-void callCriticalPointWorklet(vtkm::cont::DataSet& vtkmDataSet)
+void callCriticalPointWorklet(vtkm::cont::DataSet& vtkmDataSet, vtkm::Id numSamples)
 {
     auto resolveType = [&](auto &concreteArray)
     {
         vtkm::cont::Invoker invoke;
         vtkm::cont::ArrayHandle<vtkm::FloatDefault> outMinProb;
         // Use point neighborhood to go through data
-        invoke(CriticalPointMVGaussian{}, vtkmDataSet.GetCellSet(), concreteArray, outMinProb);
+        invoke(CriticalPointMVGaussian{numSamples}, vtkmDataSet.GetCellSet(), concreteArray, outMinProb);
         // std::cout << "debug outMinProb:" << std::endl;
         // printSummary_ArrayHandle(outMinProb, std::cout, true);
         vtkmDataSet.AddPointField("MinProb", outMinProb);
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
         argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
     vtkm::cont::Timer timer{initResult.Device};
 
-    if (argc != 7)
+    if (argc != 8)
     {
         //./test_syntheticdata_el_sequence /Users/zw1/Documents/cworkspace/src/UCV/exp_scripts/create_dataset/RawdataPointScalar TestField 300 0.8 1000
         std::cout << "<executable> <SyntheticDataSuffix> <FieldName> <Dimx> <Dimy> <Dimz> <num of ensembles>" << std::endl;
@@ -53,6 +53,7 @@ int main(int argc, char *argv[])
     int dimz = std::stoi(argv[5]);
 
     int numEnsembles = std::stoi(argv[6]);
+    int numSamples = std::stoi(argv[7]);
 
     const vtkm::Id3 dims(dimx, dimy, dimz);
     vtkm::cont::DataSetBuilderUniform dataSetBuilder;
@@ -100,15 +101,16 @@ int main(int argc, char *argv[])
     }
 
     vtkmDataSet.AddPointField("ensembles", runtimeVecArray);
+    std::cout << "runtimeVecArray summary" << std::endl;
     printSummary_ArrayHandle(runtimeVecArray, std::cout);
 
     // using pointNeighborhood worklet to process the data
     timer.Start();
-    callCriticalPointWorklet(vtkmDataSet);
+    callCriticalPointWorklet(vtkmDataSet,numSamples);
     timer.Stop();
     std::cout << "filter execution time: " << timer.GetElapsedTime() << std::endl;
 
-    std::string outputFileName = "MinProb_Uniform" + std::to_string(dimx) + "_" + std::to_string(dimy) + "ens_" + std::to_string(numEnsembles) + ".vtk";
+    std::string outputFileName = "MinProb_MVG" + std::to_string(dimx) + "_" + std::to_string(dimy) + "ens_" + std::to_string(numEnsembles) + ".vtk";
     vtkm::io::VTKDataSetWriter writeCross(outputFileName);
     writeCross.WriteDataSet(vtkmDataSet);
 

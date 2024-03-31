@@ -38,3 +38,10 @@ export OMP_NUM_THREADS=1
 
 # Run Epanech version
 ./LoadEnsAndProcessByEpanech --vtkm-device kokkos $DATADIR velocityMagnitude 500 500 1 20 &> redsea_epanishkov.log
+
+# Run mv gaussian 
+./LoadEnsAndProcessByMVG --vtkm-device kokkos $DATADIR velocityMagnitude 500 500 1 20 1000 &> redsea_mvg_1000.log
+
+./LoadEnsAndProcessByMVG --vtkm-device kokkos $DATADIR velocityMagnitude 500 500 1 20 2000 &> redsea_mvg_2000.log
+
+./LoadEnsAndProcessByMVG --vtkm-device kokkos $DATADIR velocityMagnitude 500 500 1 20 10000 &> redsea_mvg_10000.log
