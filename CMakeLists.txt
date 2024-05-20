@@ -287,6 +287,9 @@ target_link_libraries(ucv_amrex_uni ${VTKm_LIBRARIES})
 add_executable(ucv_hurrican_data ucv_hurrican_data.cpp)
 target_link_libraries(ucv_hurrican_data ${VTKm_LIBRARIES})
 
+add_executable(ucv_hurrican_ml_model ucv_hurrican_ml_model.cpp)
+target_link_libraries(ucv_hurrican_ml_model ${VTKm_LIBRARIES})
+
 endif()
 
 

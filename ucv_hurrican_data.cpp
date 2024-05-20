@@ -99,24 +99,24 @@ int main(int argc, char *argv[])
     vtkm::io::VTKDataSetWriter write(outputFileName);
     write.WriteDataSet(outputDataSet);
 
-    //reset the buffer
+    // reset the buffer
     crossProb.Fill(0);
-numNonZeroProb.Fill(0);
-entropyResult.Fill(0);
+    numNonZeroProb.Fill(0);
+    entropyResult.Fill(0);
 
     // using indepedent gaussian distribution, mean value is same with the compressed value
     std::cout << "computing gaussian output" << std::endl;
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> stdevArray;
-    stdevArray.AllocateAndFill(dx * dy * dz, 0.0000107);
+    double stdev = 0.000057;
+    stdevArray.AllocateAndFill(dx * dy * dz, stdev);
 
     auto resolveTypeIG = [&](const auto &concrete)
     {
-
         using WorkletType = EntropyIndependentGaussian<8, 256>;
         using DispatcherEntropyIG = vtkm::worklet::DispatcherMapTopology<WorkletType>;
 
         DispatcherEntropyIG dispatcherEntropyIG(EntropyIndependentGaussian<8, 256>{isovalue});
-        //assume comressed data is mean
+        // assume compressed data is mean
         dispatcherEntropyIG.Invoke(inData.GetCellSet(), concrete, stdevArray, crossProb, numNonZeroProb, entropyResult);
     };
 
@@ -130,18 +130,16 @@ entropyResult.Fill(0);
     outputDataSetGaussian.PrintSummary(std::cout);
 
     // output the dataset into the vtk file for results checking
-    std::string outputFileNameGS = "hurrican_output_gaussian_iso" + std::to_string(isovalue) + "_std" + std::to_string((0.0000107)) + ".vtk";
+    std::string outputFileNameGS = "hurrican_output_gaussian_iso" + std::to_string(isovalue) + "_std" + std::to_string((stdev)) + ".vtk";
     vtkm::io::VTKDataSetWriter writegs(outputFileNameGS);
     writegs.WriteDataSet(outputDataSetGaussian);
-
-
-
-
 
     return 0;
 }
 
 /*
+for the hurricane_compressed
 The data is in 500*500*100, fp32. And the iso-value I used is 0.0006.
-The error bound is 0.00046 and the Variance is 1.15E-10 (the standard deviation is 0.0000107).
+The error bound is 0.00046 and the Variance is 1.15E-10 (the standard deviation is 0.0000107).  0.000057 for old data
+For compressed-larger-eb data, the stdev is 0.000097
 */
