@@ -32,6 +32,7 @@ set_source_files_properties(TestRedSeaComparison.cxx PROPERTIES LANGUAGE "HIP")
 add_executable(TestRedSeaComparison TestRedSeaComparison.cxx ../Fiber.cxx)
 target_link_libraries(TestRedSeaComparison ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
+
 elseif(USE_CUDA)
 
 message("---use cuda build---")
@@ -81,6 +82,9 @@ target_link_libraries(DecomposeSuperNovaToEns ${VTKm_LIBRARIES})
 
 add_executable(TestRedSea TestRedSea.cxx ../Fiber.cxx)
 target_link_libraries(TestRedSea ${VTKm_LIBRARIES})
+
+add_executable(TestRedSea3Var TestRedSea3Var.cxx ../FiberMultiVar.cxx)
+target_link_libraries(TestRedSea3Var ${VTKm_LIBRARIES})
 
 add_executable(TestRedSeaComparison TestRedSeaComparison.cxx ../Fiber.cxx)
 target_link_libraries(TestRedSeaComparison ${VTKm_LIBRARIES})
