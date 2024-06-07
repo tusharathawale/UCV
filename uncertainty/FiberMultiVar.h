@@ -11,7 +11,7 @@
 #ifndef vtk_m_filter_uncertainty_FiberMultiVar_h
 #define vtk_m_filter_uncertainty_FiberMultiVar_h
 
-#include <vtkm/filter/FilterField.h>
+#include <vtkm/filter/Filter.h>
 #include <vtkm/filter/uncertainty/vtkm_filter_uncertainty_export.h>
 
 namespace vtkm
@@ -20,7 +20,7 @@ namespace filter
 {
 namespace uncertainty
 {
-class VTKM_FILTER_UNCERTAINTY_EXPORT FiberMultiVar : public vtkm::filter::FilterField
+class VTKM_FILTER_UNCERTAINTY_EXPORT FiberMultiVar : public vtkm::filter::Filter
 {
   vtkm::Vec<vtkm::Float64, 3> bottomLeft;
   vtkm::Vec<vtkm::Float64, 3> topRight;

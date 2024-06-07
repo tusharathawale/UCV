@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
     // curlz -15 -1
     // vorticity 1 15
     // big user specified rectangle need more monte carlo sampling
-    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-15.0, 0.0);
+    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-15.0, 3.0);
 
     //old 
     //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.1, 20);
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 
     // run filter five times
     //for (int i = 1; i <= 5; i++)
-    //{
+    //{        
         //std::cout << "------" << std::endl;
         //std::cout << std::to_string(i) << "th run" << std::endl;
         //timer.Start();

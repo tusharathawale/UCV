@@ -10,9 +10,11 @@
 
 set(uncertainty_headers
   Fiber.h
+  FiberMultiVar.h
   )
 set(uncertainty_sources_device
   Fiber.cxx
+  FiberMultiVar.cxx
   )
 
 add_library(filter_uncertainty

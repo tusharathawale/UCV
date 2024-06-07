@@ -10,8 +10,8 @@
 
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/Timer.h>
-#include <vtkm/filter/uncertainty/FiberMultiVar.h>
-#include <vtkm/filter/uncertainty/worklet/FiberMultiVar.h>
+#include "FiberMultiVar.h"
+#include "worklet/FiberMultiVar.h"
 
 namespace vtkm
 {
