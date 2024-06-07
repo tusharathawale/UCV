@@ -86,6 +86,9 @@ target_link_libraries(TestRedSea ${VTKm_LIBRARIES})
 add_executable(TestRedSea3Var TestRedSea3Var.cxx ../FiberMultiVar.cxx)
 target_link_libraries(TestRedSea3Var ${VTKm_LIBRARIES})
 
+add_executable(TestRedSea4Var TestRedSea4Var.cxx ../Fiber4Var.cxx)
+target_link_libraries(TestRedSea4Var ${VTKm_LIBRARIES})
+
 add_executable(TestRedSeaComparison TestRedSeaComparison.cxx ../Fiber.cxx)
 target_link_libraries(TestRedSeaComparison ${VTKm_LIBRARIES})
 

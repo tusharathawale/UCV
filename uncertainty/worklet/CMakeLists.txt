@@ -10,6 +10,8 @@
 
 set(headers
   Fiber.h
+  Fiber4Var.h
+  FiberMultiVar.h
   )
 #-----------------------------------------------------------------------------#i
 vtkm_declare_headers(${headers})
