@@ -113,11 +113,11 @@ int main(int argc, char *argv[])
     // curlz -15 -1
     // vorticity 1 15
     // big user specified rectangle need more monte carlo sampling
-    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-15.0, 0.0);
-    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.1, 20);
+    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-15.0, 0.6);
+    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.3, 15);
 
-    // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-5.0, 0.0);
-    // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(5.0, 6.0);
+    //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-5.0, 0.0);
+    //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(5.0, 6.0);
 
     filter.SetMinAxis(minAxisValue);
     filter.SetMaxAxis(maxAxisValue);
@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
     std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
 
     // run filter five times
-    for (int i = 1; i <= 5; i++)
+    for (int i = 1; i <= 1; i++)
     {
         std::cout << "------" << std::endl;
         std::cout << std::to_string(i) << "th run" << std::endl;
@@ -166,5 +166,9 @@ int main(int argc, char *argv[])
         timer.Stop();
         vtkm::Float64 elapsedTime = timer.GetElapsedTime();
         std::cout << "total elapsedTime:" << elapsedTime << std::endl;
+        
+        vtkm::io::VTKDataSetWriter writerMCarlo("./out_fiber_redsea" + std::to_string(NumSamples) + "_" + initResult.Device.GetName() + ".vtk");
+        writerMCarlo.WriteDataSet(output);
+
     }
 }
