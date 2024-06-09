@@ -1,48 +1,31 @@
-This repo contains some code that use the vtk-m to implement the uncertainty algorithm.
+This branch contains the code that uses the vtk-m to implement the uncertainty algorithm to find the critical points.
 
-The original name is the UCV, the updated name might be UVM (uncertianty visualizatio based on vkt-m), which might be more make sense.
+The details can be found in the following paper:
 
-Related paper:
+Uncertainty Visualization of Critical Points of 2D Scalar Fields for Parametric and Nonparametric Probabilistic Models
 
-Wang, Zhe, Tushar M. Athawale, Kenneth Moreland, Jieyang Chen, Chris R. Johnson, and David Pugmire. "FunMC^ 2: A Filter for Uncertainty Visualization of Marching Cubes on Multi-Core Devices." (2023).
+### Build testing files
 
+The installing scripts are listed under the `UCV/install_scripts`.
 
-### Build
+For example, on the mac platform, we need to execute 
 
-install example on ubuntu machine:
+`/bin/bash mac.sh`
 
-```
-clone the repo
-$ cd install_scripts
-$ /bin/bash ubuntu_cpu.sh 
-...
-try to add library path by executing:
-export LD_LIBRARY_PATH=/home/zw/cworkspace/UCV/install_scripts/ubuntu_cpu/install/vtk-m/lib:${LD_LIBRARY_PATH}]
+under the install_scripts folder. This script will create a folder called mac. Under this folder, the dependency, namely the vtk-m, will be downloaded under the `src` folder and installed into a specific folder. The executable file will be installed at `UCV/install_scripts/mac/install/UCV`
 
-$ export LD_LIBRARY_PATH=/home/zw/cworkspace/UCV/install_scripts/ubuntu_cpu/install/vtk-m/lib:${LD_LIBRARY_PATH}]
-```
+The `exp_scripts/frontier_run_weather.sh` is the script to run experiments on the Frontier supercomputer.
 
-### Example
+### Build ParaView plugin
 
+We first need to build the ParaView on a specific platform. The user can refer to [this document](https://gitlab.kitware.com/paraview/paraview/blob/master/Documentation/dev/build.md) to build the ParaView manually.
 
-using the uniform distribution
+When installing the uncertainty critical point filter through ParaView, we need to set
 
-```
-$ ./ucv_reduce_umc ../../../../dataset/beetle_496_832_832.vtk ground_truth uni 4 900
-```
+`DParaView_DIR` and `DVTKm_DIR` as the proper path. In this case, we use the vtk-m embedded as the third-party dependency of the ParaView.
 
-using the indepednet gaussian distribution
+The current `ubuntu_cpu.sh` provides an example of how to set the ParaView path and install the filter through the ParaView plugin.
 
-```
-$ ./ucv_reduce_umc ../../../../dataset/beetle_496_832_832.vtk ground_truth ig 4 900
-```
+After installing the ParaView plugin, the user could load the associated plugin through the ParaView filter and run the loaded filter.
 
-using the multivariant gaussian distribution (only works for #vertexies=4 currently)
-
-```
-$ ./ucv_reduce_umc ../../../../dataset/raw_data_128_208_208.vtk instance mg 4 900
-```
-
-### TODO
-
-support multi blocks version
+The [sample video](https://drive.google.com/file/d/1GS0OJW_HQWHP5HyS8xV0cxbDHKK_sRgR/view?usp=sharing) here shows how to run the filter through the ParaView plugin.
