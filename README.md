@@ -28,4 +28,4 @@ The current `ubuntu_cpu.sh` provides an example of how to set the ParaView path 
 
 After installing the ParaView plugin, the user could load the associated plugin through the ParaView filter and run the loaded filter.
 
-The [sample video](https://drive.google.com/file/d/1GS0OJW_HQWHP5HyS8xV0cxbDHKK_sRgR/view?usp=sharing) here shows how to run the filter through the ParaView plugin.
+The [demo video](https://drive.google.com/file/d/1GS0OJW_HQWHP5HyS8xV0cxbDHKK_sRgR/view?usp=sharing) shows how to run the filter through the ParaView plugin.
