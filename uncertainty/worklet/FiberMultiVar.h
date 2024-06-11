@@ -13,7 +13,7 @@ namespace worklet
 namespace detail
 {
 
-class VTKM_FILTER_UNCERTAINTY_EXPORT FiberMultiVar : public vtkm::worklet::WorkletPointNeighborhood
+class  FiberMultiVar : public vtkm::worklet::WorkletPointNeighborhood
 {
 public:
   // Constructor with initializer list

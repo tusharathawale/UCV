@@ -12,11 +12,13 @@ set(uncertainty_headers
   Fiber.h
   FiberMultiVar.h
   Fiber4Var.h
+  MeanField2Var.h
   )
 set(uncertainty_sources_device
   Fiber.cxx
   FiberMultiVar.cxx
   Fiber4Var.cxx
+  MeanField2Var.cxx
   )
 
 add_library(filter_uncertainty

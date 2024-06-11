@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
     //old 
     //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> topRight(-0.1, 20);
     //new value matching paper
-    vtkm::Vec3f topRight(-0.1, 15, 0.4);
+    vtkm::Vec3f topRight(-0.1, 15, 0.95);
 
     // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> bottomLeft(-5.0, 0.0);
     // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> topRight(5.0, 6.0);

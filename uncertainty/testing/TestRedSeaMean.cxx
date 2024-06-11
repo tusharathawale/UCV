@@ -9,7 +9,7 @@
 //#include <vtkm/io/VTKDataSetWriter.h>
 
 
-#include "../Fiber.h"
+#include "../MeanField2Var.h"
 #include <vtkm/io/VTKDataSetReader.h>
 #include <vtkm/io/VTKDataSetWriter.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
     std::string Approach = std::string(argv[2]);
     int NumSamples = std::stoi(argv[3]); // this only work when appraoch is MonteCarlo
 
-    if (Approach == "MonteCarlo" || Approach == "ClosedForm")
+    if (Approach == "MonteCarlo" || Approach == "ClosedForm" || Approach == "Mean")
     {
     }
     else
@@ -47,19 +47,15 @@ int main(int argc, char *argv[])
     std::string VorField = "vorticityMagnitude";
 
     // the name of the file is mistyped, the value is actually the curl
-    std::string MeanCurlFile = dataFolder + "/curlZ/meanVol/meanVorticity.vtk";
-    std::string DevCurlFile = dataFolder + "/curlZ/devVol/devVorticity.vtk";
+    std::string MeanCurlFile = dataFolder + "/curlZ/meanVol/meanCurl.vtk";
+    std::string DevCurlFile = dataFolder + "/curlZ/devVol/devCurl.vtk";
 
     std::string MeanVorFile = dataFolder + "/vorticityMagnitude/meanVol/meanVorticity.vtk";
     std::string DevVorFile = dataFolder + "/vorticityMagnitude/devVol/devVorticity.vtk";
 
-    // get mean for the curl
+    
     vtkm::io::VTKDataSetReader MeanCurlReader(MeanCurlFile);
     vtkm::cont::DataSet MeanCurlData = MeanCurlReader.ReadDataSet();
-
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> MeanCurlDataArray;
-    vtkm::cont::ArrayCopyShallowIfPossible(MeanCurlData.GetField("meanVorticity").GetData(), MeanCurlDataArray);
-
     // get the cellset
     auto cellSet = MeanCurlData.GetCellSet();
     vtkm::cont::CellSetStructured<3> structCellSet =
@@ -68,6 +64,12 @@ int main(int argc, char *argv[])
     vtkm::Id3 pointDims = structCellSet.GetPointDimensions();
     std::cout << "------" << std::endl;
     std::cout << "point dim: " << pointDims[0] << " " << pointDims[1] << " " << pointDims[2] << std::endl;
+
+    // get mean for the curl
+
+
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> MeanCurlDataArray;
+    vtkm::cont::ArrayCopyShallowIfPossible(MeanCurlData.GetField("meanVorticity").GetData(), MeanCurlDataArray);
 
     // get dev for the curl
     vtkm::io::VTKDataSetReader DevCurlReader(DevCurlFile);
@@ -111,16 +113,16 @@ int main(int argc, char *argv[])
     invoke(ExtractingMinMaxFromMeanDev{}, MeanVorDataArray, DevVorDataArray, minField2, maxField2);
 
     // user specify the field
-    vtkm::filter::uncertainty::Fiber filter;
+    vtkm::filter::uncertainty::FiberMean filter;
     // curlz -15 -1
     // vorticity 1 15
     // big user specified rectangle need more monte carlo sampling
-    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-15.0, 3.0);
+    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-15.0, 0.6);
 
     //old 
     //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.1, 20);
     //new value matching paper
-    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.1, 15);
+    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.3, 15);
 
     // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-5.0, 0.0);
     // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(5.0, 6.0);
@@ -168,9 +170,10 @@ int main(int argc, char *argv[])
         //std::cout << std::to_string(i) << "th run" << std::endl;
         //timer.Start();
         vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
-        std::string outputFilename = "redSeaOutput.vtk"; 
+        std::string outputFilename = "redSeaOutputMean.vtk"; 
         vtkm::io::VTKDataSetWriter writer(outputFilename);
         writer.WriteDataSet(output);
+        std::cout << "output file: " << outputFilename << std::endl;
         //timer.Synchronize();
         //timer.Stop();
         //vtkm::Float64 elapsedTime = timer.GetElapsedTime();

@@ -71,7 +71,7 @@ namespace vtkm
           maxX_user = static_cast<vtkm::FloatDefault>(InputTopRight.first);
           vtkm::FloatDefault maxY_user = 0.0;
           maxY_user = static_cast<vtkm::FloatDefault>(InputTopRight.second);
-          //vtkm::FloatDefault TraitArea = (maxX_user - minX_user) * (maxY_user - minY_user);
+          // vtkm::FloatDefault TraitArea = (maxX_user - minX_user) * (maxY_user - minY_user);
 
           vtkm::FloatDefault minX_dataset = 0.0;
           vtkm::FloatDefault minY_dataset = 0.0;
@@ -186,7 +186,7 @@ namespace vtkm
           maxX_user = static_cast<vtkm::FloatDefault>(InputTopRight.first);
           vtkm::FloatDefault maxY_user = 0.0;
           maxY_user = static_cast<vtkm::FloatDefault>(InputTopRight.second);
-          //vtkm::FloatDefault TraitArea = (maxX_user - minX_user) * (maxY_user - minY_user);
+          // vtkm::FloatDefault TraitArea = (maxX_user - minX_user) * (maxY_user - minY_user);
 
           vtkm::FloatDefault minX_intersection = 0.0;
           vtkm::FloatDefault maxX_intersection = 0.0;
@@ -235,8 +235,78 @@ namespace vtkm
         vtkm::Pair<vtkm::Float64, vtkm::Float64> InputBottomLeft;
         vtkm::Pair<vtkm::Float64, vtkm::Float64> InputTopRight;
       };
-    }
 
+      class FiberMean : public vtkm::worklet::WorkletMapField
+      {
+      public:
+        FiberMean(const vtkm::Pair<vtkm::Float64, vtkm::Float64> &minAxis,
+                  const vtkm::Pair<vtkm::Float64, vtkm::Float64> &maxAxis)
+            : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
+
+        // Input and Output Parameters
+        using ControlSignature = void(FieldIn, FieldIn, FieldIn, FieldIn, FieldOut);
+
+        using ExecutionSignature = void(_1, _2, _3, _4, _5);
+        using InputDomain = _1;
+
+        template <typename MinX,
+                  typename MaxX,
+                  typename MinY,
+                  typename MaxY,
+                  typename OutCellFieldType>
+
+        VTKM_EXEC void operator()(const MinX &EnsembleMinX,
+                                  const MaxX &EnsembleMaxX,
+                                  const MinY &EnsembleMinY,
+                                  const MaxY &EnsembleMaxY,
+                                  OutCellFieldType &probability) const
+        {
+
+          // User defined rectangle(trait)
+          vtkm::FloatDefault minX_user = 0.0;
+          minX_user = static_cast<vtkm::FloatDefault>(InputBottomLeft.first);
+          vtkm::FloatDefault minY_user = 0.0;
+          minY_user = static_cast<vtkm::FloatDefault>(InputBottomLeft.second);
+          vtkm::FloatDefault maxX_user = 0.0;
+          maxX_user = static_cast<vtkm::FloatDefault>(InputTopRight.first);
+          vtkm::FloatDefault maxY_user = 0.0;
+          maxY_user = static_cast<vtkm::FloatDefault>(InputTopRight.second);
+
+          vtkm::FloatDefault minX_dataset = 0.0;
+          vtkm::FloatDefault minY_dataset = 0.0;
+          vtkm::FloatDefault maxX_dataset = 0.0;
+          vtkm::FloatDefault maxY_dataset = 0.0;
+
+          // data rectangle
+          minX_dataset = static_cast<vtkm::FloatDefault>(EnsembleMinX);
+          maxX_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxX);
+          minY_dataset = static_cast<vtkm::FloatDefault>(EnsembleMinY);
+          maxY_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxY);
+
+    
+          vtkm::FloatDefault Xmean = 0.0;
+          vtkm::FloatDefault Ymean = 0.0;
+          Xmean = (minX_dataset + maxX_dataset) / 2;
+          Ymean = (minY_dataset + maxY_dataset) / 2;
+
+          if ((Xmean <= maxX_user) && (Xmean >= minX_user) && (Ymean <= maxY_user) && (Ymean >= minY_user))
+          {
+            probability = 1.0;
+            return;
+          }
+          else
+          {
+            probability = 0.0;
+            return;
+          }
+        }
+
+      private:
+        vtkm::Pair<vtkm::Float64, vtkm::Float64> InputBottomLeft;
+        vtkm::Pair<vtkm::Float64, vtkm::Float64> InputTopRight;
+      };
+
+    }
   }
 }
 #endif

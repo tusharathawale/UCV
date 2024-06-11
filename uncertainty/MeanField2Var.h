@@ -19,7 +19,7 @@ namespace filter
 {
 namespace uncertainty
 {
-class Fiber : public vtkm::filter::Filter
+class FiberMean : public vtkm::filter::Filter
 {
   vtkm::Pair<vtkm::Float64, vtkm::Float64> minAxis;
   vtkm::Pair<vtkm::Float64, vtkm::Float64> maxAxis;

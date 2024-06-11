@@ -1,3 +1,4 @@
+
 #ifndef UCV_COMPUTE_DIFF_h
 #define UCV_COMPUTE_DIFF_h
 
@@ -13,9 +14,10 @@ struct ComputeDiff: public vtkm::worklet::WorkletMapField
     VTKM_EXEC void operator()(
         const TypeIn &input1, const TypeIn &input2, TypeOut &diff, vtkm::Id workIndex) const
     {
+        //not sure if this is essential
         diff = vtkm::Abs(input1-input2);
         if(diff > 0.5){
-            printf("index %d\n",workIndex);
+            ("index %ld\n",workIndex);
         }
         return;
     }

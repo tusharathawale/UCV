@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     }
 
     std::string dataFolder = std::string(argv[1]);
-    int NumEns = 20;
+    //int NumEns = 20;
 
     std::string Approach = std::string(argv[2]);
     int NumSamples = std::stoi(argv[3]); // this only work when appraoch is MonteCarlo
@@ -115,12 +115,12 @@ int main(int argc, char *argv[])
     // curlz -15 -1
     // vorticity 1 15
     // big user specified rectangle need more monte carlo sampling
-    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-15.0, 3.0);
+    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-15.0, 0.6);
 
     //old 
     //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.1, 20);
     //new value matching paper
-    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.1, 15);
+    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.3, 15);
 
     // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-5.0, 0.0);
     // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(5.0, 6.0);

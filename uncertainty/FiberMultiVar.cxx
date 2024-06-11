@@ -11,7 +11,7 @@
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/Timer.h>
 #include "FiberMultiVar.h"
-#include "worklet/FiberMultiVar.h"
+#include "./worklet/FiberMultiVar.h"
 
 namespace vtkm
 {

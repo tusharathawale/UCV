@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
     // curlz -15 -1
     // vorticity 1 15
     // big user specified rectangle need more monte carlo sampling
-    vtkm::Vec4f bottomLeft(-15.0, 0.0, 0.0, 0.0);
+    vtkm::Vec4f bottomLeft(-15.0, 0.0, 0.0, 10.0);
 
     //old 
     //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> topRight(-0.1, 20);

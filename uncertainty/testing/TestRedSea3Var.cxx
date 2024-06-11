@@ -48,8 +48,8 @@ int main(int argc, char *argv[])
     std::string VorField = "vorticityMagnitude";
 
     // the name of the file is mistyped, the value is actually the curl
-    std::string MeanCurlFile = dataFolder + "/curlZ/meanVol/meanVorticity.vtk";
-    std::string DevCurlFile = dataFolder + "/curlZ/devVol/devVorticity.vtk";
+    std::string MeanCurlFile = dataFolder + "/curlZ/meanVol/meanCurl.vtk";
+    std::string DevCurlFile = dataFolder + "/curlZ/devVol/devCurl.vtk";
 
     std::string MeanVorFile = dataFolder + "/vorticityMagnitude/meanVol/meanVorticity.vtk";
     std::string DevVorFile = dataFolder + "/vorticityMagnitude/devVol/devVorticity.vtk";
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
     // curlz -15 -1
     // vorticity 1 15
     // big user specified rectangle need more monte carlo sampling
-    vtkm::Vec3f bottomLeft(-15.0, 0.0, 0.0);
+    vtkm::Vec3f bottomLeft(-15.0, 0.0, 0.2);
 
     //old 
     //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> topRight(-0.1, 20);
