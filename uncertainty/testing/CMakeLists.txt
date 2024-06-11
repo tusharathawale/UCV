@@ -83,7 +83,7 @@ target_link_libraries(DecomposeSuperNovaToEns ${VTKm_LIBRARIES})
 add_executable(TestRedSea TestRedSea.cxx ../Fiber.cxx)
 target_link_libraries(TestRedSea ${VTKm_LIBRARIES})
 
-add_executable(TestRedSea3Var TestRedSea3Var.cxx ../FiberMultiVar.cxx)
+add_executable(TestRedSea3Var TestRedSea3Var.cxx ../Fiber3Var.cxx)
 target_link_libraries(TestRedSea3Var ${VTKm_LIBRARIES})
 
 add_executable(TestRedSea4Var TestRedSea4Var.cxx ../Fiber4Var.cxx)
@@ -94,6 +94,9 @@ target_link_libraries(TestRedSeaMean ${VTKm_LIBRARIES})
 
 add_executable(TestRedSeaComparison TestRedSeaComparison.cxx ../Fiber.cxx)
 target_link_libraries(TestRedSeaComparison ${VTKm_LIBRARIES})
+
+add_executable(TestRedSea2Var TestRedSea2Var.cxx ../Fiber2Var.cxx)
+target_link_libraries(TestRedSea2Var ${VTKm_LIBRARIES})
 
 add_executable(temp temp.cxx)
 target_link_libraries(temp ${VTKm_LIBRARIES})
