@@ -34,7 +34,7 @@ The [demo video](https://drive.google.com/file/d/1GS0OJW_HQWHP5HyS8xV0cxbDHKK_sR
 
 ### Different approaches to compute critical point
 
-In the paper, we describes multiple appraoches to compute the critical point, including monte carlo sampling, closed form appraoch based on indepedent uniform distribution, multi-variant gaussian distribution, histogram and kernel density estimation based on Epanechnikov. Specifically,  
+In the paper, we describes multiple appraoches to compute the critical point, including monte carlo sampling, closed form appraoch based on indepedent uniform distribution, multi-variant gaussian distribution, histogram and kernel density estimation based on Epanechnikov. 
  - The `LoadEnsAndProcessByUniform` can load the ensemble data and uses the uniform kernel to compute the critical point (minimal value).
  - The `LoadEnsAndProcessByMC` can load the ensmeble data and uses Monte Carlo Sampling approach to compute the critical point (minimal value).
  - The `LoadEnsAndProcessByMVG` can load the ensmeble data and uses multi-variant gauusian approach to compute the critical point (minimal value).
