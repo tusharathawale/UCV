@@ -58,7 +58,6 @@ namespace vtkm
           vtkm::cont::ArrayCopyShallowIfPossible(EnsembleMinY.GetData(), ConcreteEnsembleMinY);
           vtkm::cont::ArrayCopyShallowIfPossible(EnsembleMaxY.GetData(), ConcreteEnsembleMaxY);
           vtkm::cont::ArrayCopyShallowIfPossible(EnsembleMinZ.GetData(), ConcreteEnsembleMinZ);
-          vtkm::cont::ArrayCopyShallowIfPossible(EnsembleMaxZ.GetData(), ConcreteEnsembleMaxZ);
           vtkm::cont::ArrayCopyShallowIfPossible(EnsembleMinW.GetData(), ConcreteEnsembleMinW);
           vtkm::cont::ArrayCopyShallowIfPossible(EnsembleMaxW.GetData(), ConcreteEnsembleMaxW);
 
@@ -79,8 +78,8 @@ namespace vtkm
                          ConcreteEnsembleMaxY,
                          ConcreteEnsembleMinZ,
                          ConcreteEnsembleMaxZ,
-                          ConcreteEnsembleMinW,
-                          ConcreteEnsembleMaxW,
+                         ConcreteEnsembleMinW,
+                         ConcreteEnsembleMaxW,
                          Probability);
           }
           else if (this->Approach == "ClosedForm")
@@ -95,8 +94,8 @@ namespace vtkm
                          ConcreteEnsembleMaxY,
                          ConcreteEnsembleMinZ,
                          ConcreteEnsembleMaxZ,
-                          ConcreteEnsembleMinW,
-                          ConcreteEnsembleMaxW,
+                         ConcreteEnsembleMinW,
+                         ConcreteEnsembleMaxW,
                          Probability);
           }
           else if (this->Approach == "Mean")
@@ -111,8 +110,8 @@ namespace vtkm
                          ConcreteEnsembleMaxY,
                          ConcreteEnsembleMinZ,
                          ConcreteEnsembleMaxZ,
-                          ConcreteEnsembleMinW,
-                          ConcreteEnsembleMaxW,
+                         ConcreteEnsembleMinW,
+                         ConcreteEnsembleMaxW,
                          Probability);
           }
           else

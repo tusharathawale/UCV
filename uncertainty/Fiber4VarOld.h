@@ -8,10 +8,11 @@
 //  PURPOSE.  See the above copyright notice for more information.
 //============================================================================
 
-#ifndef vtk_m_filter_uncertainty_Fiber_separate_h
-#define vtk_m_filter_uncertainty_Fiber_separate_h
+#ifndef vtk_m_filter_uncertainty_FiberMultiVar_h
+#define vtk_m_filter_uncertainty_FiberMultiVar_h
 
 #include <vtkm/filter/Filter.h>
+#include <vtkm/filter/uncertainty/vtkm_filter_uncertainty_export.h>
 
 namespace vtkm
 {
@@ -19,23 +20,26 @@ namespace filter
 {
 namespace uncertainty
 {
-class Fiber4Var : public vtkm::filter::Filter
+class VTKM_FILTER_UNCERTAINTY_EXPORT Fiber4Var : public vtkm::filter::Filter
 {
-  vtkm::Vec<vtkm::Float64, 4> minAxis;
-  vtkm::Vec<vtkm::Float64, 4> maxAxis;
-  std::string Approach = "ClosedForm"; //MonteCarlo or ClosedForm
-  vtkm::Id NumSamples = 500;
+  vtkm::Vec<vtkm::Float64, 4> bottomLeft;
+  vtkm::Vec<vtkm::Float64, 4> topRight;
 
 public:
-  VTKM_CONT void SetMinAxis(const vtkm::Vec<vtkm::Float64, 4>& minCoordinate)
+
+  // x1, y1, z1 
+  VTKM_CONT void SetBottomLeftAxis(const vtkm::Vec<vtkm::Float64, 4>& bottomLeftCoordinate)
   {
-    this->minAxis = minCoordinate;
+    this->bottomLeft = bottomLeftCoordinate;
+  }
+  
+  // x2, y2, z2 
+  VTKM_CONT void SetTopRightAxis(const vtkm::Vec<vtkm::Float64, 4>& topRightCoordinate)
+  {
+    this->topRight = topRightCoordinate;
   }
 
-  VTKM_CONT void SetMaxAxis(const vtkm::Vec<vtkm::Float64, 4>& maxCoordinate)
-  {
-    this->maxAxis = maxCoordinate;
-  }
+  // (x1, x2)
   VTKM_CONT void SetMinX(const std::string& fieldName)
   {
     this->SetActiveField(0, fieldName, vtkm::cont::Field::Association::Points);
@@ -44,6 +48,8 @@ public:
   {
     this->SetActiveField(1, fieldName, vtkm::cont::Field::Association::Points);
   }
+  
+  // (y1, y2)
   VTKM_CONT void SetMinY(const std::string& fieldName)
   {
     this->SetActiveField(2, fieldName, vtkm::cont::Field::Association::Points);
@@ -52,6 +58,8 @@ public:
   {
     this->SetActiveField(3, fieldName, vtkm::cont::Field::Association::Points);
   }
+
+  // (z1, z2)
   VTKM_CONT void SetMinZ(const std::string& fieldName)
   {
     this->SetActiveField(4, fieldName, vtkm::cont::Field::Association::Points);
@@ -60,6 +68,8 @@ public:
   {
     this->SetActiveField(5, fieldName, vtkm::cont::Field::Association::Points);
   }
+  
+  //(w1,w2)
   VTKM_CONT void SetMinW(const std::string& fieldName)
   {
     this->SetActiveField(6, fieldName, vtkm::cont::Field::Association::Points);
@@ -68,18 +78,6 @@ public:
   {
     this->SetActiveField(7, fieldName, vtkm::cont::Field::Association::Points);
   }
-
-  VTKM_CONT void SetNumSamples(const vtkm::Id& numSamples)
-  {
-    this->NumSamples=numSamples;
-  }
-
-   VTKM_CONT void SetApproach(const std::string& approach)
-  {
-    this->Approach=approach;
-  } 
-
-
 
 private:
   VTKM_CONT vtkm::cont::DataSet DoExecute(const vtkm::cont::DataSet& input) override;

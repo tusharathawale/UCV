@@ -37,14 +37,14 @@ namespace vtkm
         // Worklet Input
         // Fiber(const std::vector<std::pair<double, double>>& minAxis,
         //      const std::vector<std::pair<double, double>>& maxAxis)
-        //  : InputMinAxis(minAxis), InputMaxAxis(maxAxis){};
+        //  : SetMinAxis(minAxis), SetMaxAxis(maxAxis){};
         FiberMonteCarlo(const vtkm::Vec<vtkm::Float64, 4> &minAxis,
                         const vtkm::Vec<vtkm::Float64, 4> &maxAxis,
                         const vtkm::Id numSamples)
-            : InputMinAxis(minAxis), InputMaxAxis(maxAxis), NumSamples(numSamples){};
+            : SetMinAxis(minAxis), SetMaxAxis(maxAxis), NumSamples(numSamples){};
 
         // Input and Output Parameters
-        using ControlSignature = void(CellSetIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldOut);
+        using ControlSignature = void(CellSetIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn,  FieldOut);
         using ExecutionSignature = void(_2, _3, _4, _5, _6, _7, _8, _9, _10);
         using InputDomain = _1;
 
@@ -71,21 +71,21 @@ namespace vtkm
         {
           // User defined rectangle(trait)
           vtkm::FloatDefault minX_user = 0.0;
-          minX_user = static_cast<vtkm::FloatDefault>(InputMinAxis[0]);
+          minX_user = static_cast<vtkm::FloatDefault>(SetMinAxis[0]);
           vtkm::FloatDefault minY_user = 0.0;
-          minY_user = static_cast<vtkm::FloatDefault>(InputMinAxis[1]);
+          minY_user = static_cast<vtkm::FloatDefault>(SetMinAxis[1]);
           vtkm::FloatDefault minZ_user = 0.0;
-          minZ_user = static_cast<vtkm::FloatDefault>(InputMinAxis[2]);
-          vtkm::FloatDefault maxX_user = 0.0;
-          maxX_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[0]);
-          vtkm::FloatDefault maxY_user = 0.0;
-          maxY_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[1]);
-          vtkm::FloatDefault maxZ_user = 0.0;
-          maxZ_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[2]);
+          minZ_user = static_cast<vtkm::FloatDefault>(SetMinAxis[2]);
           vtkm::FloatDefault minW_user = 0.0;
-          minW_user = static_cast<vtkm::FloatDefault>(InputMinAxis[3]);
+          minW_user = static_cast<vtkm::FloatDefault>(SetMinAxis[3]);
+          vtkm::FloatDefault maxX_user = 0.0;
+          maxX_user = static_cast<vtkm::FloatDefault>(SetMaxAxis[0]);
+          vtkm::FloatDefault maxY_user = 0.0;
+          maxY_user = static_cast<vtkm::FloatDefault>(SetMaxAxis[1]);
+          vtkm::FloatDefault maxZ_user = 0.0;
+          maxZ_user = static_cast<vtkm::FloatDefault>(SetMaxAxis[2]);
           vtkm::FloatDefault maxW_user = 0.0;
-          maxW_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[3]);
+          maxW_user = static_cast<vtkm::FloatDefault>(SetMaxAxis[3]);
           // vtkm::FloatDefault TraitArea = (maxX_user - minX_user) * (maxY_user - minY_user);
 
           vtkm::FloatDefault minX_dataset = 0.0;
@@ -114,9 +114,10 @@ namespace vtkm
           minW_dataset = static_cast<vtkm::FloatDefault>(EnsembleMinW);
           maxW_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxW);
 
+
           // if data rectangle is zero, there is no uncertainty, return zero
-          // TODO needs 3var implementation
-          if (abs(minX_dataset - maxX_dataset) < 0.000001 && abs(minY_dataset - maxY_dataset) < 0.000001 && abs(minZ_dataset - maxZ_dataset) < 0.000001 && abs(minW_dataset - maxW_dataset) < 0.000001)
+          // TODO needs 4var implementation
+          if (abs(minX_dataset - maxX_dataset) < 0.000001 && abs(minY_dataset - maxY_dataset) < 0.000001)
           {
             probability = 0.0;
             return;
@@ -133,9 +134,7 @@ namespace vtkm
           {
             N1 = distX(rng);
             N2 = distY(rng);
-            N3 = distY(rng);
-            N4 = distY(rng);
-            if ((N1 > minX_user) && (N1 < maxX_user) && (N2 > minY_user) && (N2 < maxY_user) && (N3 > minZ_user) && (N3 < maxZ_user) && (N4 > minW_user) && (N4 < maxW_user)
+            if ((N1 > minX_user) && (N1 < maxX_user) && (N2 > minY_user) && (N2 < maxY_user))
             {
               NonZeroCases++;
             }
@@ -173,8 +172,8 @@ namespace vtkm
         }
 
       private:
-        vtkm::Vec<vtkm::Float64, 4> InputMinAxis;
-        vtkm::Vec<vtkm::Float64, 4> InputMaxAxis;
+        vtkm::Vec<vtkm::Float64, 4> SetMinAxis;
+        vtkm::Vec<vtkm::Float64, 4> SetMaxAxis;
         vtkm::Id NumSamples = 1;
       };
 
@@ -184,13 +183,13 @@ namespace vtkm
         // Worklet Input
         // Fiber(const std::vector<std::pair<double, double>>& minAxis,
         //      const std::vector<std::pair<double, double>>& maxAxis)
-        //  : InputMinAxis(minAxis), InputMaxAxis(maxAxis){};
+        //  : SetMinAxis(minAxis), SetMaxAxis(maxAxis){};
         FiberClosedForm(const vtkm::Vec<vtkm::Float64, 4> &minAxis,
                         const vtkm::Vec<vtkm::Float64, 4> &maxAxis)
-            : InputMinAxis(minAxis), InputMaxAxis(maxAxis){};
+            : SetMinAxis(minAxis), SetMaxAxis(maxAxis){};
 
         // Input and Output Parameters
-        using ControlSignature = void(CellSetIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldOut);
+        using ControlSignature = void(CellSetIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn,  FieldOut);
         using ExecutionSignature = void(_2, _3, _4, _5, _6, _7, _8, _9, _10);
         using InputDomain = _1;
 
@@ -216,16 +215,22 @@ namespace vtkm
                                   OutCellFieldType &probability) const
         {
           // User defined rectangle(trait)
-
-          vtkm::FloatDefault minX_user = static_cast<vtkm::FloatDefault>(InputMinAxis[0]);
-          vtkm::FloatDefault minY_user = static_cast<vtkm::FloatDefault>(InputMinAxis[1]);
-          vtkm::FloatDefault minZ_user = static_cast<vtkm::FloatDefault>(InputMinAxis[2]);
-          vtkm::FloatDefault minW_user = static_cast<vtkm::FloatDefault>(InputMinAxis[3]); 
-          vtkm::FloatDefault maxX_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[0]);
-          vtkm::FloatDefault maxY_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[1]);
-          vtkm::FloatDefault maxZ_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[2]);
-          vtkm::FloatDefault maxW_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[3]);
-
+          vtkm::FloatDefault minX_user = 0.0;
+          minX_user = static_cast<vtkm::FloatDefault>(SetMinAxis[0]);
+          vtkm::FloatDefault minY_user = 0.0;
+          minY_user = static_cast<vtkm::FloatDefault>(SetMinAxis[1]);
+          vtkm::FloatDefault minZ_user = 0.0;
+          minZ_user = static_cast<vtkm::FloatDefault>(SetMinAxis[2]);
+          vtkm::FloatDefault minW_user = 0.0;
+          minW_user = static_cast<vtkm::FloatDefault>(SetMinAxis[3]);
+          vtkm::FloatDefault maxX_user = 0.0;
+          maxX_user = static_cast<vtkm::FloatDefault>(SetMaxAxis[0]);
+          vtkm::FloatDefault maxY_user = 0.0;
+          maxY_user = static_cast<vtkm::FloatDefault>(SetMaxAxis[1]);
+          vtkm::FloatDefault maxZ_user = 0.0;
+          maxZ_user = static_cast<vtkm::FloatDefault>(SetMaxAxis[2]);
+          vtkm::FloatDefault maxW_user = 0.0;
+          maxW_user = static_cast<vtkm::FloatDefault>(SetMaxAxis[3]);
 
 
           // data rectangle
@@ -260,12 +265,11 @@ namespace vtkm
           {
             probability = 0.0;
           }
-         
         }
 
       private:
-        vtkm::Vec<vtkm::Float64, 4> InputMinAxis;
-        vtkm::Vec<vtkm::Float64, 4> InputMaxAxis;
+        vtkm::Vec<vtkm::Float64, 4> SetMinAxis;
+        vtkm::Vec<vtkm::Float64, 4> SetMaxAxis;
       };
 
       class FiberMean : public vtkm::worklet::WorkletPointNeighborhood
@@ -273,10 +277,10 @@ namespace vtkm
       public:
         FiberMean(const vtkm::Vec<vtkm::Float64, 4> &minAxis,
                   const vtkm::Vec<vtkm::Float64, 4> &maxAxis)
-            : InputMinAxis(minAxis), InputMaxAxis(maxAxis){};
+            : SetMinAxis(minAxis), SetMaxAxis(maxAxis){};
 
         // Input and Output Parameters
-        using ControlSignature = void(CellSetIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldOut);
+        using ControlSignature = void(CellSetIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn, FieldIn,  FieldOut);
         using ExecutionSignature = void(_2, _3, _4, _5, _6, _7, _8, _9, _10);
         using InputDomain = _1;
 
@@ -301,18 +305,24 @@ namespace vtkm
                                   const MaxW &EnsembleMaxW,
                                   OutCellFieldType &probability) const
         {
-
           // User defined rectangle(trait)
-          
-          vtkm::FloatDefault minX_user = static_cast<vtkm::FloatDefault>(InputMinAxis[0]);
-          vtkm::FloatDefault minY_user = static_cast<vtkm::FloatDefault>(InputMinAxis[1]);
-          vtkm::FloatDefault minZ_user = static_cast<vtkm::FloatDefault>(InputMinAxis[2]);
-          vtkm::FloatDefault minW_user = static_cast<vtkm::FloatDefault>(InputMinAxis[3]);
-          vtkm::FloatDefault maxX_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[0]);
-          vtkm::FloatDefault maxY_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[1]);
-          vtkm::FloatDefault maxZ_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[2]);
-          vtkm::FloatDefault maxW_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[3]);
-          
+          vtkm::FloatDefault minX_user = 0.0;
+          minX_user = static_cast<vtkm::FloatDefault>(SetMinAxis[0]);
+          vtkm::FloatDefault minY_user = 0.0;
+          minY_user = static_cast<vtkm::FloatDefault>(SetMinAxis[1]);
+          vtkm::FloatDefault minZ_user = 0.0;
+          minZ_user = static_cast<vtkm::FloatDefault>(SetMinAxis[2]);
+          vtkm::FloatDefault minW_user = 0.0;
+          minW_user = static_cast<vtkm::FloatDefault>(SetMinAxis[3]);
+          vtkm::FloatDefault maxX_user = 0.0;
+          maxX_user = static_cast<vtkm::FloatDefault>(SetMaxAxis[0]);
+          vtkm::FloatDefault maxY_user = 0.0;
+          maxY_user = static_cast<vtkm::FloatDefault>(SetMaxAxis[1]);
+          vtkm::FloatDefault maxZ_user = 0.0;
+          maxZ_user = static_cast<vtkm::FloatDefault>(SetMaxAxis[2]);
+          vtkm::FloatDefault maxW_user = 0.0;
+          maxW_user = static_cast<vtkm::FloatDefault>(SetMaxAxis[3]);
+
 
           // data rectangle
           vtkm::FloatDefault minX_dataset = static_cast<vtkm::FloatDefault>(EnsembleMinX);
@@ -347,8 +357,8 @@ namespace vtkm
         }
 
       private:
-        vtkm::Vec<vtkm::Float64, 4> InputMinAxis;
-        vtkm::Vec<vtkm::Float64, 4> InputMaxAxis;
+        vtkm::Vec<vtkm::Float64, 4> SetMinAxis;
+        vtkm::Vec<vtkm::Float64, 4> SetMaxAxis;
       };
 
     }

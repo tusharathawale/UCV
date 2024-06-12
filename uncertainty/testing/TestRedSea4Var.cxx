@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     std::string Approach = std::string(argv[2]);
     int NumSamples = std::stoi(argv[3]); // this only work when appraoch is MonteCarlo
 
-    if (Approach == "MonteCarlo" || Approach == "ClosedForm")
+    if (Approach == "MonteCarlo" || Approach == "ClosedForm" || Approach == "Mean")
     {
     }
     else
@@ -48,8 +48,8 @@ int main(int argc, char *argv[])
     std::string VorField = "vorticityMagnitude";
 
     // the name of the file is mistyped, the value is actually the curl
-    std::string MeanCurlFile = dataFolder + "/curlZ/meanVol/meanVorticity.vtk";
-    std::string DevCurlFile = dataFolder + "/curlZ/devVol/devVorticity.vtk";
+    std::string MeanCurlFile = dataFolder + "/curlZ/meanVol/meanCurl.vtk";
+    std::string DevCurlFile = dataFolder + "/curlZ/devVol/devCurl.vtk";
 
     std::string MeanVorFile = dataFolder + "/vorticityMagnitude/meanVol/meanVorticity.vtk";
     std::string DevVorFile = dataFolder + "/vorticityMagnitude/devVol/devVorticity.vtk";
@@ -171,18 +171,18 @@ int main(int argc, char *argv[])
     // curlz -15 -1
     // vorticity 1 15
     // big user specified rectangle need more monte carlo sampling
-    vtkm::Vec4f bottomLeft(-15.0, 0.0, 0.0, 10.0);
+    vtkm::Vec<vtkm::Float64, 4> minAxis(-15.0, 0.0, 0.0, 10.0);
 
     //old 
     //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> topRight(-0.1, 20);
     //new value matching paper
-    vtkm::Vec4f topRight(-0.1, 15, 0.4, 29);
+    vtkm::Vec<vtkm::Float64, 4> maxAxis(-0.1, 15, 0.4, 29);
 
     // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> bottomLeft(-5.0, 0.0);
     // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> topRight(5.0, 6.0);
 
-    filter.SetBottomLeftAxis(bottomLeft);
-    filter.SetTopRightAxis(topRight);
+    filter.SetMinAxis(minAxis);
+    filter.SetMaxAxis(maxAxis);
 
 
     // create the data based on min and max array
@@ -226,13 +226,13 @@ int main(int argc, char *argv[])
     filter.SetMinW("ensemble_min_four");
     filter.SetMaxW("ensemble_max_four");
 
-    /*
+    
     filter.SetApproach(Approach);
     if (Approach == "MonteCarlo")
     {
         filter.SetNumSamples(NumSamples);    
     }
-    */  
+
     
 
     //vtkm::cont::Timer timer{initResult.Device};
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
         //std::cout << std::to_string(i) << "th run" << std::endl;
         //timer.Start();
         vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
-        std::string outputFilename = "redSea4VarOutput.vtk"; 
+        std::string outputFilename = "redSea4VarOutputNewImpMean.vtk"; 
         vtkm::io::VTKDataSetWriter writer(outputFilename);
         writer.WriteDataSet(output);
         //timer.Synchronize();

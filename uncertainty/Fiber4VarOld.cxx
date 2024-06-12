@@ -10,8 +10,8 @@
 
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/Timer.h>
-#include "./Fiber4Var.h"
-#include "./worklet/Fiber4Var.h"
+#include "Fiber4Var.h"
+#include "worklet/Fiber4Var.h"
 
 namespace vtkm
 {
@@ -21,9 +21,11 @@ namespace vtkm
     {
       VTKM_CONT vtkm::cont::DataSet Fiber4Var::DoExecute(const vtkm::cont::DataSet &input)
       {
-        std::string FieldName;
+        // vtkm::cont::Timer timer;
+        // timer.Start();
 
-        vtkm::cont::Field EnsembleMinX = this->GetFieldFromDataSet(0, input);
+        // Input Field
+        vtkm::cont::Field EnsembleMinX = this->GetFieldFromDataSet(0, input); // For resolve type
         vtkm::cont::Field EnsembleMaxX = this->GetFieldFromDataSet(1, input);
         vtkm::cont::Field EnsembleMinY = this->GetFieldFromDataSet(2, input);
         vtkm::cont::Field EnsembleMaxY = this->GetFieldFromDataSet(3, input);
@@ -33,15 +35,17 @@ namespace vtkm
         vtkm::cont::Field EnsembleMaxW = this->GetFieldFromDataSet(7, input);
 
         // Output Field
-        vtkm::cont::UnknownArrayHandle OutputProbability;
+        vtkm::cont::UnknownArrayHandle OutputMonteCarloProbability;
+        vtkm::cont::UnknownArrayHandle OutputInteriorProbability;
 
+        // CellSet
         vtkm::cont::CellSetStructured<3> cellSet;
         input.GetCellSet().AsCellSet(cellSet);
 
-        //  For Invoker
+        // For Invoker
         auto resolveType = [&](auto ConcreteEnsembleMinX)
         {
-          //  Obtaining Type
+          // Obtaining Type
           using ArrayType = std::decay_t<decltype(ConcreteEnsembleMinX)>;
           using ValueType = typename ArrayType::ValueType;
 
@@ -63,70 +67,38 @@ namespace vtkm
           vtkm::cont::ArrayCopyShallowIfPossible(EnsembleMaxW.GetData(), ConcreteEnsembleMaxW);
 
           // Temporary Output Variable
-          vtkm::cont::ArrayHandle<ValueType> Probability;
+          vtkm::cont::ArrayHandle<ValueType> ConcreteMonteCarloProbability;
+          vtkm::cont::ArrayHandle<ValueType> ConcreteInteriorProbability;
 
           // Invoker
-
-          if (this->Approach == "MonteCarlo")
-          {
-            FieldName = "MonteCarlo";
-            std::cout << "Adopt monte carlo with numsamples " << this->NumSamples << std::endl;
-            this->Invoke(vtkm::worklet::detail::FiberMonteCarlo{this->minAxis, this->maxAxis, this->NumSamples},
-                         cellSet,
-                         ConcreteEnsembleMinX,
-                         ConcreteEnsembleMaxX,
-                         ConcreteEnsembleMinY,
-                         ConcreteEnsembleMaxY,
-                         ConcreteEnsembleMinZ,
-                         ConcreteEnsembleMaxZ,
-                          ConcreteEnsembleMinW,
-                          ConcreteEnsembleMaxW,
-                         Probability);
-          }
-          else if (this->Approach == "ClosedForm")
-          {
-            FieldName = "ClosedForm";
-            std::cout << "Adopt ClosedForm" << std::endl;
-            this->Invoke(vtkm::worklet::detail::FiberClosedForm{this->minAxis, this->maxAxis},
-                         cellSet,
-                         ConcreteEnsembleMinX,
-                         ConcreteEnsembleMaxX,
-                         ConcreteEnsembleMinY,
-                         ConcreteEnsembleMaxY,
-                         ConcreteEnsembleMinZ,
-                         ConcreteEnsembleMaxZ,
-                          ConcreteEnsembleMinW,
-                          ConcreteEnsembleMaxW,
-                         Probability);
-          }
-          else if (this->Approach == "Mean")
-          {
-            FieldName = "Mean";
-            std::cout << "Adopt Mean" << std::endl;
-            this->Invoke(vtkm::worklet::detail::FiberMean{this->minAxis, this->maxAxis},
-                         cellSet,
-                         ConcreteEnsembleMinX,
-                         ConcreteEnsembleMaxX,
-                         ConcreteEnsembleMinY,
-                         ConcreteEnsembleMaxY,
-                         ConcreteEnsembleMinZ,
-                         ConcreteEnsembleMaxZ,
-                          ConcreteEnsembleMinW,
-                          ConcreteEnsembleMaxW,
-                         Probability);
-          }
-          else
-          {
-            throw std::runtime_error("unsupported approach:" + this->Approach);
-          }
+          // this->IsoValue
+          this->Invoke(vtkm::worklet::detail::Fiber4Var{this->bottomLeft, this->topRight},
+                       cellSet,
+                       ConcreteEnsembleMinX,
+                       ConcreteEnsembleMaxX,
+                       ConcreteEnsembleMinY,
+                       ConcreteEnsembleMaxY,
+                       ConcreteEnsembleMinZ,
+                       ConcreteEnsembleMaxZ,
+                       ConcreteEnsembleMinW,
+                       ConcreteEnsembleMaxW,
+                       ConcreteMonteCarloProbability,
+                       ConcreteInteriorProbability);
 
           // From Temporary Output Variable to Output Variable
-          OutputProbability = Probability;
+          OutputMonteCarloProbability = ConcreteMonteCarloProbability;
+          OutputInteriorProbability = ConcreteInteriorProbability;
         };
         this->CastAndCallScalarField(EnsembleMinX, resolveType);
 
+        // Creating Result
         vtkm::cont::DataSet result = this->CreateResult(input);
-        result.AddPointField(FieldName, OutputProbability);
+        result.AddPointField("OutputMonteCarloProbability", OutputMonteCarloProbability);
+        result.AddPointField("OutputInteriorProbability", OutputInteriorProbability);
+
+        //   timer.Stop();
+        //   vtkm::Float64 elapsedTime = timer.GetElapsedTime();
+        //   std::cout << elapsedTime << std::endl;
 
         return result;
       }

@@ -69,6 +69,7 @@ public:
     this->SetActiveField(7, fieldName, vtkm::cont::Field::Association::Points);
   }
 
+
   VTKM_CONT void SetNumSamples(const vtkm::Id& numSamples)
   {
     this->NumSamples=numSamples;
@@ -78,7 +79,6 @@ public:
   {
     this->Approach=approach;
   } 
-
 
 
 private:
