@@ -40,5 +40,5 @@ In the paper, we describes multiple appraoches to compute the critical point, in
  - The `LoadEnsAndProcessByMVG` can load the ensmeble data and uses multi-variant gauusian approach to compute the critical point (minimal value).
  - The `LoadWeatherProcessByEpanech` can load the ensmeble data and uses Epanechnikov compute the critical point (minimal value).
 
-
+These testing files can be used for both redsea data and weather data described in paper, in particular, [this script](https://github.com/wangzhezhe/UCV/blob/exp_critical_point_noplugin/exp_scripts/frontier_run_redsea.sh) and [this script](https://github.com/wangzhezhe/UCV/blob/exp_critical_point_noplugin/exp_scripts/frontier_run_weather.sh) shows details and associated parameters of how to run testing fiels on Frontier platform for redsea data and weather data, respectively.
 
