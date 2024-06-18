@@ -98,6 +98,15 @@ target_link_libraries(TestRedSeaComparison ${VTKm_LIBRARIES})
 add_executable(TestRedSea2Var TestRedSea2Var.cxx ../Fiber2Var.cxx)
 target_link_libraries(TestRedSea2Var ${VTKm_LIBRARIES})
 
+add_executable(TestAsteroidImpact2Var TestAsteroidImpact2Var.cxx ../Fiber2Var.cxx)
+target_link_libraries(TestAsteroidImpact2Var ${VTKm_LIBRARIES})
+
+add_executable(TestAsteroidImpact3Var TestAsteroidImpact3Var.cxx ../Fiber3Var.cxx)
+target_link_libraries(TestAsteroidImpact3Var ${VTKm_LIBRARIES})
+
+add_executable(TestAsteroidImpact4Var TestAsteroidImpact4Var.cxx ../Fiber4Var.cxx)
+target_link_libraries(TestAsteroidImpact4Var ${VTKm_LIBRARIES})
+
 add_executable(temp temp.cxx)
 target_link_libraries(temp ${VTKm_LIBRARIES})
 

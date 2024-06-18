@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     }
 
     std::string dataFolder = std::string(argv[1]);
-    int NumEns = 20;
+    //int NumEns = 20;
 
     std::string Approach = std::string(argv[2]);
     int NumSamples = std::stoi(argv[3]); // this only work when appraoch is MonteCarlo
@@ -207,14 +207,14 @@ int main(int argc, char *argv[])
 
 
 
-    dataSetForFilter.AddPointField("MeanCurlDataArray", MeanCurlDataArray);
-    dataSetForFilter.AddPointField("DevCurlDataArray", DevCurlDataArray);
-    dataSetForFilter.AddPointField("MeanVorDataArray", MeanVorDataArray);
-    dataSetForFilter.AddPointField("DevVorDataArray", DevVorDataArray);
-    dataSetForFilter.AddPointField("MeanVelDataArray", MeanVelDataArray);
-    dataSetForFilter.AddPointField("DevVelDataArray", DevVelDataArray);
-    dataSetForFilter.AddPointField("MeanTempDataArray", MeanTempDataArray);
-    dataSetForFilter.AddPointField("DevTempDataArray", DevTempDataArray);
+    //dataSetForFilter.AddPointField("MeanCurlDataArray", MeanCurlDataArray);
+    //dataSetForFilter.AddPointField("DevCurlDataArray", DevCurlDataArray);
+    //dataSetForFilter.AddPointField("MeanVorDataArray", MeanVorDataArray);
+    //dataSetForFilter.AddPointField("DevVorDataArray", DevVorDataArray);
+    //dataSetForFilter.AddPointField("MeanVelDataArray", MeanVelDataArray);
+    //dataSetForFilter.AddPointField("DevVelDataArray", DevVelDataArray);
+    //dataSetForFilter.AddPointField("MeanTempDataArray", MeanTempDataArray);
+    //dataSetForFilter.AddPointField("DevTempDataArray", DevTempDataArray);
 
     // call the fiber filter
     filter.SetMinX("ensemble_min_one");
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
         //std::cout << std::to_string(i) << "th run" << std::endl;
         //timer.Start();
         vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
-        std::string outputFilename = "redSea4VarOutputNewImpMean.vtk"; 
+        std::string outputFilename = "redSea4VarOutput"+Approach+std::to_string(NumSamples)+".vtk"; 
         vtkm::io::VTKDataSetWriter writer(outputFilename);
         writer.WriteDataSet(output);
         //timer.Synchronize();

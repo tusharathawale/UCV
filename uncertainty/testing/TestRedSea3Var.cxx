@@ -181,12 +181,12 @@ int main(int argc, char *argv[])
 
 
 
-    dataSetForFilter.AddPointField("MeanCurlDataArray", MeanCurlDataArray);
-    dataSetForFilter.AddPointField("DevCurlDataArray", DevCurlDataArray);
-    dataSetForFilter.AddPointField("MeanVorDataArray", MeanVorDataArray);
-    dataSetForFilter.AddPointField("DevVorDataArray", DevVorDataArray);
-    dataSetForFilter.AddPointField("MeanVelDataArray", MeanVelDataArray);
-    dataSetForFilter.AddPointField("DevVelDaßtaArray", DevVelDataArray);
+    //dataSetForFilter.AddPointField("MeanCurlDataArray", MeanCurlDataArray);
+    //dataSetForFilter.AddPointField("DevCurlDataArray", DevCurlDataArray);
+    //dataSetForFilter.AddPointField("MeanVorDataArray", MeanVorDataArray);
+    //dataSetForFilter.AddPointField("DevVorDataArray", DevVorDataArray);
+    //dataSetForFilter.AddPointField("MeanVelDataArray", MeanVelDataArray);
+    //dataSetForFilter.AddPointField("DevVelDaßtaArray", DevVelDataArray);
 
     // call the fiber filter
     filter.SetMinX("ensemble_min_one");
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
         //std::cout << std::to_string(i) << "th run" << std::endl;
         //timer.Start();
         vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
-        std::string outputFilename = "redSea3VarOutputWithFIber3VarMean.vtk"; 
+        std::string outputFilename = "redSea3VarOutput"+Approach+std::to_string(NumSamples)+".vtk"; 
         vtkm::io::VTKDataSetWriter writer(outputFilename);
         writer.WriteDataSet(output);
         //timer.Synchronize();
