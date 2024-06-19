@@ -290,6 +290,11 @@ target_link_libraries(ucv_hurrican_data ${VTKm_LIBRARIES})
 add_executable(ucv_hurrican_ml_model ucv_hurrican_ml_model.cpp)
 target_link_libraries(ucv_hurrican_ml_model ${VTKm_LIBRARIES})
 
+add_executable(ucv_beetle_ml_model ucv_beetle_ml_model.cpp)
+target_link_libraries(ucv_beetle_ml_model ${VTKm_LIBRARIES})
+
+
+
 endif()
 
 

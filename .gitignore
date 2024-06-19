@@ -11,3 +11,4 @@ src/
 dataset/
 .DS_Store
 utpy/
+*.zip
