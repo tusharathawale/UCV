@@ -103,6 +103,21 @@ namespace vtkm
                          ConcreteEnsembleMaxZ,
                          Probability);
           }
+          else if (this->Approach == "Truth")
+          {
+            FieldName = "Truth";
+            std::cout << "Adopt Truth" << std::endl;
+            this->Invoke(vtkm::worklet::detail::FiberTruth{this->minAxis, this->maxAxis},
+                         cellSet,
+                         ConcreteEnsembleMinX,
+                         ConcreteEnsembleMaxX,
+                         ConcreteEnsembleMinY,
+                         ConcreteEnsembleMaxY,
+                         ConcreteEnsembleMinZ,
+                         ConcreteEnsembleMaxZ,
+                         Probability);
+          }
+          
           else
           {
             throw std::runtime_error("unsupported approach:" + this->Approach);

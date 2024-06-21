@@ -135,7 +135,7 @@ namespace vtkm
             N2 = distY(rng);
             N3 = distY(rng);
             N4 = distY(rng);
-            if ((N1 > minX_user) && (N1 < maxX_user) && (N2 > minY_user) && (N2 < maxY_user) && (N3 > minZ_user) && (N3 < maxZ_user) && (N4 > minW_user) && (N4 < maxW_user)
+            if ((N1 > minX_user) && (N1 < maxX_user) && (N2 > minY_user) && (N2 < maxY_user) && (N3 > minZ_user) && (N3 < maxZ_user) && (N4 > minW_user) && (N4 < maxW_user))
             {
               NonZeroCases++;
             }
