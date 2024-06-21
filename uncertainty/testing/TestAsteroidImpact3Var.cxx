@@ -6,7 +6,7 @@
 #include <vtkm/cont/DataSetBuilderUniform.h>
 #include <vtkm/cont/Algorithm.h>
 #include "../worklet/ExtractingMinMaxFromMeanDev.hpp"
-//#include <vtkm/io/VTKDataSetWriter.h>
+
 
 
 #include "../Fiber3Var.h"
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
     std::string Approach = std::string(argv[2]);
     int NumSamples = std::stoi(argv[3]); // this only work when appraoch is MonteCarlo
 
-    if (Approach == "MonteCarlo" || Approach == "ClosedForm" || Approach == "Mean")
+    if (Approach == "MonteCarlo" || Approach == "ClosedForm" || Approach == "Mean" || Approach == "Truth")
     {
     }
     else
@@ -143,12 +143,15 @@ int main(int argc, char *argv[])
     // curlz -15 -1
     // vorticity 1 15
     // big user specified rectangle need more monte carlo sampling
-    vtkm::Vec3f minAxisValue(0, 0.01809121295809746, 34000);
+    //vtkm::Vec3f minAxisValue(0, 0.01809121295809746, 34000)
+    vtkm::Vec3f minAxisValue(0.1, 0.2, 30000);
 
     //old 
     //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.1, 20);
     //new value matching paper
-    vtkm::Vec3f maxAxisValue(0.5, 0.25, 400000000);
+    //vtkm::Vec3f maxAxisValue(0.5, 0.25, 400000000);
+    //vtkm::Vec3f maxAxisValue(0.5, 0.25, 400000);
+    vtkm::Vec3f maxAxisValue(1, 0.4, 507509888);
 
     // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-5.0, 0.0);
     // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(5.0, 6.0);
