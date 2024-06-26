@@ -111,6 +111,9 @@ target_link_libraries(TestAsteroidImpact3VarTruth ${VTKm_LIBRARIES})
 add_executable(TestAsteroidImpact4Var TestAsteroidImpact4Var.cxx ../Fiber4Var.cxx)
 target_link_libraries(TestAsteroidImpact4Var ${VTKm_LIBRARIES})
 
+add_executable(TestS3D3Var TestS3D3Var.cxx ../Fiber3Var.cxx)
+target_link_libraries(TestS3D3Var ${VTKm_LIBRARIES})
+
 add_executable(temp temp.cxx)
 target_link_libraries(temp ${VTKm_LIBRARIES})
 
