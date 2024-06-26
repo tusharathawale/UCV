@@ -37,9 +37,9 @@ int main(int argc, char *argv[])
     vtkm::cont::Timer timer{initResult.Device};
     std::cout << "initResult.Device: " << initResult.Device.GetName() << " timer device: " << timer.GetDevice().GetName() << std::endl;
 
-    if (argc != 5)
+    if (argc != 6)
     {
-        std::cout << "executable [VTK-m options] <filename> <fieldname> <isovalue> <error value>" << std::endl;
+        std::cout << "executable [VTK-m options] <filename> <fieldname> <isovalue> <error value> <std value>" << std::endl;
         std::cout << "VTK-m options are:\n";
         std::cout << initResult.Usage << std::endl;
         exit(0);
@@ -49,17 +49,18 @@ int main(int argc, char *argv[])
     std::string fieldName = argv[2];
     double isovalue = std::atof(argv[3]);
     double errvalue = std::atof(argv[4]);
+    double stdvalue = std::atof(argv[5]);
 
-    std::cout << "check input fileName " << fileName << "fieldName " << fieldName << " isovalue " << isovalue << " errvalue " << errvalue << std::endl;
+    std::cout << "check input fileName " << fileName << "fieldName " << fieldName << " isovalue " << isovalue << " errvalue " << errvalue  << " stdev " << stdvalue << std::endl;
 
     // create the vtkm data set from the loaded data
     vtkm::io::VTKDataSetReader reader(fileName);
     vtkm::cont::DataSet inData = reader.ReadDataSet();
     inData.PrintSummary(std::cout);
 
-    vtkm::Id dx = 500;
-    vtkm::Id dy = 500;
-    vtkm::Id dz = 100;
+    vtkm::Id dx = 496;
+    vtkm::Id dy = 496;
+    vtkm::Id dz = 96;
 
     // get min and max through error data
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> minArray;
@@ -105,9 +106,10 @@ int main(int argc, char *argv[])
     entropyResult.Fill(0);
 
     // using indepedent gaussian distribution, mean value is same with the compressed value
-    std::cout << "computing gaussian output" << std::endl;
+    std::cout << "------computing gaussian output" << std::endl;
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> stdevArray;
-    double stdev = 0.000057;
+    double stdev = stdvalue;
+
     stdevArray.AllocateAndFill(dx * dy * dz, stdev);
 
     auto resolveTypeIG = [&](const auto &concrete)
