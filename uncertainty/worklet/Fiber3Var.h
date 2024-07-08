@@ -14,7 +14,7 @@
 #include <iostream>
 #include <utility>
 #include <vector>
-#include <vtkm/worklet/WorkletMapField.h>
+//#include <vtkm/worklet/WorkletMapField.h>
 #include <vtkm/worklet/WorkletPointNeighborhood.h>
 
 #if defined(VTKM_CUDA) || defined(VTKM_KOKKOS_HIP)
@@ -31,14 +31,14 @@ namespace vtkm
   {
     namespace detail
     {
-      class FiberMonteCarlo : public vtkm::worklet::WorkletPointNeighborhood
+      class MultiVariateMonteCarlo : public vtkm::worklet::WorkletPointNeighborhood
       {
       public:
         // Worklet Input
         // Fiber(const std::vector<std::pair<double, double>>& minAxis,
         //      const std::vector<std::pair<double, double>>& maxAxis)
         //  : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
-        FiberMonteCarlo(const vtkm::Vec<vtkm::Float64, 3> &minAxis,
+        MultiVariateMonteCarlo(const vtkm::Vec<vtkm::Float64, 3> &minAxis,
                         const vtkm::Vec<vtkm::Float64, 3> &maxAxis,
                         const vtkm::Id numSamples)
             : InputBottomLeft(minAxis), InputTopRight(maxAxis), NumSamples(numSamples){};
@@ -164,14 +164,14 @@ namespace vtkm
         vtkm::Id NumSamples = 1;
       };
 
-      class FiberClosedForm : public vtkm::worklet::WorkletPointNeighborhood
+      class MultiVariateClosedForm : public vtkm::worklet::WorkletPointNeighborhood
       {
       public:
         // Worklet Input
         // Fiber(const std::vector<std::pair<double, double>>& minAxis,
         //      const std::vector<std::pair<double, double>>& maxAxis)
         //  : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
-        FiberClosedForm(const vtkm::Vec<vtkm::Float64, 3> &minAxis,
+        MultiVariateClosedForm(const vtkm::Vec<vtkm::Float64, 3> &minAxis,
                         const vtkm::Vec<vtkm::Float64, 3> &maxAxis)
             : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
 
@@ -223,9 +223,14 @@ namespace vtkm
           vtkm::FloatDefault maxY_intersection = std::min(maxY_user, maxY_dataset);
           vtkm::FloatDefault maxZ_intersection = std::min(maxZ_user, maxZ_dataset);
 
+          vtkm::FloatDefault X_intersection_length = maxX_intersection - minX_intersection;
+          vtkm::FloatDefault Y_intersection_length = maxY_intersection - minY_intersection;
+          vtkm::FloatDefault Z_intersection_length = maxZ_intersection - minZ_intersection;
 
 
-          if ((minX_intersection < maxX_intersection) and (minY_intersection < maxY_intersection) and (minZ_intersection < maxZ_intersection))
+
+          if ((minX_intersection < maxX_intersection) and (minY_intersection < maxY_intersection) and (minZ_intersection < maxZ_intersection)
+          && (X_intersection_length > 0) && (Y_intersection_length > 0) && (Z_intersection_length > 0))
           {
             vtkm::FloatDefault volume_intersection = (maxX_intersection - minX_intersection) * (maxY_intersection - minY_intersection) * (maxZ_intersection - minZ_intersection);
             vtkm::FloatDefault volume_data = (maxX_dataset - minX_dataset) * (maxY_dataset - minY_dataset) * (maxZ_dataset - minZ_dataset);
@@ -242,10 +247,10 @@ namespace vtkm
         vtkm::Vec<vtkm::Float64, 3> InputTopRight;
       };
 
-      class FiberMean : public vtkm::worklet::WorkletPointNeighborhood
+      class MultiVariateMean : public vtkm::worklet::WorkletPointNeighborhood
       {
       public:
-        FiberMean(const vtkm::Vec<vtkm::Float64, 3> &minAxis,
+        MultiVariateMean(const vtkm::Vec<vtkm::Float64, 3> &minAxis,
                   const vtkm::Vec<vtkm::Float64, 3> &maxAxis)
             : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
 
@@ -315,10 +320,10 @@ namespace vtkm
         vtkm::Vec<vtkm::Float64, 3> InputTopRight;
       };
 
-      class FiberTruth : public vtkm::worklet::WorkletPointNeighborhood
+      class MultiVariateTruth : public vtkm::worklet::WorkletPointNeighborhood
       {
         public:
-        FiberTruth(const vtkm::Vec<vtkm::Float64, 3> &minAxis,
+        MultiVariateTruth(const vtkm::Vec<vtkm::Float64, 3> &minAxis,
                   const vtkm::Vec<vtkm::Float64, 3> &maxAxis)
             : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
 
@@ -359,6 +364,9 @@ namespace vtkm
           vtkm::FloatDefault maxY_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxY);
           vtkm::FloatDefault minZ_dataset = static_cast<vtkm::FloatDefault>(EnsembleMinZ);
           vtkm::FloatDefault maxZ_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxZ);
+
+          
+
 
           if ((minX_dataset <= maxX_user) && (minX_dataset >= minX_user) && (minY_dataset <= maxY_user) && (minY_dataset >= minY_user) && (minZ_dataset <= maxZ_user) && (minZ_dataset >= minZ_user))
           {

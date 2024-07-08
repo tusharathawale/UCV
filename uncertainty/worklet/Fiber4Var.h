@@ -31,14 +31,14 @@ namespace vtkm
   {
     namespace detail
     {
-      class FiberMonteCarlo : public vtkm::worklet::WorkletPointNeighborhood
+      class MultiVariateMonteCarlo : public vtkm::worklet::WorkletPointNeighborhood
       {
       public:
         // Worklet Input
         // Fiber(const std::vector<std::pair<double, double>>& minAxis,
         //      const std::vector<std::pair<double, double>>& maxAxis)
         //  : InputMinAxis(minAxis), InputMaxAxis(maxAxis){};
-        FiberMonteCarlo(const vtkm::Vec<vtkm::Float64, 4> &minAxis,
+        MultiVariateMonteCarlo(const vtkm::Vec<vtkm::Float64, 4> &minAxis,
                         const vtkm::Vec<vtkm::Float64, 4> &maxAxis,
                         const vtkm::Id numSamples)
             : InputMinAxis(minAxis), InputMaxAxis(maxAxis), NumSamples(numSamples){};
@@ -178,14 +178,14 @@ namespace vtkm
         vtkm::Id NumSamples = 1;
       };
 
-      class FiberClosedForm : public vtkm::worklet::WorkletPointNeighborhood
+      class MultiVariateClosedForm : public vtkm::worklet::WorkletPointNeighborhood
       {
       public:
         // Worklet Input
         // Fiber(const std::vector<std::pair<double, double>>& minAxis,
         //      const std::vector<std::pair<double, double>>& maxAxis)
         //  : InputMinAxis(minAxis), InputMaxAxis(maxAxis){};
-        FiberClosedForm(const vtkm::Vec<vtkm::Float64, 4> &minAxis,
+        MultiVariateClosedForm(const vtkm::Vec<vtkm::Float64, 4> &minAxis,
                         const vtkm::Vec<vtkm::Float64, 4> &maxAxis)
             : InputMinAxis(minAxis), InputMaxAxis(maxAxis){};
 
@@ -220,13 +220,11 @@ namespace vtkm
           vtkm::FloatDefault minX_user = static_cast<vtkm::FloatDefault>(InputMinAxis[0]);
           vtkm::FloatDefault minY_user = static_cast<vtkm::FloatDefault>(InputMinAxis[1]);
           vtkm::FloatDefault minZ_user = static_cast<vtkm::FloatDefault>(InputMinAxis[2]);
-          vtkm::FloatDefault minW_user = static_cast<vtkm::FloatDefault>(InputMinAxis[3]); 
+          vtkm::FloatDefault minW_user = static_cast<vtkm::FloatDefault>(InputMinAxis[3]);
           vtkm::FloatDefault maxX_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[0]);
           vtkm::FloatDefault maxY_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[1]);
           vtkm::FloatDefault maxZ_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[2]);
           vtkm::FloatDefault maxW_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[3]);
-
-
 
           // data rectangle
           vtkm::FloatDefault minX_dataset = static_cast<vtkm::FloatDefault>(EnsembleMinX);
@@ -248,19 +246,23 @@ namespace vtkm
           vtkm::FloatDefault minW_intersection = std::max(minW_user, minW_dataset);
           vtkm::FloatDefault maxW_intersection = std::min(maxW_user, maxW_dataset);
 
+          vtkm::FloatDefault X_intersection_length = maxX_intersection - minX_intersection;
+          vtkm::FloatDefault Y_intersection_length = maxY_intersection - minY_intersection;
+          vtkm::FloatDefault Z_intersection_length = maxZ_intersection - minZ_intersection;
+          vtkm::FloatDefault W_intersection_length = maxW_intersection - minW_intersection;
 
-
-          if ((minX_intersection < maxX_intersection) and (minY_intersection < maxY_intersection) and (minZ_intersection < maxZ_intersection) and (minW_intersection < maxW_intersection))
+          if ((minX_intersection < maxX_intersection) && (minY_intersection < maxY_intersection) && (minZ_intersection < maxZ_intersection) && (minW_intersection < maxW_intersection)
+          && (X_intersection_length > 0) && (Y_intersection_length > 0) && (Z_intersection_length > 0) && (W_intersection_length > 0))
           {
             vtkm::FloatDefault volume_intersection = (maxX_intersection - minX_intersection) * (maxY_intersection - minY_intersection) * (maxZ_intersection - minZ_intersection) * (maxW_intersection - minW_intersection);
-            vtkm::FloatDefault volume_data = (maxX_dataset - minX_dataset) * (maxY_dataset - minY_dataset) * (maxZ_dataset - minZ_dataset) * (maxW_dataset - minW_dataset);
-            probability = volume_intersection / volume_data;
+            
+            vtkm::FloatDefault volume_data = abs(maxX_dataset - minX_dataset) * abs(maxY_dataset - minY_dataset) * abs(maxZ_dataset - minZ_dataset) * abs(maxW_dataset - minW_dataset);
+              probability = volume_intersection / volume_data;
           }
           else
           {
             probability = 0.0;
           }
-         
         }
 
       private:
@@ -268,10 +270,10 @@ namespace vtkm
         vtkm::Vec<vtkm::Float64, 4> InputMaxAxis;
       };
 
-      class FiberMean : public vtkm::worklet::WorkletPointNeighborhood
+      class MultiVariateMean : public vtkm::worklet::WorkletPointNeighborhood
       {
       public:
-        FiberMean(const vtkm::Vec<vtkm::Float64, 4> &minAxis,
+        MultiVariateMean(const vtkm::Vec<vtkm::Float64, 4> &minAxis,
                   const vtkm::Vec<vtkm::Float64, 4> &maxAxis)
             : InputMinAxis(minAxis), InputMaxAxis(maxAxis){};
 
@@ -303,7 +305,7 @@ namespace vtkm
         {
 
           // User defined rectangle(trait)
-          
+
           vtkm::FloatDefault minX_user = static_cast<vtkm::FloatDefault>(InputMinAxis[0]);
           vtkm::FloatDefault minY_user = static_cast<vtkm::FloatDefault>(InputMinAxis[1]);
           vtkm::FloatDefault minZ_user = static_cast<vtkm::FloatDefault>(InputMinAxis[2]);
@@ -312,7 +314,6 @@ namespace vtkm
           vtkm::FloatDefault maxY_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[1]);
           vtkm::FloatDefault maxZ_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[2]);
           vtkm::FloatDefault maxW_user = static_cast<vtkm::FloatDefault>(InputMaxAxis[3]);
-          
 
           // data rectangle
           vtkm::FloatDefault minX_dataset = static_cast<vtkm::FloatDefault>(EnsembleMinX);
@@ -323,7 +324,6 @@ namespace vtkm
           vtkm::FloatDefault maxZ_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxZ);
           vtkm::FloatDefault minW_dataset = static_cast<vtkm::FloatDefault>(EnsembleMinW);
           vtkm::FloatDefault maxW_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxW);
-
 
           vtkm::FloatDefault Xmean = 0.0;
           vtkm::FloatDefault Ymean = 0.0;

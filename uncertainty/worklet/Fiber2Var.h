@@ -30,14 +30,14 @@ namespace vtkm
   {
     namespace detail
     {
-      class FiberMonteCarlo : public vtkm::worklet::WorkletMapField
+      class MultiVariateMonteCarlo : public vtkm::worklet::WorkletMapField
       {
       public:
         // Worklet Input
         // Fiber(const std::vector<std::pair<double, double>>& minAxis,
         //      const std::vector<std::pair<double, double>>& maxAxis)
         //  : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
-        FiberMonteCarlo(const vtkm::Pair<vtkm::Float64, vtkm::Float64> &minAxis,
+        MultiVariateMonteCarlo(const vtkm::Pair<vtkm::Float64, vtkm::Float64> &minAxis,
                         const vtkm::Pair<vtkm::Float64, vtkm::Float64> &maxAxis,
                         const vtkm::Id numSamples)
             : InputBottomLeft(minAxis), InputTopRight(maxAxis), NumSamples(numSamples){};
@@ -146,14 +146,14 @@ namespace vtkm
         vtkm::Id NumSamples = 1;
       };
 
-      class FiberClosedForm : public vtkm::worklet::WorkletMapField
+      class MultiVariateClosedForm : public vtkm::worklet::WorkletMapField
       {
       public:
         // Worklet Input
         // Fiber(const std::vector<std::pair<double, double>>& minAxis,
         //      const std::vector<std::pair<double, double>>& maxAxis)
         //  : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
-        FiberClosedForm(const vtkm::Pair<vtkm::Float64, vtkm::Float64> &minAxis,
+        MultiVariateClosedForm(const vtkm::Pair<vtkm::Float64, vtkm::Float64> &minAxis,
                         const vtkm::Pair<vtkm::Float64, vtkm::Float64> &maxAxis)
             : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
 
@@ -236,10 +236,10 @@ namespace vtkm
         vtkm::Pair<vtkm::Float64, vtkm::Float64> InputTopRight;
       };
 
-      class FiberMean : public vtkm::worklet::WorkletMapField
+      class MultiVariateMean : public vtkm::worklet::WorkletMapField
       {
       public:
-        FiberMean(const vtkm::Pair<vtkm::Float64, vtkm::Float64> &minAxis,
+        MultiVariateMean(const vtkm::Pair<vtkm::Float64, vtkm::Float64> &minAxis,
                   const vtkm::Pair<vtkm::Float64, vtkm::Float64> &maxAxis)
             : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
 

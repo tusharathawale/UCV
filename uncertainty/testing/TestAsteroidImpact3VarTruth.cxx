@@ -150,7 +150,8 @@ int main(int argc, char *argv[])
     //old 
     //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.1, 20);
     //new value matching paper
-    vtkm::Vec3f maxAxisValue(0.5, 0.25, 400000000);
+    vtkm::Vec3f maxAxisValue(0.5, 0.25, 400000);
+    //vtkm::Vec3f maxAxisValue(0.5, 0.25, 400000000);
     //vtkm::Vec3f maxAxisValue(1, 0.4, 507509888);
 
     // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-5.0, 0.0);

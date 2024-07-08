@@ -64,7 +64,7 @@ namespace vtkm
           if (this->Approach == "MonteCarlo")
           {
             std::cout << "Adopt monte carlo with numsamples " << this->NumSamples << std::endl;
-            this->Invoke(vtkm::worklet::detail::FiberMonteCarlo{this->minAxis, this->maxAxis, this->NumSamples},
+            this->Invoke(vtkm::worklet::detail::MultiVariateMonteCarlo{this->minAxis, this->maxAxis, this->NumSamples},
                          ConcreteEnsembleMinOne,
                          ConcreteEnsembleMaxOne,
                          ConcreteEnsembleMinTwo,
@@ -74,7 +74,7 @@ namespace vtkm
           else if (this->Approach == "ClosedForm")
           {
             std::cout << "Adopt ClosedForm" << std::endl;
-            this->Invoke(vtkm::worklet::detail::FiberClosedForm{this->minAxis, this->maxAxis},
+            this->Invoke(vtkm::worklet::detail::MultiVariateClosedForm{this->minAxis, this->maxAxis},
                          ConcreteEnsembleMinOne,
                          ConcreteEnsembleMaxOne,
                          ConcreteEnsembleMinTwo,

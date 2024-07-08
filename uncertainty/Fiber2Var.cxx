@@ -66,7 +66,7 @@ namespace vtkm
           {
             FieldName = "MonteCarlo";
             std::cout << "Adopt monte carlo with numsamples " << this->NumSamples << std::endl;
-            this->Invoke(vtkm::worklet::detail::FiberMonteCarlo{this->minAxis, this->maxAxis, this->NumSamples},
+            this->Invoke(vtkm::worklet::detail::MultiVariateMonteCarlo{this->minAxis, this->maxAxis, this->NumSamples},
                          ConcreteEnsembleMinX,
                          ConcreteEnsembleMaxX,
                          ConcreteEnsembleMinY,
@@ -77,7 +77,7 @@ namespace vtkm
           {
             FieldName = "ClosedForm";
             std::cout << "Adopt ClosedForm" << std::endl;
-            this->Invoke(vtkm::worklet::detail::FiberClosedForm{this->minAxis, this->maxAxis},
+            this->Invoke(vtkm::worklet::detail::MultiVariateClosedForm{this->minAxis, this->maxAxis},
                          ConcreteEnsembleMinX,
                          ConcreteEnsembleMaxX,
                          ConcreteEnsembleMinY,
@@ -88,7 +88,7 @@ namespace vtkm
           {
             FieldName = "Mean";
             std::cout << "Adopt Mean" << std::endl;
-            this->Invoke(vtkm::worklet::detail::FiberMean{this->minAxis, this->maxAxis},
+            this->Invoke(vtkm::worklet::detail::MultiVariateMean{this->minAxis, this->maxAxis},
                          ConcreteEnsembleMinX,
                          ConcreteEnsembleMaxX,
                          ConcreteEnsembleMinY,

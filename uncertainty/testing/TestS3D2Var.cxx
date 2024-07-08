@@ -6,10 +6,10 @@
 #include <vtkm/cont/DataSetBuilderUniform.h>
 #include <vtkm/cont/Algorithm.h>
 #include "../worklet/ExtractingMinMaxFromMeanDev.hpp"
+//#include <vtkm/io/VTKDataSetWriter.h>
 
 
-
-#include "../Fiber3Var.h"
+#include "../Fiber2Var.h"
 #include <vtkm/io/VTKDataSetReader.h>
 #include <vtkm/io/VTKDataSetWriter.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
@@ -53,8 +53,6 @@ int main(int argc, char *argv[])
     std::string meanTemp = dataFolder + "/temp_mean.vtk";
     std::string devTemp = dataFolder + "/temp_dev.vtk";
 
-    std::string meanPressure = dataFolder + "/pressure_mean.vtk";
-    std::string devPressure = dataFolder + "/pressure_dev.vtk";
 
 
 
@@ -99,18 +97,7 @@ int main(int argc, char *argv[])
     vtkm::cont::ArrayCopyShallowIfPossible(devTempData.GetField("temp_dev").GetData(), devTempDataArray);
 
     // get mean for the pressure
-    vtkm::io::VTKDataSetReader meanPressureReader(meanPressure);
-    vtkm::cont::DataSet meanPressureData = meanPressureReader.ReadDataSet();
-
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> meanPressureDataArray;
-    vtkm::cont::ArrayCopyShallowIfPossible(meanPressureData.GetField("pressure_mean").GetData(), meanPressureDataArray);
-
-    // get dev for the pressure
-    vtkm::io::VTKDataSetReader devPressureReader(devPressure);
-    vtkm::cont::DataSet devPressureData = devPressureReader.ReadDataSet();
-
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> devPressureDataArray;
-    vtkm::cont::ArrayCopyShallowIfPossible(devPressureData.GetField("pressure_dev").GetData(), devPressureDataArray);
+  
 
     // print summary
     // vtkm::cont::printSummary_ArrayHandle(H2_meanArray, std::cout);
@@ -133,25 +120,22 @@ int main(int argc, char *argv[])
     invoke(ExtractingMinMaxFromMeanDev{}, meanTempDataArray, devTempDataArray, minField2, maxField2);
 
     // compute the min and max for the pressure
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> minField3;
-    vtkm::cont::ArrayHandle<vtkm::FloatDefault> maxField3;
 
-    invoke(ExtractingMinMaxFromMeanDev{}, meanPressureDataArray, devPressureDataArray, minField3, maxField3);
 
     // user specify the field
-    vtkm::filter::uncertainty::Fiber3Var filter;
+    vtkm::filter::uncertainty::FiberMean filter;
     // curlz -15 -1
     // vorticity 1 15
     // big user specified rectangle need more monte carlo sampling
 
     //vtkm::Vec3f minAxisValue(0.000003396285150573271, 142.6763755914383, 62.50704829840122);
-    vtkm::Vec3f minAxisValue(0.000003396285150573271, 142.6763755914383, 62.6);
+    vtkm::Pair<float,float> minAxisValue(0.000003396285150573271, 142.6763755914383);
 
     //old 
     //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.1, 20);
     //new value matching paper
     //vtkm::Vec3f maxAxisValue(0.05162012818706921, 143.11353385803952, 172.3119481913726);
-    vtkm::Vec3f maxAxisValue(0.00162012818706921, 143.11353385803952, 170.0);
+    vtkm::Pair<float,float> maxAxisValue(0.05162012818706921, 143.11353385803952);
     //vtkm::Vec3f maxAxisValue(0.006, 143.0, 100.0);
 
     // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-5.0, 0.0);
@@ -174,8 +158,7 @@ int main(int argc, char *argv[])
     dataSetForFilter.AddPointField("ensemble_min_two", minField2);
     dataSetForFilter.AddPointField("ensemble_max_two", maxField2);
 
-    dataSetForFilter.AddPointField("ensemble_min_three", minField3);
-    dataSetForFilter.AddPointField("ensemble_max_three", maxField3);
+
 
     //dataSetForFilter.AddPointField("H2_meanArray", H2_meanArray);
     //dataSetForFilter.AddPointField("H2_devDataArray", H2_devDataArray);
@@ -187,8 +170,7 @@ int main(int argc, char *argv[])
     filter.SetMaxX("ensemble_max_one");
     filter.SetMinY("ensemble_min_two");
     filter.SetMaxY("ensemble_max_two");
-    filter.SetMinZ("ensemble_min_three");
-    filter.SetMaxZ("ensemble_max_three");
+
 
     filter.SetApproach(Approach);
     if (Approach == "MonteCarlo")
@@ -206,7 +188,7 @@ int main(int argc, char *argv[])
         //std::cout << std::to_string(i) << "th run" << std::endl;
         //timer.Start();
         vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
-        std::string outputFilename = "TestS3D3Var"+Approach+std::to_string(NumSamples)+".vtk"; 
+        std::string outputFilename = "TestS3D2Var"+Approach+std::to_string(NumSamples)+".vtk"; 
         vtkm::io::VTKDataSetWriter writer(outputFilename);
         writer.WriteDataSet(output);
         std::cout << "output file: " << outputFilename << std::endl;
