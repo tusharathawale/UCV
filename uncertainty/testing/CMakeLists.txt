@@ -107,6 +107,9 @@ target_link_libraries(TestAsteroidImpact2Var ${VTKm_LIBRARIES})
 add_executable(TestAsteroidImpact3Var TestAsteroidImpact3Var.cxx ../Fiber3Var.cxx)
 target_link_libraries(TestAsteroidImpact3Var ${VTKm_LIBRARIES})
 
+add_executable(DiffCheck DiffCheck.cxx ../Fiber3Var.cxx)
+target_link_libraries(DiffCheck ${VTKm_LIBRARIES})
+
 
 add_executable(TestAsteroidImpact3VarTruth TestAsteroidImpact3VarTruth.cxx ../Fiber3Var.cxx)
 target_link_libraries(TestAsteroidImpact3VarTruth ${VTKm_LIBRARIES})

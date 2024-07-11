@@ -12,7 +12,7 @@ set(uncertainty_headers
   Fiber.h
   FiberMultiVar.h
   Fiber4Var.h
-  MeanField2Var.h
+  #MeanField2Var.h
   Fiber2Var.h
   Fiber3Var.h
   )
@@ -20,7 +20,7 @@ set(uncertainty_sources_device
   Fiber.cxx
   FiberMultiVar.cxx
   Fiber4Var.cxx
-  MeanField2Var.cxx
+  #MeanField2Var.cxx
   Fiber2Var.cxx
   Fiber3Var.cxx
   )
@@ -55,7 +55,7 @@ if(BUILD_PARAVIEW_PLUGIN)
     PLUGIN_FILES ${CMAKE_CURRENT_SOURCE_DIR}/pv-plugin/paraview.plugin
     PROVIDES_PLUGINS plugins
     ENABLE_BY_DEFAULT ON
-    HIDE_PLUGINS_FROM_CACHE ON
+    HIDE_PLUGINS_FROM_CACHE ONS
     )
 
   # Note: this will call subdirectory for pv-plugin so we don't have to.

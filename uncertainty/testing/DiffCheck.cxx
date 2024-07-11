@@ -8,8 +8,7 @@
 #include "../worklet/ExtractingMinMaxFromMeanDev.hpp"
 #include "../worklet/ComputeDiff.hpp"
 
-
-#include "../Fiber4Var.h"
+#include "../Fiber3Var.h"
 #include <vtkm/io/VTKDataSetReader.h>
 #include <vtkm/io/VTKDataSetWriter.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
@@ -21,53 +20,45 @@ int main(int argc, char *argv[])
         argc, argv, vtkm::cont::InitializeOptions::DefaultAnyDevice);
     std::cout << "initResult.Device: " << initResult.Device.GetName() << std::endl;
 
-    if (argc != 4)
+    if (argc != 6)
     {
-        std::cout << "<executable> <DataFolder> <Approach> <NumSamples>" << std::endl;
+        std::cout << "<executable> <DataFolder> <File1> <Feild1> <File2> <Field2>" << std::endl;
         exit(0);
     }
 
     std::string dataFolder = std::string(argv[1]);
     //int NumEns = 20;
 
-    std::string Approach = std::string(argv[2]);
-    int NumSamples = std::stoi(argv[3]); // this only work when appraoch is MonteCarlo
+    std::string File1 = std::string(argv[2]);
+    std::string Field1 = std::string(argv[3]);
+    std::string File2 = std::string(argv[4]);
+    std::string Field2 = std::string(argv[5]);
 
-    if (Approach == "MonteCarlo" || Approach == "ClosedForm" || Approach == "Mean")
-    {
-    }
-    else
-    {
-        std::cout << "Approach should be MonteCarlo or ClosedFrom" << std::endl;
-        exit(0);
-    }
 
     // compute the min and max through the mean+-stdev for two variables
     
-    std::cout << "got here 1" << std::endl;
+    
     // get mean for the curl
-    vtkm::io::VTKDataSetReader ClosedForm(dataFolder + "redSea3VarOutputClosedForm1000.vtk");
+    vtkm::io::VTKDataSetReader ClosedForm(dataFolder + File1);
     vtkm::cont::DataSet ClosedFormData = ClosedForm.ReadDataSet();
-
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> ClosedFormArray;
-    vtkm::cont::ArrayCopyShallowIfPossible(ClosedFormData.GetField("ClosedForm").GetData(), ClosedFormArray);
+    vtkm::cont::ArrayCopyShallowIfPossible(ClosedFormData.GetField(Field1).GetData(), ClosedFormArray);
+    std::cout << "Read " + Field1 + " From " + File1 << std::endl;
 
     // get the cellset
 
-    std::cout << "got here 2" << std::endl;
+    
     // get dev for the curl
-    vtkm::io::VTKDataSetReader MonteCarlo(dataFolder + "redSea3VarOutputMonteCarlo1000.vtk");
+    vtkm::io::VTKDataSetReader MonteCarlo(dataFolder + File2);
     vtkm::cont::DataSet MonteCarloData = MonteCarlo.ReadDataSet();
  
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> MonteCarloArray;
-    vtkm::cont::ArrayCopyShallowIfPossible(MonteCarloData.GetField("MonteCarlo").GetData(), MonteCarloArray);
-
+    vtkm::cont::ArrayCopyShallowIfPossible(MonteCarloData.GetField(Field2).GetData(), MonteCarloArray);
+    std::cout << "Read " + Field2 + " From " + File2 << std::endl;
 
     vtkm::cont::Invoker invoke;
 
-    //array for diff feild
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> diffFeild;
-
     invoke(ComputeDiffSquare{}, ClosedFormArray, MonteCarloArray, diffFeild);
 
     
@@ -86,10 +77,23 @@ int main(int argc, char *argv[])
         }
         
         sum += diffFeild.ReadPortal().Get(i);
-        //std::cout << sum << std::endl;
+        //checks for any nan values in either of the fields
+        if (std::isnan(ClosedFormArray.ReadPortal().Get(i)))
+        {
+            std::cout << "nan in File1 value found at: " << i << std::endl;
+        }
+        else if (std::isnan(MonteCarloArray.ReadPortal().Get(i)))
+        {
+            std::cout << "nan in File2  found at: " << i << std::endl;
+        }else if (std::isnan(diffFeild.ReadPortal().Get(i)))
+        {
+            std::cout << "nan in Diff  found at: " << i << std::endl;
+        }
+        
+        
     }
     vtkm::FloatDefault total = sum / diffFeild.GetNumberOfValues();
-    std::cout << "totalsum: " << total << std::endl;
+    std::cout << "total sum: " << total << std::endl;
     std::cout << "max: " << max << std::endl;
 
     

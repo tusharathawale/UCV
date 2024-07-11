@@ -38,8 +38,8 @@ namespace vtkm
         //      const std::vector<std::pair<double, double>>& maxAxis)
         //  : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
         MultiVariateMonteCarlo(const vtkm::Pair<vtkm::Float64, vtkm::Float64> &minAxis,
-                        const vtkm::Pair<vtkm::Float64, vtkm::Float64> &maxAxis,
-                        const vtkm::Id numSamples)
+                               const vtkm::Pair<vtkm::Float64, vtkm::Float64> &maxAxis,
+                               const vtkm::Id numSamples)
             : InputBottomLeft(minAxis), InputTopRight(maxAxis), NumSamples(numSamples){};
 
         // Input and Output Parameters
@@ -88,13 +88,23 @@ namespace vtkm
           maxX_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxX);
           minY_dataset = static_cast<vtkm::FloatDefault>(EnsembleMinY);
           maxY_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxY);
+          
+          vtkm::FloatDefault minX_intersection = 0.0;
+          vtkm::FloatDefault maxX_intersection = 0.0;
+          vtkm::FloatDefault minY_intersection = 0.0;
+          vtkm::FloatDefault maxY_intersection = 0.0;
+
+          minX_intersection = std::max(minX_user, minX_dataset);
+          minY_intersection = std::max(minY_user, minY_dataset);
+          maxX_intersection = std::min(maxX_user, maxX_dataset);
+          maxY_intersection = std::min(maxY_user, maxY_dataset);
 
           // if data rectangle is zero, there is no uncertainty, return zero
-          if (abs(minX_dataset - maxX_dataset) < 0.000001 && abs(minY_dataset - maxY_dataset) < 0.000001)
-          {
-            probability = 0.0;
-            return;
-          }
+          // if (abs(minX_dataset - maxX_dataset) < 0.000001 && abs(minY_dataset - maxY_dataset) < 0.000001)
+          //{
+          //  probability = 0.0;
+          //  return;
+          //}
 
           // Monte Carlo
           // Trait Coordinates (minX_user,minY_user) & (maxX_user,maxY_user)
@@ -120,14 +130,67 @@ namespace vtkm
           std::uniform_real_distribution<vtkm::FloatDefault> GenerateN1(minX_dataset, maxX_dataset);
           std::uniform_real_distribution<vtkm::FloatDefault> GenerateN2(minY_dataset, maxY_dataset);
 
-          for (vtkm::IdComponent i = 0; i < this->NumSamples; i++)
+          // Point: make check like Jay?
+          if ((minX_dataset == maxX_dataset) && (minY_dataset == maxY_dataset))
           {
-            N1 = GenerateN1(gen);
-            N2 = GenerateN2(gen);
-            // increase the case number when the data is located in user rectangle
-            if ((N1 > minX_user) && (N1 < maxX_user) && (N2 > minY_user) && (N2 < maxY_user))
+            // check if point is inside a trait
+            if ((minX_dataset <= maxX_user) && (minX_dataset >= minX_user) && (minY_dataset <= maxY_user) && (minY_dataset >= minY_user))
             {
-              NonZeroCases++;
+              NonZeroCases = this->NumSamples;
+            }
+          
+          }
+
+          // Line
+          // Data as horizontal line
+          else if ((minX_dataset < maxX_dataset) && (minY_dataset == maxY_dataset))
+          {
+            // Check if line intersects a trait. Might need <= check here
+            if ((minX_intersection < maxX_intersection) && (minY_dataset >= minY_user) && (minY_dataset <= maxY_user))
+            {
+              for (vtkm::IdComponent i = 0; i < this->NumSamples; i++)
+              {
+                N1 = GenerateN1(gen);
+                // increase the case number when the data is located in user rectangle
+                if ((N1 > minX_user) && (N1 < maxX_user))
+                {
+                  NonZeroCases++;
+                }
+              }
+            }
+          }
+
+          // Data as a vertical line
+          else if ((minX_dataset == maxX_dataset) && (minY_dataset < maxY_dataset))
+          {
+            // Check if line intersects a trait. Might need <= check here
+            if ((minY_intersection < maxY_intersection) && (minX_dataset >= minX_user) && (minX_dataset <= maxX_user))
+            {
+              for (vtkm::IdComponent i = 0; i < this->NumSamples; i++)
+              {
+      
+                N2 = GenerateN2(gen);
+                // increase the case number when the data is located in user rectangle
+                if ((N2 > minY_user) && (N2 < maxY_user))
+                {
+                  NonZeroCases++;
+                }
+              }
+            }
+          }
+
+          // Rectangle
+          else
+          {
+            for (vtkm::IdComponent i = 0; i < this->NumSamples; i++)
+            {
+              N1 = GenerateN1(gen);
+              N2 = GenerateN2(gen);
+              // increase the case number when the data is located in user rectangle
+              if ((N1 > minX_user) && (N1 < maxX_user) && (N2 > minY_user) && (N2 < maxY_user))
+              {
+                NonZeroCases++;
+              }
             }
           }
 
@@ -154,7 +217,7 @@ namespace vtkm
         //      const std::vector<std::pair<double, double>>& maxAxis)
         //  : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
         MultiVariateClosedForm(const vtkm::Pair<vtkm::Float64, vtkm::Float64> &minAxis,
-                        const vtkm::Pair<vtkm::Float64, vtkm::Float64> &maxAxis)
+                               const vtkm::Pair<vtkm::Float64, vtkm::Float64> &maxAxis)
             : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
 
         // Input and Output Parameters
@@ -199,7 +262,7 @@ namespace vtkm
           vtkm::FloatDefault maxY_dataset = 0.0;
 
           vtkm::FloatDefault IntersectionArea = 0.0;
-          vtkm::FloatDefault IntersectionProbablity = 0.0;
+          vtkm::FloatDefault IntersectionProbability = 0.0;
           vtkm::FloatDefault IntersectionHeight = 0.0;
           vtkm::FloatDefault IntersectionWidth = 0.0;
 
@@ -209,25 +272,74 @@ namespace vtkm
           minY_dataset = static_cast<vtkm::FloatDefault>(EnsembleMinY);
           maxY_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxY);
 
-          // caculating intersection of two rectangle (overlapping region)
+          // caculating data and trait intersection limits. For intersection to take place, mixX <= maxX and minY <= maxY condition must satisfy.
           minX_intersection = std::max(minX_user, minX_dataset);
           minY_intersection = std::max(minY_user, minY_dataset);
           maxX_intersection = std::min(maxX_user, maxX_dataset);
           maxY_intersection = std::min(maxY_user, maxY_dataset);
 
-          IntersectionHeight = maxY_intersection - minY_intersection;
-          IntersectionWidth = maxX_intersection - minX_intersection;
+          // Check if data is a point, line, or a rectangle
 
-          vtkm::FloatDefault DataArea = (maxX_dataset - minX_dataset) * (maxY_dataset - minY_dataset);
-
-          if ((IntersectionHeight > 0) && (IntersectionWidth > 0) && (minX_intersection < maxX_intersection) && (minY_intersection < maxY_intersection))
+          // Point
+          if ((minX_dataset == maxX_dataset) && (minY_dataset == maxY_dataset))
           {
-            IntersectionArea = IntersectionHeight * IntersectionWidth;
-            // the portion of trait
-            // IntersectionProbablity = IntersectionArea / TraitArea;
-            IntersectionProbablity = IntersectionArea / DataArea;
+            // check if point is inside a trait
+            if ((minX_dataset <= maxX_user) && (minX_dataset >= minX_user) && (minY_dataset <= maxY_user) && (minY_dataset >= minY_user))
+            {
+              IntersectionProbability = 1.0;
+            }
+            else
+            {
+              IntersectionProbability = 0.0;
+            }
           }
-          probability = IntersectionProbablity;
+
+          // Line
+          // Data as horizontal line
+          else if ((minX_dataset < maxX_dataset) && (minY_dataset == maxY_dataset))
+          {
+            // Check if line intersects a trait. Might need <= check here
+            if ((minX_intersection < maxX_intersection) && (minY_dataset >= minY_user) && (minY_dataset <= maxY_user))
+            {
+              IntersectionProbability = (maxX_intersection - minX_intersection) / (maxX_dataset - minX_dataset);
+            }
+            else
+            {
+              IntersectionProbability = 0.0;
+            }
+          }
+
+          // Data as a vertical line
+          else if ((minX_dataset == maxX_dataset) && (minY_dataset < maxY_dataset))
+          {
+            // Check if line intersects a trait. Might need <= check here
+            if ((minY_intersection < maxY_intersection) && (minX_dataset >= minX_user) && (minX_dataset <= maxX_user))
+            {
+              IntersectionProbability = (maxY_intersection - minY_intersection) / (maxY_dataset - minY_dataset);
+            }
+            else
+            {
+              IntersectionProbability = 0.0;
+            }
+          }
+
+          // Rectangle
+          else
+          {
+            IntersectionHeight = maxY_intersection - minY_intersection;
+            IntersectionWidth = maxX_intersection - minX_intersection;
+
+            vtkm::FloatDefault DataArea = (maxX_dataset - minX_dataset) * (maxY_dataset - minY_dataset);
+
+            if ((IntersectionHeight > 0) && (IntersectionWidth > 0) && (minX_intersection < maxX_intersection) && (minY_intersection < maxY_intersection))
+            {
+              IntersectionArea = IntersectionHeight * IntersectionWidth;
+              // the portion of trait
+              // IntersectionProbability = IntersectionArea / TraitArea;
+              IntersectionProbability = IntersectionArea / DataArea;
+            }
+          }
+          probability = IntersectionProbability;
           return;
         }
 
@@ -240,7 +352,7 @@ namespace vtkm
       {
       public:
         MultiVariateMean(const vtkm::Pair<vtkm::Float64, vtkm::Float64> &minAxis,
-                  const vtkm::Pair<vtkm::Float64, vtkm::Float64> &maxAxis)
+                         const vtkm::Pair<vtkm::Float64, vtkm::Float64> &maxAxis)
             : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
 
         // Input and Output Parameters
@@ -283,7 +395,6 @@ namespace vtkm
           minY_dataset = static_cast<vtkm::FloatDefault>(EnsembleMinY);
           maxY_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxY);
 
-    
           vtkm::FloatDefault Xmean = 0.0;
           vtkm::FloatDefault Ymean = 0.0;
           Xmean = (minX_dataset + maxX_dataset) / 2;
