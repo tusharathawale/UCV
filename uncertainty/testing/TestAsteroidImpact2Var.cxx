@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     // curlz -15 -1
     // vorticity 1 15
     // big user specified rectangle need more monte carlo sampling
-    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(0, 0.01809121295809746);
+    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(0.1, 0.);
 
     //old 
     //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.1, 20);

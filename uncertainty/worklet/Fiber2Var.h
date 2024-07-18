@@ -88,7 +88,7 @@ namespace vtkm
           maxX_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxX);
           minY_dataset = static_cast<vtkm::FloatDefault>(EnsembleMinY);
           maxY_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxY);
-          
+
           vtkm::FloatDefault minX_intersection = 0.0;
           vtkm::FloatDefault maxX_intersection = 0.0;
           vtkm::FloatDefault minY_intersection = 0.0;

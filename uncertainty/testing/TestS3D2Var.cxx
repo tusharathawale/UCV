@@ -129,16 +129,16 @@ int main(int argc, char *argv[])
     // big user specified rectangle need more monte carlo sampling
 
     //vtkm::Vec3f minAxisValue(0.000003396285150573271, 142.6763755914383, 62.50704829840122);
-    //vtkm::Pair<vtkm::FloatDefault,vtkm::FloatDefault> minAxisValue(0.000003396285150573271, 142.6763755914383);
+    vtkm::Pair<vtkm::FloatDefault,vtkm::FloatDefault> minAxisValue(0.004, 6.0);
     //vtkm::Pair<vtkm::FloatDefault,vtkm::FloatDefault> minAxisValue(0, 142.67);
-    vtkm::Pair<vtkm::FloatDefault,vtkm::FloatDefault> minAxisValue(0, 142.0);
+    //vtkm::Pair<vtkm::FloatDefault,vtkm::FloatDefault> minAxisValue(0, 142.0);
 
     //old 
     //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.1, 20);
     //new value matching paper
 
-    //vtkm::Pair<vtkm::FloatDefault,vtkm::FloatDefault> maxAxisValue(0.05162012818706921, 143.11353385803952);
-    vtkm::Pair<vtkm::FloatDefault,vtkm::FloatDefault> maxAxisValue(0.05, 172.0);
+    vtkm::Pair<vtkm::FloatDefault,vtkm::FloatDefault> maxAxisValue(0.005, 17.0);
+    //vtkm::Pair<vtkm::FloatDefault,vtkm::FloatDefault> maxAxisValue(0.05, 172.0);
     //vtkm::Vec3f maxAxisValue(0.006, 143.0, 100.0);
 
     // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-5.0, 0.0);
