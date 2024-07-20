@@ -2,7 +2,7 @@ This branch contains the code that uses the vtk-m to implement the uncertainty a
 
 The details can be found in the following paper:
 
-[Submitted to IEEE VIS2024] Uncertainty Visualization of Critical Points of 2D Scalar Fields for Parametric and Nonparametric Probabilistic Models. [TODO, adding author list when final version of paper is ready]
+Tushar M. Athawale,Zhe Wang,David Pugmire,Kenneth Moreland,Qian Gong,Scott Klasky,Chris R. Johnson."Uncertainty Visualization of Critical Points of 2D Scalar Fields for Parametric and Nonparametric Probabilistic Models". Accepted by 2024 IEEE Visualization and Visual Analytics (VIS),
 
 
 ### Build testing files
