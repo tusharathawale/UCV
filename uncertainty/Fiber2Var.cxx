@@ -95,6 +95,17 @@ namespace vtkm
                          ConcreteEnsembleMaxY,
                          Probability);
           }
+          else if (this->Approach == "Truth")
+          {
+            FieldName = "Truth";
+            std::cout << "Adopt Truth" << std::endl;
+            this->Invoke(vtkm::worklet::detail::MultiVariateTruth{this->minAxis, this->maxAxis},
+                         ConcreteEnsembleMinX,
+                         ConcreteEnsembleMaxX,
+                         ConcreteEnsembleMinY,
+                         ConcreteEnsembleMaxY,
+                         Probability);
+          }
           else
           {
             throw std::runtime_error("unsupported approach:" + this->Approach);

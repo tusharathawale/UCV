@@ -129,6 +129,10 @@ target_link_libraries(temp ${VTKm_LIBRARIES})
 add_executable(TestRedSea4Vardiff TestRedSea4Vardiff.cxx ../Fiber4Var.cxx)
 target_link_libraries(TestRedSea4Vardiff ${VTKm_LIBRARIES})
 
+add_executable(TestS3D2VarTruth TestS3D2VarTruth.cxx ../Fiber2Var.cxx)
+target_link_libraries(TestS3D2VarTruth ${VTKm_LIBRARIES})
+
+
 #set(headers
 #file_writer.h)
 #vtkm_declare_headers(${headers})

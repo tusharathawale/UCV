@@ -417,6 +417,73 @@ namespace vtkm
         vtkm::Pair<vtkm::Float64, vtkm::Float64> InputTopRight;
       };
 
+      class MultiVariateTruth : public vtkm::worklet::WorkletMapField
+      {
+      public:
+        MultiVariateTruth(const vtkm::Pair<vtkm::Float64, vtkm::Float64> &minAxis,
+                         const vtkm::Pair<vtkm::Float64, vtkm::Float64> &maxAxis)
+            : InputBottomLeft(minAxis), InputTopRight(maxAxis){};
+
+        // Input and Output Parameters
+        using ControlSignature = void(FieldIn, FieldIn, FieldIn, FieldIn, FieldOut);
+
+        using ExecutionSignature = void(_1, _2, _3, _4, _5);
+        using InputDomain = _1;
+
+        template <typename MinX,
+                  typename MaxX,
+                  typename MinY,
+                  typename MaxY,
+                  typename OutCellFieldType>
+
+        VTKM_EXEC void operator()(const MinX &EnsembleMinX,
+                                  const MaxX &EnsembleMaxX,
+                                  const MinY &EnsembleMinY,
+                                  const MaxY &EnsembleMaxY,
+                                  OutCellFieldType &probability) const
+        {
+
+          // User defined rectangle(trait)
+          vtkm::FloatDefault minX_user = 0.0;
+          minX_user = static_cast<vtkm::FloatDefault>(InputBottomLeft.first);
+          vtkm::FloatDefault minY_user = 0.0;
+          minY_user = static_cast<vtkm::FloatDefault>(InputBottomLeft.second);
+          vtkm::FloatDefault maxX_user = 0.0;
+          maxX_user = static_cast<vtkm::FloatDefault>(InputTopRight.first);
+          vtkm::FloatDefault maxY_user = 0.0;
+          maxY_user = static_cast<vtkm::FloatDefault>(InputTopRight.second);
+
+          vtkm::FloatDefault minX_dataset = 0.0;
+          vtkm::FloatDefault minY_dataset = 0.0;
+          vtkm::FloatDefault maxX_dataset = 0.0;
+          vtkm::FloatDefault maxY_dataset = 0.0;
+
+          // data rectangle
+          minX_dataset = static_cast<vtkm::FloatDefault>(EnsembleMinX);
+          maxX_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxX);
+          minY_dataset = static_cast<vtkm::FloatDefault>(EnsembleMinY);
+          maxY_dataset = static_cast<vtkm::FloatDefault>(EnsembleMaxY);
+
+          if ((minX_dataset <= maxX_user) && (minX_dataset >= minX_user) && (minY_dataset <= maxY_user) && (minY_dataset >= minY_user))
+          {
+            probability = 1.0;
+            return;
+          }
+          else
+          {
+            probability = 0.0;
+            return;
+          }
+        }
+
+      private:
+        vtkm::Pair<vtkm::Float64, vtkm::Float64> InputBottomLeft;
+        vtkm::Pair<vtkm::Float64, vtkm::Float64> InputTopRight;
+      };
+
+
+      
+
     }
   }
 }
