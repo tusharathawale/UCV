@@ -10,6 +10,11 @@
 
 set(headers
   Fiber.h
+  Fiber4Var.h
+  FiberMultiVar.h
+  #MeanField2Var.h
+  Fiber2Var.h
+  Fiber3Var.h
   )
 #-----------------------------------------------------------------------------#i
 vtkm_declare_headers(${headers})

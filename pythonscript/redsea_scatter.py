@@ -21,8 +21,8 @@ def readDS(fname) :
 
 if __name__ == "__main__":
 
-    nparray_mean_curl_file="/Users/zw1/Documents/Datasets/Uncertainty/redsea/curlZ/meanVol/meanVorticity.vtk"
-    nparray_mean_vort="/Users/zw1/Documents/Datasets/Uncertainty/redsea/vorticityMagnitude/meanVol/meanVorticity.vtk"
+    nparray_mean_curl_file="/Users/g1e/Desktop/vtk-mjay/data/dataForGautam/curlZ/meanVol/meanVorticity.vtk"
+    nparray_mean_vort="/Users/g1e/Desktop/vtk-mjay/data/dataForGautam/vorticityMagnitude/meanVol/meanVorticity.vtk"
     
     ds_curl = readDS(nparray_mean_curl_file)
     vtkarray_curl=ds_curl.GetPointData().GetArray("meanVorticity")

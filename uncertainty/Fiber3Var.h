@@ -19,38 +19,46 @@ namespace filter
 {
 namespace uncertainty
 {
-class Fiber : public vtkm::filter::Filter
+class Fiber3Var : public vtkm::filter::Filter
 {
-  vtkm::Pair<vtkm::Float64, vtkm::Float64> minAxis;
-  vtkm::Pair<vtkm::Float64, vtkm::Float64> maxAxis;
-  std::string Approach = "MonteCarlo"; //MonteCarlo or ClosedForm
+  vtkm::Vec<vtkm::Float64, 3> minAxis;
+  vtkm::Vec<vtkm::Float64, 3> maxAxis;
+  std::string Approach = "ClosedForm"; //MonteCarlo or ClosedForm
   vtkm::Id NumSamples = 500;
 
 public:
-  VTKM_CONT void SetMinAxis(const vtkm::Pair<vtkm::Float64, vtkm::Float64>& minCoordinate)
+  VTKM_CONT void SetMinAxis(const vtkm::Vec<vtkm::Float64, 3>& minCoordinate)
   {
     this->minAxis = minCoordinate;
   }
 
-  VTKM_CONT void SetMaxAxis(const vtkm::Pair<vtkm::Float64, vtkm::Float64>& maxCoordinate)
+  VTKM_CONT void SetMaxAxis(const vtkm::Vec<vtkm::Float64, 3>& maxCoordinate)
   {
     this->maxAxis = maxCoordinate;
   }
-  VTKM_CONT void SetMinOne(const std::string& fieldName)
+  VTKM_CONT void SetMinX(const std::string& fieldName)
   {
     this->SetActiveField(0, fieldName, vtkm::cont::Field::Association::Points);
   }
-  VTKM_CONT void SetMaxOne(const std::string& fieldName)
+  VTKM_CONT void SetMaxX(const std::string& fieldName)
   {
     this->SetActiveField(1, fieldName, vtkm::cont::Field::Association::Points);
   }
-  VTKM_CONT void SetMinTwo(const std::string& fieldName)
+  VTKM_CONT void SetMinY(const std::string& fieldName)
   {
     this->SetActiveField(2, fieldName, vtkm::cont::Field::Association::Points);
   }
-  VTKM_CONT void SetMaxTwo(const std::string& fieldName)
+  VTKM_CONT void SetMaxY(const std::string& fieldName)
   {
     this->SetActiveField(3, fieldName, vtkm::cont::Field::Association::Points);
+  }
+  VTKM_CONT void SetMinZ(const std::string& fieldName)
+  {
+    this->SetActiveField(4, fieldName, vtkm::cont::Field::Association::Points);
+  }
+  VTKM_CONT void SetMaxZ(const std::string& fieldName)
+  {
+    this->SetActiveField(5, fieldName, vtkm::cont::Field::Association::Points);
   }
 
   VTKM_CONT void SetNumSamples(const vtkm::Id& numSamples)

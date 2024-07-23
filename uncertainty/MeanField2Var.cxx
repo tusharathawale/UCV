@@ -10,8 +10,8 @@
 
 #include <vtkm/cont/DataSet.h>
 #include <vtkm/cont/Timer.h>
-#include "./Fiber.h"
-#include "./worklet/Fiber.h"
+#include "./MeanField2Var.h"
+#include "./worklet/MeanField2Var.h"
 
 namespace vtkm
 {
@@ -19,13 +19,13 @@ namespace vtkm
   {
     namespace uncertainty
     {
-      VTKM_CONT vtkm::cont::DataSet Fiber::DoExecute(const vtkm::cont::DataSet &input)
+      VTKM_CONT vtkm::cont::DataSet FiberMean::DoExecute(const vtkm::cont::DataSet &input)
       {
 
-        //vtkm::cont::Timer timer;
-        //std::cout << "detailed timer device: " << timer.GetDevice().GetName() << std::endl;
-        //timer.Start();
-        // Input Field
+        // vtkm::cont::Timer timer;
+        // std::cout << "detailed timer device: " << timer.GetDevice().GetName() << std::endl;
+        // timer.Start();
+        //  Input Field
         vtkm::cont::Field EnsembleMinOne = this->GetFieldFromDataSet(0, input);
         vtkm::cont::Field EnsembleMaxOne = this->GetFieldFromDataSet(1, input);
         vtkm::cont::Field EnsembleMinTwo = this->GetFieldFromDataSet(2, input);
@@ -34,13 +34,13 @@ namespace vtkm
         // Output Field
         vtkm::cont::UnknownArrayHandle OutputProbability;
 
-        //timer.Stop();
-        //std::cout << "filter 1 " << timer.GetElapsedTime() << std::endl;
-        // For Invoker
+        // timer.Stop();
+        // std::cout << "filter 1 " << timer.GetElapsedTime() << std::endl;
+        //  For Invoker
         auto resolveType = [&](auto ConcreteEnsembleMinOne)
         {
-          //timer.Start();
-          // Obtaining Type
+          // timer.Start();
+          //  Obtaining Type
           using ArrayType = std::decay_t<decltype(ConcreteEnsembleMinOne)>;
           using ValueType = typename ArrayType::ValueType;
 
@@ -81,6 +81,16 @@ namespace vtkm
                          ConcreteEnsembleMaxTwo,
                          Probability);
           }
+          else if (this->Approach == "Mean")
+          {
+            std::cout << "Adopt Mean" << std::endl;
+            this->Invoke(vtkm::worklet::detail::MultiVariateMean{this->minAxis, this->maxAxis},
+                         ConcreteEnsembleMinOne,
+                         ConcreteEnsembleMaxOne,
+                         ConcreteEnsembleMinTwo,
+                         ConcreteEnsembleMaxTwo,
+                         Probability);
+          }
           else
           {
             throw std::runtime_error("unsupported approach:" + this->Approach);
@@ -94,11 +104,11 @@ namespace vtkm
         this->CastAndCallScalarField(EnsembleMinOne, resolveType);
 
         // Creating Result
-        //timer.Start();
+        // timer.Start();
         vtkm::cont::DataSet result = this->CreateResult(input);
         result.AddPointField("OutputProbability", OutputProbability);
-        //timer.Stop();
-        //std::cout << "filter 4 " << timer.GetElapsedTime() << std::endl;
+        // timer.Stop();
+        // std::cout << "filter 4 " << timer.GetElapsedTime() << std::endl;
 
         return result;
       }

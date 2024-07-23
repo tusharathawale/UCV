@@ -9,7 +9,8 @@
 //#include <vtkm/io/VTKDataSetWriter.h>
 
 
-#include "../Fiber.h"
+#include "../FiberMultiVar.h"
+//#include <vtkm/filter/uncertainty/FiberMultiVar.h>
 #include <vtkm/io/VTKDataSetReader.h>
 #include <vtkm/io/VTKDataSetWriter.h>
 #include <vtkm/cont/DataSetBuilderUniform.h>
@@ -28,7 +29,7 @@ int main(int argc, char *argv[])
     }
 
     std::string dataFolder = std::string(argv[1]);
-    //int NumEns = 20;
+    int NumEns = 20;
 
     std::string Approach = std::string(argv[2]);
     int NumSamples = std::stoi(argv[3]); // this only work when appraoch is MonteCarlo
@@ -47,11 +48,21 @@ int main(int argc, char *argv[])
     std::string VorField = "vorticityMagnitude";
 
     // the name of the file is mistyped, the value is actually the curl
-    std::string MeanCurlFile = dataFolder + "/curlZ/meanVol/meanCurl.vtk";
-    std::string DevCurlFile = dataFolder + "/curlZ/devVol/devCurl.vtk";
+    std::string MeanCurlFile = dataFolder + "/curlZ/meanVol/meanVorticity.vtk";
+    std::string DevCurlFile = dataFolder + "/curlZ/devVol/devVorticity.vtk";
 
     std::string MeanVorFile = dataFolder + "/vorticityMagnitude/meanVol/meanVorticity.vtk";
     std::string DevVorFile = dataFolder + "/vorticityMagnitude/devVol/devVorticity.vtk";
+
+
+
+    //3rd variable 
+    std::string MeanVelFile = dataFolder + "/velocityMagnitude/meanVol/meanVelocityMagnitude.vtk";
+    std::string DevVelFile = dataFolder + "/velocityMagnitude/devVol/devVelocityMagnitude.vtk";
+
+    //4rd variable
+    //std::string MeanTempFile = dataFolder + "/temperature/meanVol/meanTemperature.vtk";
+    //std::string MeanTempFile = dataFolder + "/temperature/meanVol/meanTemperature.vtk";
 
     // get mean for the curl
     vtkm::io::VTKDataSetReader MeanCurlReader(MeanCurlFile);
@@ -89,6 +100,21 @@ int main(int argc, char *argv[])
 
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> DevVorDataArray;
     vtkm::cont::ArrayCopyShallowIfPossible(DevVorData.GetField("devVorticity").GetData(), DevVorDataArray);
+    
+
+    // get mean for the velocity
+    vtkm::io::VTKDataSetReader MeanVelReader(MeanVelFile);
+    vtkm::cont::DataSet MeanVelData = MeanVelReader.ReadDataSet();
+
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> MeanVelDataArray;
+    vtkm::cont::ArrayCopyShallowIfPossible(MeanVelData.GetField("meanVelocityMagnitude").GetData(), MeanVelDataArray);
+
+    // get dev for the velocity
+    vtkm::io::VTKDataSetReader DevVelReader(DevVelFile);
+    vtkm::cont::DataSet DevVelData = DevVelReader.ReadDataSet();
+
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> DevVelDataArray;
+    vtkm::cont::ArrayCopyShallowIfPossible(DevVelData.GetField("devVelocityMagnitude").GetData(), DevVelDataArray);
 
     // print summary
     // vtkm::cont::printSummary_ArrayHandle(MeanCurlDataArray, std::cout);
@@ -110,26 +136,36 @@ int main(int argc, char *argv[])
     vtkm::cont::ArrayHandle<vtkm::FloatDefault> maxField2;
     invoke(ExtractingMinMaxFromMeanDev{}, MeanVorDataArray, DevVorDataArray, minField2, maxField2);
 
+
+    // compute the min and max for the velocity
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> minField3;
+    vtkm::cont::ArrayHandle<vtkm::FloatDefault> maxField3;
+    invoke(ExtractingMinMaxFromMeanDev{}, MeanVelDataArray, DevVelDataArray, minField3, maxField3);
+
     // user specify the field
-    vtkm::filter::uncertainty::Fiber filter;
+
+    //TODO change to 3 variables
+    vtkm::filter::uncertainty::FiberMultiVar filter;
     // curlz -15 -1
     // vorticity 1 15
     // big user specified rectangle need more monte carlo sampling
-    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-15.0, 0.6);
+    vtkm::Vec3f bottomLeft(-15.0, 0.0, 0.0);
 
     //old 
-    //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.1, 20);
+    //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> topRight(-0.1, 20);
     //new value matching paper
-    vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(-0.3, 15);
+    vtkm::Vec3f topRight(-0.1, 15, 0.95);
 
-    //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> minAxisValue(-5.0, 0.0);
-    //vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> maxAxisValue(5.0, 6.0);
+    // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> bottomLeft(-5.0, 0.0);
+    // vtkm::Pair<vtkm::FloatDefault, vtkm::FloatDefault> topRight(5.0, 6.0);
 
-    filter.SetMinAxis(minAxisValue);
-    filter.SetMaxAxis(maxAxisValue);
+    filter.SetBottomLeftAxis(bottomLeft);
+    filter.SetTopRightAxis(topRight);
+
 
     // create the data based on min and max array
-    const vtkm::Id3 dims(pointDims[0], pointDims[1], pointDims[2]);
+    //do I change the pointDims to 4?
+    const vtkm::Vec<vtkm::Id, 3> dims(pointDims[0], pointDims[1], pointDims[2]);
     vtkm::cont::DataSetBuilderUniform dataSetBuilder;
     vtkm::cont::DataSet dataSetForFilter = dataSetBuilder.Create(dims);
 
@@ -141,34 +177,46 @@ int main(int argc, char *argv[])
     dataSetForFilter.AddPointField("ensemble_min_two", minField2);
     dataSetForFilter.AddPointField("ensemble_max_two", maxField2);
 
+    dataSetForFilter.AddPointField("ensemble_min_three", minField3);
+    dataSetForFilter.AddPointField("ensemble_max_three", maxField3);
+
+
+
     dataSetForFilter.AddPointField("MeanCurlDataArray", MeanCurlDataArray);
     dataSetForFilter.AddPointField("DevCurlDataArray", DevCurlDataArray);
     dataSetForFilter.AddPointField("MeanVorDataArray", MeanVorDataArray);
     dataSetForFilter.AddPointField("DevVorDataArray", DevVorDataArray);
+    dataSetForFilter.AddPointField("MeanVelDataArray", MeanVelDataArray);
+    dataSetForFilter.AddPointField("DevVelDataArray", DevVelDataArray);
 
     // call the fiber filter
-    filter.SetMinOne("ensemble_min_one");
-    filter.SetMaxOne("ensemble_max_one");
-    filter.SetMinTwo("ensemble_min_two");
-    filter.SetMaxTwo("ensemble_max_two");
+    filter.SetMinX("ensemble_min_one");
+    filter.SetMaxX("ensemble_max_one");
+    filter.SetMinY("ensemble_min_two");
+    filter.SetMaxY("ensemble_max_two");
+    filter.SetMinZ("ensemble_min_three");
+    filter.SetMaxZ("ensemble_max_three");
 
+    /*
     filter.SetApproach(Approach);
     if (Approach == "MonteCarlo")
     {
-        filter.SetNumSamples(NumSamples);
+        filter.SetNumSamples(NumSamples);    
     }
+    */  
+    
 
     //vtkm::cont::Timer timer{initResult.Device};
     //std::cout << "timer device: " << timer.GetDevice().GetName() << std::endl;
 
     // run filter five times
     //for (int i = 1; i <= 5; i++)
-    //{        
+    //{
         //std::cout << "------" << std::endl;
         //std::cout << std::to_string(i) << "th run" << std::endl;
         //timer.Start();
         vtkm::cont::DataSet output = filter.Execute(dataSetForFilter);
-        std::string outputFilename = "redSeaOutput"+Approach+std::to_string(NumSamples)+".vtk"; 
+        std::string outputFilename = "redSea3VarOutput.vtk"; 
         vtkm::io::VTKDataSetWriter writer(outputFilename);
         writer.WriteDataSet(output);
         //timer.Synchronize();

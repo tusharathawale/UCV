@@ -32,6 +32,7 @@ set_source_files_properties(TestRedSeaComparison.cxx PROPERTIES LANGUAGE "HIP")
 add_executable(TestRedSeaComparison TestRedSeaComparison.cxx ../Fiber.cxx)
 target_link_libraries(TestRedSeaComparison ${VTKm_LIBRARIES} MPI::MPI_CXX)
 
+
 elseif(USE_CUDA)
 
 message("---use cuda build---")
@@ -82,10 +83,59 @@ target_link_libraries(DecomposeSuperNovaToEns ${VTKm_LIBRARIES})
 add_executable(TestRedSea TestRedSea.cxx ../Fiber.cxx)
 target_link_libraries(TestRedSea ${VTKm_LIBRARIES})
 
+add_executable(TestRedSea3Var TestRedSea3Var.cxx ../Fiber3Var.cxx)
+target_link_libraries(TestRedSea3Var ${VTKm_LIBRARIES})
+
+add_executable(TestRedSea4Var TestRedSea4Var.cxx ../Fiber4Var.cxx)
+target_link_libraries(TestRedSea4Var ${VTKm_LIBRARIES})
+
+add_executable(TestRedSeaMean TestRedSeaMean.cxx ../MeanField2Var.cxx)
+target_link_libraries(TestRedSeaMean ${VTKm_LIBRARIES})
+
 add_executable(TestRedSeaComparison TestRedSeaComparison.cxx ../Fiber.cxx)
 target_link_libraries(TestRedSeaComparison ${VTKm_LIBRARIES})
 
+add_executable(TestRedSea2Var TestRedSea2Var.cxx ../Fiber2Var.cxx)
+target_link_libraries(TestRedSea2Var ${VTKm_LIBRARIES})
+
+add_executable(TestRedSea2Varc TestRedSea2Varc.cxx ../Fiber2Var.cxx)
+target_link_libraries(TestRedSea2Varc ${VTKm_LIBRARIES})
+
+add_executable(TestAsteroidImpact2Var TestAsteroidImpact2Var.cxx ../Fiber2Var.cxx)
+target_link_libraries(TestAsteroidImpact2Var ${VTKm_LIBRARIES})
+
+add_executable(TestAsteroidImpact3Var TestAsteroidImpact3Var.cxx ../Fiber3Var.cxx)
+target_link_libraries(TestAsteroidImpact3Var ${VTKm_LIBRARIES})
+
+add_executable(DiffCheck DiffCheck.cxx ../Fiber3Var.cxx)
+target_link_libraries(DiffCheck ${VTKm_LIBRARIES})
+
+
+add_executable(TestAsteroidImpact3VarTruth TestAsteroidImpact3VarTruth.cxx ../Fiber3Var.cxx)
+target_link_libraries(TestAsteroidImpact3VarTruth ${VTKm_LIBRARIES})
+
+add_executable(TestAsteroidImpact4Var TestAsteroidImpact4Var.cxx ../Fiber4Var.cxx)
+target_link_libraries(TestAsteroidImpact4Var ${VTKm_LIBRARIES})
+
+add_executable(TestS3D3Var TestS3D3Var.cxx ../Fiber3Var.cxx)
+target_link_libraries(TestS3D3Var ${VTKm_LIBRARIES})
+
+add_executable(TestS3D2Var TestS3D2Var.cxx ../Fiber2Var.cxx)
+target_link_libraries(TestS3D2Var ${VTKm_LIBRARIES})
+
 add_executable(temp temp.cxx)
 target_link_libraries(temp ${VTKm_LIBRARIES})
+
+add_executable(TestRedSea4Vardiff TestRedSea4Vardiff.cxx ../Fiber4Var.cxx)
+target_link_libraries(TestRedSea4Vardiff ${VTKm_LIBRARIES})
+
+add_executable(TestS3D2VarTruth TestS3D2VarTruth.cxx ../Fiber2Var.cxx)
+target_link_libraries(TestS3D2VarTruth ${VTKm_LIBRARIES})
+
+
+#set(headers
+#file_writer.h)
+#vtkm_declare_headers(${headers})
+
 
 endif()

@@ -1,0 +1,20 @@
+#include <filesystem>
+#include <string>
+#include <iostream>
+#include <vtkm/io/VTKDataSetWriter.h>
+
+namespace fs = std::filesystem;
+
+void write_output(const vtkm::cont::DataSet& output, const std::string& filename, const std::string& directory) {
+    // Create the directory if it doesn't exist
+    fs::create_directories(directory);
+
+    // Construct the full path to the file
+    fs::path full_path = fs::path(directory) / fs::path(filename);
+
+    // Write the dataset to the file
+    vtkm::io::VTKDataSetWriter writer(full_path.string());
+    writer.WriteDataSet(output);
+
+    std::cout << "output file: " << full_path.string() << std::endl;
+}
