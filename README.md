@@ -2,8 +2,7 @@ This branch contains the code that uses the vtk-m to implement the uncertainty a
 
 The details can be found in the following paper:
 
-Tushar M. Athawale,Zhe Wang,David Pugmire,Kenneth Moreland,Qian Gong,Scott Klasky,Chris R. Johnson."Uncertainty Visualization of Critical Points of 2D Scalar Fields for Parametric and Nonparametric Probabilistic Models". Accepted by 2024 IEEE Visualization and Visual Analytics (VIS),
-
+Tushar M. Athawale, Zhe Wang, David Pugmire, Kenneth Moreland, Qian Gong, Scott Klasky, Chris R. Johnson, Paul Rosen. "Uncertainty Visualization of Critical Points of 2D Scalar Fields for Parametric and Nonparametric Probabilistic Models". Accepted by 2024 IEEE Visualization and Visual Analytics (VIS),
 
 ### Build testing files
 
@@ -36,10 +35,13 @@ The [demo video](https://drive.google.com/file/d/1GS0OJW_HQWHP5HyS8xV0cxbDHKK_sR
 ### Using different approaches to compute critical points
 
 In the paper, we describes multiple appraoches to compute the critical point, including monte carlo sampling, closed form appraoch based on indepedent uniform distribution, multi-variant gaussian distribution, histogram and kernel density estimation based on Epanechnikov. 
- - The `LoadEnsAndProcessByUniform` can load the ensemble data and use the uniform kernel to compute the critical point (minimal value).
- - The `LoadEnsAndProcessByMC` can load the ensemble data and uses the Monte Carlo Sampling approach to compute the critical point (minimal value).
+ - The `LoadEnsAndProcessByUniform` can load the ensemble data and use the uniform kernel to compute the critical point (minimal value). Checking the code [here](https://github.com/wangzhezhe/UCV/blob/exp_critical_point_noplugin/ucvworklet/CriticalPointWorklet.hpp#L224) for detailed steps to compute the integration. 
+
+ - The `LoadEnsAndProcessByMC` can load the ensemble data and uses the Monte Carlo Sampling approach to compute the critical point (minimal value). 
+
  - The `LoadEnsAndProcessByMVG` can load the ensemble data and uses a multi-variant gaussian approach to compute the critical point (minimal value).
- - The `LoadWeatherProcessByEpanech` can load the ensemble data and uses Epanechnikov to compute the critical point (minimal value).
+ 
+ - The `LoadWeatherProcessByEpanech` can load the ensemble data and uses Epanechnikov to compute the critical point (minimal value). Checking the code [here](https://github.com/wangzhezhe/UCV/blob/exp_critical_point_noplugin/ucvworklet/CriticalPointWorkletEpanechAOUF.hpp#L259) for detailed steps to compute the integration.
 
 These testing files can be used for both red sea data and weather data described in paper, in particular, [this script](https://github.com/wangzhezhe/UCV/blob/exp_critical_point_noplugin/exp_scripts/frontier_run_redsea.sh) and [this script](https://github.com/wangzhezhe/UCV/blob/exp_critical_point_noplugin/exp_scripts/frontier_run_weather.sh) shows details and associated parameters of how to run testing files on Frontier platform for red sea data and weather data, respectively.
 
@@ -49,4 +51,4 @@ These testing files can be used for both red sea data and weather data described
 
  - Build and install testing by executing `/bin/bash mac.sh` under the `install_scripts` folder
 
- - Update the `DATADIR` to the directory of the data set and `TESTINGDIR` to the directory where testings are installed. Run `/bin/bash mac_run_all.sh` under `exp_scripts` folder to test all described approaches.
+ - Change the `DATADIR` to the directory of the data set and `TESTINGDIR` to the directory where testings are installed. Run `/bin/bash mac_run_all.sh` under `exp_scripts` folder to test all described approaches.
